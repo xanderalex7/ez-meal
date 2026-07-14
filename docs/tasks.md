@@ -40,7 +40,7 @@ Requisiti MVP coperti: `REQ-001..REQ-012`, `NFR-002`, `NFR-003`, `NFR-007`, `NFR
 | `BLOCKED` | Bloccato; indicare motivo minimo. |
 | `DEFERRED` | Rinviato; indicare motivo minimo. |
 
-Snapshot corrente: `TASK-001` - `TASK-026`, `TASK-028` - `TASK-056` e `TASK-058` sono completati lato sviluppo con test automatici/verifiche asset/build; `TASK-057` ha fix e test completati ma resta in verifica manuale su APK Android installato; restano `TASK-027` come smoke test MVP finale guidato su Expo Go/APK e `TASK-059`/`TASK-060`/`TASK-061`/`TASK-062` come improvement post-MVP.
+Snapshot corrente: `TASK-001` - `TASK-026`, `TASK-028` - `TASK-056` e `TASK-058` sono completati lato sviluppo con test automatici/verifiche asset/build; `TASK-057` ha fix e test completati ma resta in verifica manuale su APK Android installato; restano `TASK-027` come smoke test MVP finale guidato su Expo Go/APK e `TASK-059`/`TASK-060`/`TASK-061`/`TASK-062`/`TASK-063` come improvement post-MVP.
 
 ## 5. Task
 
@@ -974,6 +974,21 @@ Snapshot corrente: `TASK-001` - `TASK-026`, `TASK-028` - `TASK-056` e `TASK-058`
 | Logging essenziale | Non loggare token, credenziali Expo/GitHub o dati sensibili nei log/README. |
 | Code docs/README | Owner: utente. Aggiornare README solo se emergono passaggi mancanti per collegamento GitHub/EAS, trigger branch o recupero APK. |
 
+### TASK-063 - Import/export DB locale tramite Excel/CSV
+
+| Campo | Valore |
+| --- | --- |
+| Stato | TODO |
+| Priorita | COULD |
+| Descrizione | Aggiungere la possibilita di esportare e importare il database locale dell'app tramite file Excel/CSV, includendo ingredienti, ricette, piani settimanali e preferenze utente di lingua/tema. |
+| Dipendenze | TASK-010, TASK-011, TASK-034, TASK-035, TASK-041, TASK-057 |
+| Requisiti | REQ-003, REQ-004, REQ-005, REQ-007, REQ-010, REQ-011, REQ-012 |
+| Documenti | `docs/security.md`, `README.md`, `IMPORT_EXPORT.md`, `src/data/`, `src/features/` |
+| Criteri completamento | Definita struttura stabile del file di export/import per Excel e/o CSV; esportazione include ingredienti, ricette, piani, lingua e tema; import valida formato, versioning schema, campi obbligatori, duplicati, riferimenti tra ricette/ingredienti e piani/ricette; import gestisce errori senza corrompere i dati esistenti; utente vede riepilogo/feedback prima o dopo import; privacy e sicurezza rispettate; `IMPORT_EXPORT.md` spiega struttura, colonne/sheet, valori ammessi, esempi minimi e regole di compatibilita. |
+| Verifica/test | Unit/integration test per serializer/parser, validazioni, riferimenti mancanti, duplicati e preferenze; test repository/persistence se import scrive DB; `npm run typecheck` OK; `npm run test -- --runInBand` OK; smoke manuale export -> import su dataset reale; file generato apribile in Excel/LibreOffice o parser CSV previsto. |
+| Logging essenziale | Loggare solo eventi tecnici import/export e conteggi, senza contenuto di ingredienti, ricette, piani o preferenze utente. |
+| Code docs/README | Creare `IMPORT_EXPORT.md`; aggiornare README con link al documento e istruzioni operative se la funzionalita viene implementata. |
+
 ## 6. Regole di aggiornamento
 
 - Aggiornare lo stato del task nello stesso branch/PR della modifica.
@@ -1014,7 +1029,7 @@ Snapshot corrente: `TASK-001` - `TASK-026`, `TASK-028` - `TASK-056` e `TASK-058`
 | FUTURE-001 | DEFERRED | Lista della spesa. | Evoluzione futura in requirements. |
 | FUTURE-002 | DEFERRED | Preferenze alimentari, calorie, porzioni, statistiche. | Escluse dal MVP. |
 | FUTURE-003 | DEFERRED | Account, cloud sync, backup remoto. | Esclusi dal MVP e richiedono nuova security/privacy review. |
-| FUTURE-004 | DEFERRED | Import/export dati. | Evoluzione futura; richiede path validation e policy privacy. |
+| FUTURE-004 | DEFERRED | Import/export dati tramite Excel/CSV. | Tracciato in `TASK-063`; richiede struttura file documentata, validazioni, path validation e policy privacy. |
 | FUTURE-005 | DEFERRED | Notifiche e condivisione. | Escluse dal MVP. |
 
 ## 11. Tracciabilita
