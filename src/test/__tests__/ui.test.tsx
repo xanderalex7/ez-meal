@@ -289,7 +289,7 @@ describe('shared UI', () => {
           ? {
               ...day,
               slots: day.slots.map((slot, slotIndex) =>
-                slotIndex === 0 ? { ...slot, recipeId: 'recipe-1' } : slot,
+                slotIndex === 0 ? { ...slot, recipeIds: ['recipe-1'] } : slot,
               ),
             }
           : day,

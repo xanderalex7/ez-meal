@@ -113,14 +113,15 @@ Entita domain-level:
 | `Ingredient` | `id`, `name`, `available`, `createdAt`, `updatedAt` | Molti-a-molti con `Recipe` |
 | `MealPlan` | `id`, `weekStartDate`, `days[]`, `createdAt`, `updatedAt` | Contiene 7 `PlanDay` |
 | `PlanDay` | `date`, `slots[]` | Contiene 3 `MealSlot` |
-| `MealSlot` | `date`, `mealType`, `recipeId?` | Opzionalmente punta a `Recipe` |
+| `MealSlot` | `date`, `mealType`, `recipeIds[]` | Punta a zero o piu `Recipe` compatibili |
 | `UserPreference` | `themeMode` | Locale, nessun account |
 
 Regole dati:
 
 - `mealType` ammette solo `breakfast`, `lunch`, `dinner` internamente; etichette UI localizzate in italiano.
-- Uno slot puo avere zero o una ricetta.
-- Una ricetta assegnata deve includere il `mealType` dello slot.
+- Uno slot puo avere zero, una o piu ricette.
+- Ogni ricetta assegnata deve includere il `mealType` dello slot.
+- La stessa ricetta non deve essere duplicata nello stesso slot.
 - Le eliminazioni che impattano piani o relazioni devono produrre esito esplicito: blocco, cascade controllato o conferma utente. La policy finale va registrata in `docs/decisions.md`.
 
 ## 7. Flussi applicativi
@@ -134,7 +135,7 @@ App start -> resolve today -> load week plan -> extract today slots -> load link
 Modifica slot:
 
 ```text
-Open planner -> select slot -> list compatible recipes -> validate assignment -> save slot -> refresh week and home data
+Open planner -> select slot -> list compatible recipes not already assigned -> validate assignment -> append recipe to slot -> optionally remove single recipes -> save slot -> refresh week and home data
 ```
 
 Generazione piano:
@@ -191,7 +192,7 @@ Regole:
 
 Misure giustificate dai requisiti:
 
-- Query locali indicizzate su `weekStartDate`, `date`, `mealType`, `recipeId`.
+- Query locali indicizzate su `weekStartDate`; gli slot sono salvati nel JSON del piano con `date`, `mealType`, `recipeIds[]`.
 - Caricamento home limitato alla settimana corrente e alle ricette referenziate.
 - Generazione piano eseguita in memoria su dataset personale, senza rete.
 - Componenti lista per ricette/ingredienti preparati a dataset personali realistici.

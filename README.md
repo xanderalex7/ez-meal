@@ -200,13 +200,13 @@ Implementazione MVP parziale completata secondo `docs/tasks.md`:
 - Domain core, repository locali, UI shell, CRUD base ricette/ingredienti, planner con piani nominabili/selezionabili, generazione piano, home, tema selezionabile da `Altro`, error handling e logging essenziale.
 - Persistenza locale collegata alla UI tramite SQLite; lo stato applicativo viene caricato all'avvio e salvato dopo le modifiche. Le scritture locali sono serializzate per evitare conflitti tra salvataggi pendenti e reset database.
 - Nel planner e possibile creare un piano con il FAB `+`, selezionarlo, rinominarlo e cancellarlo con conferma.
+- Ogni slot pasto del piano puo contenere piu ricette compatibili, ad esempio un pranzo composto da riso, pollo e frutta; ogni ricetta puo essere rimossa singolarmente.
 - `Genera piano ✨` crea una bozza random solo se esiste almeno una ricetta compatibile per colazione, pranzo e cena; la bozza si conferma con `Salva`, mentre se mancano ricette compatibili il piano resta invariato e viene mostrato un messaggio.
-- `Altro` include import/export CSV dei dati locali con formato documentato in `IMPORT_EXPORT.md`.
+- `Altro` include import/export CSV dei dati locali con formato documentato in `IMPORT_EXPORT.md`, inclusi slot pasto con piu ricette.
 - Hardening sicurezza MVP completato con `npm audit --omit=dev` a 0 vulnerabilita.
 - Logo minimale, icone app Android/iOS/web e asset PWA completati.
 - Verifiche correnti: `npm run typecheck`, `npm run test`, `npm run build:web`, `npm run build:ios`, `npm run build:android`, `npm audit --omit=dev`.
 
 Punti aperti:
 
-- Verifica manuale su APK Android installato per confermare reset database, CRUD dati, aggiornamento piano e riapertura app dopo il fix di `TASK-057`.
-- Smoke runtime finale guidato su Expo Go (`TASK-027`).
+- Smoke manuale APK mirato dopo `TASK-064`: creare un piano con piu ricette nello stesso pasto, riaprire l'app, esportare CSV e reimportare i dati.

@@ -21,6 +21,15 @@ const dinnerRecipe: Recipe = {
   updatedAt: timestamp,
 };
 
+const lunchSideRecipe: Recipe = {
+  id: 'recipe-4',
+  name: 'Pollo',
+  mealTypes: ['lunch'],
+  ingredientIds: [],
+  createdAt: timestamp,
+  updatedAt: timestamp,
+};
+
 const breakfastRecipe: Recipe = {
   id: 'recipe-3',
   name: 'Yogurt',
@@ -171,7 +180,7 @@ describe('appModel generated plan draft', () => {
     expect(countPlannedRecipe(harness.model, plannedRecipe.id)).toBe(0);
     expect(
       harness.model.generatedMealPlanDraft?.days.some((day) =>
-        day.slots.some((slot) => slot.recipeId === plannedRecipe.id),
+        day.slots.some((slot) => slot.recipeIds.includes(plannedRecipe.id)),
       ),
     ).toBe(true);
 
@@ -183,6 +192,33 @@ describe('appModel generated plan draft', () => {
   });
 });
 
+describe('appModel meal slot recipes', () => {
+  it('adds multiple compatible recipes to the same meal slot and removes one recipe', () => {
+    const harness = createModelHarness({
+      ...createInitialAppModel(),
+      recipes: [plannedRecipe, lunchSideRecipe],
+    });
+    const lunchSlot = harness.model.mealPlan.days[0].slots.find((slot) => slot.mealType === 'lunch');
+
+    expect(lunchSlot).toBeDefined();
+    const firstResult = harness.actions().assignRecipeToMealSlot(lunchSlot!.date, 'lunch', plannedRecipe.id);
+    const secondResult = harness.actions().assignRecipeToMealSlot(lunchSlot!.date, 'lunch', lunchSideRecipe.id);
+
+    expect(firstResult).toBeNull();
+    expect(secondResult).toBeNull();
+    expect(harness.model.mealPlan.days[0].slots.find((slot) => slot.mealType === 'lunch')?.recipeIds).toEqual([
+      plannedRecipe.id,
+      lunchSideRecipe.id,
+    ]);
+
+    harness.actions().removeRecipeFromMealSlot(lunchSlot!.date, 'lunch', plannedRecipe.id);
+
+    expect(harness.model.mealPlan.days[0].slots.find((slot) => slot.mealType === 'lunch')?.recipeIds).toEqual([
+      lunchSideRecipe.id,
+    ]);
+  });
+});
+
 function assignLunch(mealPlan: AppModel['mealPlan'], recipeId: string) {
   return {
     ...mealPlan,
@@ -191,7 +227,7 @@ function assignLunch(mealPlan: AppModel['mealPlan'], recipeId: string) {
         ? {
             ...day,
             slots: day.slots.map((slot) =>
-              slot.mealType === 'lunch' ? { ...slot, recipeId } : slot,
+              slot.mealType === 'lunch' ? { ...slot, recipeIds: [recipeId] } : slot,
             ),
           }
         : day,
@@ -205,7 +241,7 @@ function countPlannedRecipe(model: AppModel, recipeId: string) {
       count +
       plan.days.reduce(
         (dayCount, day) =>
-          dayCount + day.slots.filter((slot) => slot.recipeId === recipeId).length,
+          dayCount + day.slots.filter((slot) => slot.recipeIds.includes(recipeId)).length,
         0,
       ),
     0,

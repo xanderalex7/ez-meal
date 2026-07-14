@@ -1,9 +1,14 @@
 export { getMealTypeLabel, isMealType, mealTypeLabels, mealTypes } from './mealTypes';
 export { validateIngredientInput } from './ingredients';
 export {
+  addRecipeToSlot,
+  clearRecipesFromSlot,
   assignRecipeToSlot,
   createEmptyMealPlan,
   generateWeeklyPlan,
+  normalizeMealPlan,
+  normalizeMealSlot,
+  removeRecipeFromSlotById,
   removeRecipeFromSlot,
 } from './planning';
 export { validateRecipeInput } from './recipes';
