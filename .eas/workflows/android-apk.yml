@@ -11,4 +11,4 @@ jobs:
     params:
       platform: android
       profile: apk
-      message: APK automatico da branch android-apk
+      message: build pipeline from branch android-apk
