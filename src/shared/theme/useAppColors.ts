@@ -7,6 +7,10 @@ export type ThemeMode = 'system' | 'light' | 'dark';
 
 const ThemeModeContext = createContext<ThemeMode>('system');
 
+export function isThemeMode(value: unknown): value is ThemeMode {
+  return value === 'system' || value === 'light' || value === 'dark';
+}
+
 export function AppThemeProvider({
   children,
   themeMode,

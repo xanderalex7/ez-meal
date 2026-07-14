@@ -15,6 +15,12 @@ import { HomeScreen } from './src/features/home';
 import { IngredientsScreen } from './src/features/ingredients';
 import { createAppActions, createInitialAppModel, type AppModel } from './src/features/appModel';
 import { createAppPersistence, type AppPersistence } from './src/features/appPersistence';
+import {
+  exportAppModelToCsv,
+  importAppModelFromCsv,
+  type ImportExportStepId,
+} from './src/features/importExport';
+import { pickCsvFile, readCsvFile, shareCsvFile } from './src/features/importExport/deviceFiles';
 import { appSections, type AppSection } from './src/features/navigation';
 import { PlannerScreen } from './src/features/planner';
 import { RecipesScreen } from './src/features/recipes';
@@ -200,6 +206,74 @@ function AppContent({
     }
   }
 
+  async function selectImportCsvFile() {
+    try {
+      const pickedFile = await pickCsvFile();
+      if (pickedFile.canceled) {
+        return { ok: false as const, canceled: true as const };
+      }
+      return {
+        ok: true as const,
+        fileName: pickedFile.name,
+        uri: pickedFile.uri,
+      };
+    } catch {
+      consoleLogger.error('CSV file selection failed');
+      return { ok: false as const, message: t('errorImportFileSelectionFailed') };
+    }
+  }
+
+  async function confirmImportCsvFile(
+    uri: string,
+    onProgress: (stepId: ImportExportStepId, status: 'active' | 'success' | 'error') => void,
+  ) {
+    try {
+      onProgress('read', 'active');
+      const csv = await readCsvFile(uri);
+      onProgress('read', 'success');
+      const imported = importAppModelFromCsv(csv, onProgress);
+      onProgress('database', 'active');
+      await persistence.current?.replaceLocalData(imported.model, imported.language, imported.themeMode);
+      onProgress('database', 'success');
+      onProgress('app', 'active');
+      setModel(imported.model);
+      setLanguage(imported.language);
+      setThemeMode(imported.themeMode);
+      onProgress('app', 'success');
+      consoleLogger.warn('CSV import completed');
+      return { ok: true as const, completedAt: new Date().toLocaleString('it-IT') };
+    } catch {
+      consoleLogger.error('CSV import failed');
+      return { ok: false as const, message: t('errorImportFailed') };
+    }
+  }
+
+  async function exportCsvFile(
+    onProgress: (stepId: ImportExportStepId, status: 'active' | 'success' | 'error') => void,
+  ) {
+    try {
+      onProgress('export', 'active');
+      const exportedAt = new Date();
+      const csv = exportAppModelToCsv({
+        exportedAt: exportedAt.toISOString(),
+        language,
+        model,
+        themeMode,
+      });
+      await shareCsvFile(csv, exportedAt);
+      onProgress('export', 'success');
+      consoleLogger.info('CSV export completed', {
+        ingredientCount: model.ingredients.length,
+        recipeCount: model.recipes.length,
+      });
+      return { ok: true as const, completedAt: exportedAt.toLocaleString('it-IT') };
+    } catch {
+      consoleLogger.error('CSV export failed');
+      onProgress('export', 'error');
+      return { ok: false as const, message: t('errorExportFailed') };
+    }
+  }
+
   const keyboardBottomPadding = keyboardVisible ? spacing.xxxl : 0;
 
   return (
@@ -226,6 +300,9 @@ function AppContent({
           changeThemeMode,
           language,
           changeLanguage,
+          selectImportCsvFile,
+          confirmImportCsvFile,
+          exportCsvFile,
         )}
       </ScrollView>
       {!keyboardVisible ? (
@@ -284,6 +361,17 @@ function renderSection(
   changeThemeMode: (themeMode: ThemeMode) => Promise<string | null>,
   language: Language,
   changeLanguage: (language: Language) => Promise<string | null>,
+  selectImportCsvFile: () => Promise<
+    | { ok: true; fileName: string; uri: string }
+    | { ok: false; canceled?: true; message?: string }
+  >,
+  confirmImportCsvFile: (
+    uri: string,
+    onProgress: (stepId: ImportExportStepId, status: 'active' | 'success' | 'error') => void,
+  ) => Promise<{ ok: true; completedAt: string } | { ok: false; message: string }>,
+  exportCsvFile: (
+    onProgress: (stepId: ImportExportStepId, status: 'active' | 'success' | 'error') => void,
+  ) => Promise<{ ok: true; completedAt: string } | { ok: false; message: string }>,
 ) {
   switch (section) {
     case 'home':
@@ -300,7 +388,10 @@ function renderSection(
           onResetLocalDatabase={resetLocalDatabase}
           language={language}
           onLanguageChange={changeLanguage}
+          onConfirmImportCsv={confirmImportCsvFile}
+          onExportCsv={exportCsvFile}
           onThemeModeChange={changeThemeMode}
+          onSelectImportCsv={selectImportCsvFile}
           themeMode={themeMode}
         />
       );

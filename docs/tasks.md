@@ -974,20 +974,20 @@ Snapshot corrente: `TASK-001` - `TASK-026`, `TASK-028` - `TASK-056`, `TASK-058` 
 | Logging essenziale | Non loggare token, credenziali Expo/GitHub o dati sensibili nei log/README. |
 | Code docs/README | Owner: utente. Aggiornare README solo se emergono passaggi mancanti per collegamento GitHub/EAS, trigger branch o recupero APK. |
 
-### TASK-063 - Import/export DB locale tramite Excel/CSV
+### TASK-063 - Import/export DB locale tramite CSV
 
 | Campo | Valore |
 | --- | --- |
-| Stato | TODO |
+| Stato | IN_PROGRESS |
 | Priorita | COULD |
-| Descrizione | Aggiungere la possibilita di esportare e importare il database locale dell'app tramite file Excel/CSV, includendo ingredienti, ricette, piani settimanali e preferenze utente di lingua/tema. |
+| Descrizione | Aggiungere la possibilita di esportare e importare il database locale dell'app tramite un singolo file CSV tipizzato e leggero, includendo ingredienti, ricette, piani settimanali e preferenze utente di lingua/tema. |
 | Dipendenze | TASK-010, TASK-011, TASK-034, TASK-035, TASK-041, TASK-057 |
 | Requisiti | REQ-003, REQ-004, REQ-005, REQ-007, REQ-010, REQ-011, REQ-012 |
 | Documenti | `docs/security.md`, `README.md`, `IMPORT_EXPORT.md`, `src/data/`, `src/features/` |
-| Criteri completamento | Definita struttura stabile del file di export/import per Excel e/o CSV; esportazione include ingredienti, ricette, piani, lingua e tema; import valida formato, versioning schema, campi obbligatori, duplicati, riferimenti tra ricette/ingredienti e piani/ricette; import gestisce errori senza corrompere i dati esistenti; utente vede riepilogo/feedback prima o dopo import; privacy e sicurezza rispettate; `IMPORT_EXPORT.md` spiega struttura, colonne/sheet, valori ammessi, esempi minimi e regole di compatibilita. |
-| Verifica/test | Unit/integration test per serializer/parser, validazioni, riferimenti mancanti, duplicati e preferenze; test repository/persistence se import scrive DB; `npm run typecheck` OK; `npm run test -- --runInBand` OK; smoke manuale export -> import su dataset reale; file generato apribile in Excel/LibreOffice o parser CSV previsto. |
+| Criteri completamento | Definita struttura stabile del CSV unico di export/import; esportazione include ingredienti, ricette, relazioni ricetta-ingredienti, piani, slot piano, lingua e tema; import valida formato, versioning schema, campi obbligatori, duplicati, riferimenti tra ricette/ingredienti e piani/ricette; import gestisce errori senza corrompere i dati esistenti; privacy e sicurezza rispettate; `IMPORT_EXPORT.md` spiega header, `record_type`, colonne, valori ammessi, esempi minimi e regole di compatibilita. In tab `Altro` esiste una sezione `Import/export` dedicata: allo stato iniziale mostra solo `Import CSV` e `Esporta CSV`; `Import CSV` apre il picker di sistema per scegliere un CSV dalle cartelle del telefono; dopo selezione appare il nome file e il bottone `Importa`; la lista step non e visibile finche l'import/export non parte. Durante import/export compaiono progressivamente gli step con indicatore attivo, `V` verde sugli step riusciti e `X` rossa sugli step falliti. Se una validazione fallisce, DB e stato app restano invariati e la UI mostra lo step fallito con messaggio comprensibile. Dopo import/export completati, la sezione mostra ultimo import/export con data e ora. |
+| Verifica/test | Sviluppo completato lato codice: `IMPORT_EXPORT.md` creato con specifica CSV unico tipizzato; moduli Expo installati per picker file, filesystem e condivisione; serializer/parser CSV testati con roundtrip e validazione ricetta incompatibile; persistence test aggiunto per sostituzione dati/preferenze in import; UI `Altro` aggiornata con sezione `Import/export`, stato iniziale con soli `Import CSV`/`Esporta CSV`, bottone `Importa` e step progress visibili solo dopo selezione/avvio, export e timestamp ultimo import/export; export web corretto con fallback download CSV via browser; `npm run typecheck` OK; `npm run test -- src/test/__tests__/importExportCsv.test.ts --runInBand` OK; `npm run test -- src/test/__tests__/ui.test.tsx --runInBand` OK; `npm run test -- --runInBand` OK, 60 test passati con warning `act(...)` noti; `npm run build:android` OK; `npm run build:web` OK. Pendente smoke manuale APK: selezione CSV da cartelle telefono, import valido, import invalido senza modifica DB, export/condivisione CSV, file generato apribile in Excel/LibreOffice come CSV UTF-8. |
 | Logging essenziale | Loggare solo eventi tecnici import/export e conteggi, senza contenuto di ingredienti, ricette, piani o preferenze utente. |
-| Code docs/README | Creare `IMPORT_EXPORT.md`; aggiornare README con link al documento e istruzioni operative se la funzionalita viene implementata. |
+| Code docs/README | `IMPORT_EXPORT.md` creato con specifica CSV; aggiornare README con link al documento e istruzioni operative quando la funzionalita viene implementata. |
 
 ## 6. Regole di aggiornamento
 
@@ -1029,7 +1029,7 @@ Snapshot corrente: `TASK-001` - `TASK-026`, `TASK-028` - `TASK-056`, `TASK-058` 
 | FUTURE-001 | DEFERRED | Lista della spesa. | Evoluzione futura in requirements. |
 | FUTURE-002 | DEFERRED | Preferenze alimentari, calorie, porzioni, statistiche. | Escluse dal MVP. |
 | FUTURE-003 | DEFERRED | Account, cloud sync, backup remoto. | Esclusi dal MVP e richiedono nuova security/privacy review. |
-| FUTURE-004 | DEFERRED | Import/export dati tramite Excel/CSV. | Tracciato in `TASK-063`; richiede struttura file documentata, validazioni, path validation e policy privacy. |
+| FUTURE-004 | DEFERRED | Import/export dati tramite CSV. | Tracciato in `TASK-063`; richiede struttura file documentata, validazioni, path validation e policy privacy. |
 | FUTURE-005 | DEFERRED | Notifiche e condivisione. | Escluse dal MVP. |
 
 ## 11. Tracciabilita
