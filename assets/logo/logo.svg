@@ -1,0 +1,34 @@
+<svg width="960" height="240" viewBox="0 0 960 240" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">EZ-MEAL logo</title>
+  <desc id="desc">A clean meal planning logo combining a calendar, plate and leaf symbol with the EZ-MEAL wordmark.</desc>
+  <defs>
+    <linearGradient id="markGradient" x1="48" y1="32" x2="198" y2="207" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2F7D5C"/>
+      <stop offset="1" stop-color="#5B6EE1"/>
+    </linearGradient>
+    <linearGradient id="leafGradient" x1="128" y1="73" x2="171" y2="132" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6CCF9D"/>
+      <stop offset="1" stop-color="#2F7D5C"/>
+    </linearGradient>
+  </defs>
+  <g>
+    <rect x="24" y="24" width="192" height="192" rx="44" fill="url(#markGradient)"/>
+    <path d="M68 82C68 71.5066 76.5066 63 87 63H153C163.493 63 172 71.5066 172 82V157C172 167.493 163.493 176 153 176H87C76.5066 176 68 167.493 68 157V82Z" fill="#FAFAF7"/>
+    <path d="M68 91H172V82C172 71.5066 163.493 63 153 63H87C76.5066 63 68 71.5066 68 82V91Z" fill="#D97706"/>
+    <path d="M94 54V73" stroke="#FAFAF7" stroke-width="12" stroke-linecap="round"/>
+    <path d="M146 54V73" stroke="#FAFAF7" stroke-width="12" stroke-linecap="round"/>
+    <path d="M88 115H152" stroke="#2F7D5C" stroke-width="8" stroke-linecap="round"/>
+    <path d="M88 139H128" stroke="#2F7D5C" stroke-width="8" stroke-linecap="round"/>
+    <path d="M139.5 151.5C139.5 151.5 136 124.5 157 109C171.5 98.5 188 99.5 188 99.5C188 99.5 190.5 117.5 178 132.5C164.5 148.5 139.5 151.5 139.5 151.5Z" fill="url(#leafGradient)"/>
+    <path d="M143 148C153 136 164 126.5 179 118" stroke="#FAFAF7" stroke-width="6" stroke-linecap="round"/>
+    <circle cx="120" cy="122" r="25" stroke="#2F7D5C" stroke-width="8"/>
+    <path d="M110 121C114 128 123 131 131 124" stroke="#D97706" stroke-width="7" stroke-linecap="round"/>
+  </g>
+  <g fill="#1E241F">
+    <path d="M278 66H407V96H313V113H398V142H313V164H410V194H278V66Z"/>
+    <path d="M432 66H558V92L480 164H560V194H429V168L507 96H432V66Z"/>
+    <path d="M582 124H661V153H582V124Z"/>
+    <path d="M687 66H725L769 136L813 66H851V194H816V121L782 174H756L722 121V194H687V66Z"/>
+    <path d="M883 66H960V96H918V113H954V142H918V164H960V194H883V66Z"/>
+  </g>
+</svg>

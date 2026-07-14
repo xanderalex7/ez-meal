@@ -1,0 +1,213 @@
+import { createEmptyMealPlan, type Recipe } from '../../domain';
+import { createAppActions, createInitialAppModel, type AppModel } from '../../features/appModel';
+
+const timestamp = '2026-07-04T12:00:00.000Z';
+
+const plannedRecipe: Recipe = {
+  id: 'recipe-1',
+  name: 'Pasta',
+  mealTypes: ['lunch'],
+  ingredientIds: ['ingredient-1'],
+  createdAt: timestamp,
+  updatedAt: timestamp,
+};
+
+const dinnerRecipe: Recipe = {
+  id: 'recipe-2',
+  name: 'Zuppa',
+  mealTypes: ['dinner'],
+  ingredientIds: [],
+  createdAt: timestamp,
+  updatedAt: timestamp,
+};
+
+const breakfastRecipe: Recipe = {
+  id: 'recipe-3',
+  name: 'Yogurt',
+  mealTypes: ['breakfast'],
+  ingredientIds: [],
+  createdAt: timestamp,
+  updatedAt: timestamp,
+};
+
+function createModelHarness(initialModel: AppModel) {
+  let model = initialModel;
+  const setModel = (update: AppModel | ((current: AppModel) => AppModel)) => {
+    model = typeof update === 'function' ? update(model) : update;
+  };
+
+  return {
+    get model() {
+      return model;
+    },
+    actions() {
+      return createAppActions(model, setModel);
+    },
+  };
+}
+
+describe('appModel destructive actions', () => {
+  it('requires confirmation before removing an ingredient from recipes', () => {
+    const harness = createModelHarness({
+      ...createInitialAppModel(),
+      ingredients: [
+        {
+          id: 'ingredient-1',
+          name: 'Pomodoro',
+          available: true,
+          createdAt: timestamp,
+          updatedAt: timestamp,
+        },
+      ],
+      recipes: [plannedRecipe],
+    });
+
+    const warning = harness.actions().deleteIngredient('ingredient-1');
+
+    expect(warning).toMatch(/Ingrediente usato in 1 ricette/);
+    expect(harness.model.ingredients).toHaveLength(1);
+    expect(harness.model.recipes[0].ingredientIds).toEqual(['ingredient-1']);
+
+    const result = harness.actions().deleteIngredient('ingredient-1', { forceCascade: true });
+
+    expect(result).toBeNull();
+    expect(harness.model.ingredients).toEqual([]);
+    expect(harness.model.recipes[0].ingredientIds).toEqual([]);
+  });
+
+  it('requires confirmation and removes a deleted recipe from every meal plan', () => {
+    const firstPlan = createEmptyMealPlan({
+      id: 'plan-1',
+      title: 'Piano 1',
+      weekStartDate: '2026-06-29',
+      now: timestamp,
+    });
+    const secondPlan = createEmptyMealPlan({
+      id: 'plan-2',
+      title: 'Piano 2',
+      weekStartDate: '2026-06-29',
+      now: timestamp,
+    });
+    const plannedFirstPlan = assignLunch(firstPlan, plannedRecipe.id);
+    const plannedSecondPlan = assignLunch(secondPlan, plannedRecipe.id);
+    const harness = createModelHarness({
+      ...createInitialAppModel(),
+      mealPlan: plannedFirstPlan,
+      mealPlans: [plannedFirstPlan, plannedSecondPlan],
+      recipes: [plannedRecipe],
+      selectedMealPlanId: plannedFirstPlan.id,
+    });
+
+    const warning = harness.actions().deleteRecipe(plannedRecipe.id);
+
+    expect(warning).toMatch(/Ricetta pianificata in 2 pasti/);
+    expect(harness.model.recipes).toHaveLength(1);
+    expect(countPlannedRecipe(harness.model, plannedRecipe.id)).toBe(2);
+
+    const result = harness.actions().deleteRecipe(plannedRecipe.id, { forceCascade: true });
+
+    expect(result).toBeNull();
+    expect(harness.model.recipes).toEqual([]);
+    expect(countPlannedRecipe(harness.model, plannedRecipe.id)).toBe(0);
+  });
+});
+
+describe('appModel duplicate policy', () => {
+  it('rejects duplicate ingredient names ignoring case and surrounding spaces', () => {
+    const harness = createModelHarness({
+      ...createInitialAppModel(),
+      ingredients: [
+        {
+          id: 'ingredient-1',
+          name: 'Pomodoro',
+          available: true,
+          createdAt: timestamp,
+          updatedAt: timestamp,
+        },
+      ],
+    });
+
+    const result = harness.actions().addIngredient('  pomodoro  ');
+
+    expect(result).toBe('Esiste già un ingrediente con questo nome.');
+    expect(harness.model.ingredients).toHaveLength(1);
+  });
+
+  it('rejects duplicate recipe names on create and update', () => {
+    const harness = createModelHarness({
+      ...createInitialAppModel(),
+      recipes: [plannedRecipe, dinnerRecipe],
+    });
+
+    const createResult = harness.actions().addRecipe({
+      ingredientIds: [],
+      mealTypes: ['lunch'],
+      name: ' pasta ',
+    });
+    const updateResult = harness.actions().updateRecipe(dinnerRecipe.id, {
+      ingredientIds: [],
+      mealTypes: ['dinner'],
+      name: 'PASTA',
+    });
+
+    expect(createResult).toBe('Esiste già una ricetta con questo nome.');
+    expect(updateResult).toBe('Esiste già una ricetta con questo nome.');
+    expect(harness.model.recipes.map((recipe) => recipe.name)).toEqual(['Pasta', 'Zuppa']);
+  });
+});
+
+describe('appModel generated plan draft', () => {
+  it('keeps a generated random plan as draft until it is saved', () => {
+    const initialModel = {
+      ...createInitialAppModel(),
+      recipes: [breakfastRecipe, plannedRecipe, dinnerRecipe],
+    };
+    const harness = createModelHarness(initialModel);
+
+    const uncovered = harness.actions().generatePlan();
+
+    expect(uncovered).toBe(0);
+    expect(harness.model.generatedMealPlanDraft).toBeDefined();
+    expect(countPlannedRecipe(harness.model, plannedRecipe.id)).toBe(0);
+    expect(
+      harness.model.generatedMealPlanDraft?.days.some((day) =>
+        day.slots.some((slot) => slot.recipeId === plannedRecipe.id),
+      ),
+    ).toBe(true);
+
+    const result = harness.actions().saveGeneratedPlan();
+
+    expect(result).toBeNull();
+    expect(harness.model.generatedMealPlanDraft).toBeUndefined();
+    expect(countPlannedRecipe(harness.model, plannedRecipe.id)).toBeGreaterThan(0);
+  });
+});
+
+function assignLunch(mealPlan: AppModel['mealPlan'], recipeId: string) {
+  return {
+    ...mealPlan,
+    days: mealPlan.days.map((day, dayIndex) =>
+      dayIndex === 0
+        ? {
+            ...day,
+            slots: day.slots.map((slot) =>
+              slot.mealType === 'lunch' ? { ...slot, recipeId } : slot,
+            ),
+          }
+        : day,
+    ),
+  };
+}
+
+function countPlannedRecipe(model: AppModel, recipeId: string) {
+  return model.mealPlans.reduce(
+    (count, plan) =>
+      count +
+      plan.days.reduce(
+        (dayCount, day) =>
+          dayCount + day.slots.filter((slot) => slot.recipeId === recipeId).length,
+        0,
+      ),
+    0,
+  );
+}
