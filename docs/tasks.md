@@ -40,7 +40,7 @@ Requisiti MVP coperti: `REQ-001..REQ-012`, `NFR-002`, `NFR-003`, `NFR-007`, `NFR
 | `BLOCKED` | Bloccato; indicare motivo minimo. |
 | `DEFERRED` | Rinviato; indicare motivo minimo. |
 
-Snapshot corrente: `TASK-001` - `TASK-026`, `TASK-028` - `TASK-058`, `TASK-060`, `TASK-061` e `TASK-063` sono completati lato sviluppo con test automatici/verifiche asset/build; restano `TASK-027` come smoke test MVP finale guidato su Expo Go/APK e `TASK-059`/`TASK-062` come improvement post-MVP.
+Snapshot corrente: `TASK-001` - `TASK-026`, `TASK-028` - `TASK-061` e `TASK-063` sono completati lato sviluppo con test automatici/verifiche asset/build o analisi tecnica; restano `TASK-027` come smoke test MVP finale guidato su Expo Go/APK e `TASK-062` come improvement operativo post-MVP.
 
 ## 5. Task
 
@@ -918,14 +918,14 @@ Snapshot corrente: `TASK-001` - `TASK-026`, `TASK-028` - `TASK-058`, `TASK-060`,
 
 | Campo | Valore |
 | --- | --- |
-| Stato | TODO |
+| Stato | DONE |
 | Priorita | COULD |
 | Descrizione | Analizzare e migliorare il peso della build Android/APK riducendo asset, bundle e dipendenze non necessarie senza cambiare comportamento utente. |
 | Dipendenze | TASK-031, TASK-054, TASK-055, TASK-057 |
 | Requisiti | REQ-011, NFR-003, NFR-008 |
 | Documenti | `docs/architecture.md`, `README.md`, `package.json`, `app.json`, `assets/`, `build/` |
 | Criteri completamento | Dimensione bundle/APK misurata prima e dopo; asset immagine/logo/icon auditati per dimensioni e duplicazioni; dipendenze runtime verificate e rimosse solo se inutilizzate; configurazione build controllata per minificazione/tree shaking/asset inclusion compatibili con Expo; nessuna regressione su icone, PWA, SQLite e avvio app; eventuali limiti non risolvibili documentati. |
-| Verifica/test | `npm run typecheck` OK; `npm run test -- --runInBand` OK; `npm run build:android` OK; se disponibile, nuova build EAS APK confrontata con la precedente; checklist manuale APK: avvio, icona, reset database, CRUD, piano, PWA/web non regressi se toccati asset condivisi. |
+| Verifica/test | Analisi completata senza modifiche: APK reale rilevato circa 60 MB; export Android locale circa 1.9 MB e asset circa 240 KB, quindi il peso non dipende in modo sensibile da codice JS o immagini del progetto. `npx expo config --type public` OK. `npm explain` conferma che `expo-modules-core` e transitivo tramite `expo`, ma rimuoverlo come dipendenza diretta avrebbe impatto atteso minimo sul peso APK. `expo-sqlite`, `expo-document-picker`, `expo-file-system`, `expo-sharing`, `react-dom` e `react-native-web` sono giustificati dai requisiti offline/import-export/web. Nessuna miglioria sensibile e sicura individuata senza cambiare strategia build/distribuzione; riduzioni importanti richiederebbero valutazioni separate come AAB per store, split ABI o workflow native/prebuild. |
 | Logging essenziale | Non richiesto salvo errori build/diagnostica senza dati utente. |
 | Code docs/README | Aggiornare README solo se cambiano comandi build, note EAS o raccomandazioni per produrre APK leggero. |
 
