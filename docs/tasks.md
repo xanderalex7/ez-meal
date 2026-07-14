@@ -963,7 +963,7 @@ Snapshot corrente: `TASK-001` - `TASK-026`, `TASK-028` - `TASK-056`, `TASK-058` 
 
 | Campo | Valore |
 | --- | --- |
-| Stato | TODO |
+| Stato | IN_PROGRESS |
 | Priorita | SHOULD |
 | Descrizione | Verificare operativamente che il workflow EAS configurato in `.eas/workflows/android-apk.yml` parta quando si pusha sul branch `android-apk` e produca davvero un APK installabile su Expo/EAS. Owner operativo: utente. |
 | Dipendenze | TASK-031, TASK-057 |
