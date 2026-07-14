@@ -26,6 +26,8 @@ const dictionaries = {
     actionCancel: 'Annulla',
     actionEdit: 'Modifica',
     actionSave: 'Salva',
+    actionEditPlan: 'Modifica piano',
+    actionSavePlan: 'Salva piano',
     actionRenamePlan: 'Rinomina piano',
     actionDeletePlan: 'Elimina piano',
     actionConfirmDeletePlan: 'Conferma elimina piano',
@@ -65,6 +67,7 @@ const dictionaries = {
     planGenerate: 'Genera piano ✨',
     planGeneratedDraft: 'Piano generato. Premi Salva per confermarlo.',
     planGeneratedSave: 'Piano salvato.',
+    planSaved: 'Piano salvato.',
     planInsufficientRecipes:
       'Ricette insufficienti: {{count}} slot non hanno ricette compatibili. Piano non modificato.',
     planMealUpdated: 'Pasto aggiornato.',
@@ -133,6 +136,8 @@ const dictionaries = {
     actionCancel: 'Cancel',
     actionEdit: 'Edit',
     actionSave: 'Save',
+    actionEditPlan: 'Edit plan',
+    actionSavePlan: 'Save plan',
     actionRenamePlan: 'Rename plan',
     actionDeletePlan: 'Delete plan',
     actionConfirmDeletePlan: 'Confirm delete plan',
@@ -172,6 +177,7 @@ const dictionaries = {
     planGenerate: 'Generate plan ✨',
     planGeneratedDraft: 'Plan generated. Press Save to confirm.',
     planGeneratedSave: 'Plan saved.',
+    planSaved: 'Plan saved.',
     planInsufficientRecipes:
       'Not enough recipes: {{count}} slots have no compatible recipes. Plan unchanged.',
     planMealUpdated: 'Meal updated.',

@@ -10,6 +10,7 @@ import {
   Card,
   FloatingActionButton,
   PencilIconButton,
+  SaveIconButton,
   TextField,
   TrashIcon,
   TrashIconButton,
@@ -44,6 +45,8 @@ export function PlannerScreen({ actions, model }: PlannerScreenProps) {
   const [newPlanTitle, setNewPlanTitle] = useState('');
   const [message, setMessage] = useState<string | undefined>();
   const [selectionSlotKey, setSelectionSlotKey] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const canGeneratePlan = isEditing && !hasGeneratedDraft && isMealPlanEmpty(model.mealPlan);
 
   function getSlotKey(date: string, mealType: MealType) {
     return `${date}-${mealType}`;
@@ -59,11 +62,27 @@ export function PlannerScreen({ actions, model }: PlannerScreenProps) {
     );
   }
 
-  function saveGeneratedPlan() {
+  function enterEditMode() {
     setPendingDeletePlanId(null);
     setSelectionSlotKey(null);
-    const result = actions.saveGeneratedPlan();
-    setMessage(result ?? t('planGeneratedSave'));
+    setPlanTitle(model.mealPlan.title);
+    setMessage(undefined);
+    setIsEditing(true);
+  }
+
+  function savePlanChanges() {
+    setPendingDeletePlanId(null);
+    setSelectionSlotKey(null);
+    const generatedResult = hasGeneratedDraft ? actions.saveGeneratedPlan() : null;
+    const renameResult =
+      planTitle.trim() !== model.mealPlan.title
+        ? actions.renameMealPlan(model.mealPlan.id, planTitle)
+        : null;
+    const result = generatedResult ?? renameResult;
+    setMessage(result ?? (hasGeneratedDraft ? t('planGeneratedSave') : t('planSaved')));
+    if (!result) {
+      setIsEditing(false);
+    }
   }
 
   function startManualPlanCreation() {
@@ -74,14 +93,8 @@ export function PlannerScreen({ actions, model }: PlannerScreenProps) {
     if (!result) {
       setNewPlanTitle('');
       setIsCreateFormVisible(false);
+      setIsEditing(true);
     }
-  }
-
-  function renameSelectedPlan() {
-    setPendingDeletePlanId(null);
-    setSelectionSlotKey(null);
-    const result = actions.renameMealPlan(model.mealPlan.id, planTitle);
-    setMessage(result ?? t('planTitleUpdated'));
   }
 
   function deleteSelectedPlan() {
@@ -106,6 +119,7 @@ export function PlannerScreen({ actions, model }: PlannerScreenProps) {
     setPlanTitle(plan.title);
     setPendingDeletePlanId(null);
     setSelectionSlotKey(null);
+    setIsEditing(false);
     setMessage(undefined);
   }
 
@@ -131,12 +145,14 @@ export function PlannerScreen({ actions, model }: PlannerScreenProps) {
           <Button label={t('actionAdd')} onPress={startManualPlanCreation} />
         </View>
       ) : null}
-      <TextField
-        label={t('planRenameSelected')}
-        placeholder={t('planRenameSelected')}
-        value={planTitle}
-        onChangeText={setPlanTitle}
-      />
+      {isEditing ? (
+        <TextField
+          label={t('planRenameSelected')}
+          placeholder={t('planRenameSelected')}
+          value={planTitle}
+          onChangeText={setPlanTitle}
+        />
+      ) : null}
       {hasMultipleMealPlans ? (
         <View style={styles.planSelector} testID="meal-plan-selector">
           {model.mealPlans.map((plan) => (
@@ -150,10 +166,11 @@ export function PlannerScreen({ actions, model }: PlannerScreenProps) {
         </View>
       ) : null}
       <View style={styles.planActions} testID="plan-actions">
-        <PencilIconButton
-          accessibilityLabel={t('actionRenamePlan')}
-          onPress={renameSelectedPlan}
-        />
+        {isEditing ? (
+          <SaveIconButton accessibilityLabel={t('actionSavePlan')} onPress={savePlanChanges} />
+        ) : (
+          <PencilIconButton accessibilityLabel={t('actionEditPlan')} onPress={enterEditMode} />
+        )}
         <TrashIconButton
           accessibilityLabel={
             pendingDeletePlanId === model.mealPlan.id
@@ -164,15 +181,16 @@ export function PlannerScreen({ actions, model }: PlannerScreenProps) {
           onPress={deleteSelectedPlan}
         />
       </View>
-      <View style={styles.generatorActions} testID="plan-generator-actions">
-        <Button
-          label={t('planGenerate')}
-          onPress={generate}
-          style={styles.fullWidthButton}
-          testID="generate-plan-button"
-        />
-        {hasGeneratedDraft ? <Button label={t('actionSave')} onPress={saveGeneratedPlan} style={styles.fullWidthButton} /> : null}
-      </View>
+      {canGeneratePlan ? (
+        <View style={styles.generatorActions} testID="plan-generator-actions">
+          <Button
+            label={t('planGenerate')}
+            onPress={generate}
+            style={styles.fullWidthButton}
+            testID="generate-plan-button"
+          />
+        </View>
+      ) : null}
       {message ? <Text style={[styles.message, { color: colors.textMuted }]}>{message}</Text> : null}
       {visibleMealPlan.days.map((day, dayIndex) => (
         <Card key={day.date} style={styles.day}>
@@ -205,37 +223,39 @@ export function PlannerScreen({ actions, model }: PlannerScreenProps) {
                       {recipe?.name ?? t('planEmptySlot')}
                     </Text>
                   </View>
-                  <View style={styles.slotActions}>
-                    <SlotActionButton
-                      accessibilityLabel={t('planChooseRecipeA11y', {
-                        date: slot.date,
-                        meal: mealTypeLabel(slot.mealType),
-                      })}
-                      color={recipe ? colors.text : colors.success}
-                      icon={recipe ? 'swap' : 'add'}
-                      onPress={() => {
-                        setMessage(undefined);
-                        setSelectionSlotKey(selectionOpen ? null : slotKey);
-                      }}
-                    />
-                    {recipe ? (
+                  {isEditing ? (
+                    <View style={styles.slotActions}>
                       <SlotActionButton
-                        accessibilityLabel={t('planRemoveRecipeA11y', {
+                        accessibilityLabel={t('planChooseRecipeA11y', {
                           date: slot.date,
                           meal: mealTypeLabel(slot.mealType),
                         })}
-                        color={colors.error}
-                        icon="trash"
+                        color={recipe ? colors.text : colors.success}
+                        icon={recipe ? 'swap' : 'add'}
                         onPress={() => {
-                          actions.removeRecipeFromMealSlot(slot.date, slot.mealType);
-                          setSelectionSlotKey(null);
-                          setMessage(t('planMealCleared'));
+                          setMessage(undefined);
+                          setSelectionSlotKey(selectionOpen ? null : slotKey);
                         }}
                       />
-                    ) : null}
-                  </View>
+                      {recipe ? (
+                        <SlotActionButton
+                          accessibilityLabel={t('planRemoveRecipeA11y', {
+                            date: slot.date,
+                            meal: mealTypeLabel(slot.mealType),
+                          })}
+                          color={colors.error}
+                          icon="trash"
+                          onPress={() => {
+                            actions.removeRecipeFromMealSlot(slot.date, slot.mealType);
+                            setSelectionSlotKey(null);
+                            setMessage(t('planMealCleared'));
+                          }}
+                        />
+                      ) : null}
+                    </View>
+                  ) : null}
                 </View>
-                {selectionOpen ? (
+                {isEditing && selectionOpen ? (
                   <View style={styles.optionList}>
                     {compatibleRecipes.length > 0 ? (
                       compatibleRecipes.map((candidate) => (
@@ -251,7 +271,11 @@ export function PlannerScreen({ actions, model }: PlannerScreenProps) {
                         {t('planNoCompatibleRecipe', { meal: mealTypeLabel(slot.mealType) })}
                       </Text>
                     )}
-                    <Button label={t('actionCancel')} variant="ghost" onPress={() => setSelectionSlotKey(null)} />
+                    <Button
+                      label={t('actionCancel')}
+                      variant="ghost"
+                      onPress={() => setSelectionSlotKey(null)}
+                    />
                   </View>
                 ) : null}
               </View>
@@ -271,6 +295,10 @@ export function PlannerScreen({ actions, model }: PlannerScreenProps) {
       ) : null}
     </View>
   );
+}
+
+function isMealPlanEmpty(mealPlan: AppModel['mealPlan']) {
+  return mealPlan.days.every((day) => day.slots.every((slot) => !slot.recipeId));
 }
 
 function SlotActionButton({

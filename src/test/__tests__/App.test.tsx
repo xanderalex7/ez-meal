@@ -97,9 +97,11 @@ describe('App', () => {
     expect(await findByText('Ingrediente eliminato.')).toBeTruthy();
 
     fireEvent.press(getByText('Piano'));
+    fireEvent.press(await findByLabelText('Modifica piano'));
     fireEvent.press(await findByLabelText('Scegli ricetta per 2026-06-29 Pranzo'));
     fireEvent.press(await findByText('Pasta al forno'));
     expect(await findByText('Pasto aggiornato.')).toBeTruthy();
+    fireEvent.press(await findByLabelText('Salva piano'));
     expect(await findByText('Lunedì')).toBeTruthy();
 
     fireEvent.press(getByText('Ricette'));
@@ -118,8 +120,8 @@ describe('App', () => {
     expect(await findAllByText('Piano bulk')).not.toHaveLength(0);
 
     fireEvent.changeText(await findByPlaceholderText('Rinomina piano selezionato'), 'Piano bulk aggiornato');
-    fireEvent.press(await findByLabelText('Rinomina piano'));
-    expect(await findByText('Titolo piano aggiornato.')).toBeTruthy();
+    fireEvent.press(await findByLabelText('Salva piano'));
+    expect(await findByText('Piano salvato.')).toBeTruthy();
     expect(await findAllByText('Piano bulk aggiornato')).not.toHaveLength(0);
 
     fireEvent.press(await findByLabelText('Elimina piano'));
@@ -127,6 +129,7 @@ describe('App', () => {
     fireEvent.press(await findByLabelText('Conferma elimina piano'));
     expect(await findByText('Piano eliminato.')).toBeTruthy();
 
+    fireEvent.press(await findByLabelText('Modifica piano'));
     fireEvent.press(await findByText('Genera piano ✨'));
     expect(await findByText(/Ricette insufficienti/)).toBeTruthy();
 

@@ -40,7 +40,7 @@ Requisiti MVP coperti: `REQ-001..REQ-012`, `NFR-002`, `NFR-003`, `NFR-007`, `NFR
 | `BLOCKED` | Bloccato; indicare motivo minimo. |
 | `DEFERRED` | Rinviato; indicare motivo minimo. |
 
-Snapshot corrente: `TASK-001` - `TASK-026`, `TASK-028` - `TASK-056` e `TASK-058` sono completati lato sviluppo con test automatici/verifiche asset/build; `TASK-057` ha fix e test completati ma resta in verifica manuale su APK Android installato; restano `TASK-027` come smoke test MVP finale guidato su Expo Go/APK e `TASK-059`/`TASK-060`/`TASK-061`/`TASK-062`/`TASK-063` come improvement post-MVP.
+Snapshot corrente: `TASK-001` - `TASK-026`, `TASK-028` - `TASK-056`, `TASK-058` e `TASK-061` sono completati lato sviluppo con test automatici/verifiche asset/build; `TASK-057` ha fix e test completati ma resta in verifica manuale su APK Android installato; restano `TASK-027` come smoke test MVP finale guidato su Expo Go/APK e `TASK-059`/`TASK-060`/`TASK-062`/`TASK-063` come improvement post-MVP.
 
 ## 5. Task
 
@@ -948,16 +948,16 @@ Snapshot corrente: `TASK-001` - `TASK-026`, `TASK-028` - `TASK-056` e `TASK-058`
 
 | Campo | Valore |
 | --- | --- |
-| Stato | TODO |
+| Stato | DONE |
 | Priorita | SHOULD |
 | Descrizione | Rendere la schermata Piano coerente con una modalita lettura/modifica: in lettura il piano e consultabile senza controlli di modifica; in modifica compaiono i controlli necessari e il bottone matita diventa un bottone salva con icona floppy disk verde. |
 | Dipendenze | TASK-036, TASK-037, TASK-045, TASK-050, TASK-052 |
 | Requisiti | REQ-003, REQ-004, REQ-011, REQ-012 |
 | Documenti | `docs/design.md`, `src/features/planner/`, `src/shared/ui/` |
 | Criteri completamento | Quando il piano e salvato/consultato appare il bottone modifica con icona matita; quando si entra in modifica, al suo posto appare il bottone salva con contorno verde e icona floppy disk verde; in lettura spariscono campo modifica titolo piano, bottoni di modifica dei pasti, rimozione/swap/assegnazione e controlli non necessari; in modifica il titolo e i pasti restano editabili; `Genera piano ✨` appare solo quando il piano selezionato e vuoto; il salvataggio riporta la vista in lettura mantenendo le modifiche; stati vuoti e accessibilita restano chiari. |
-| Verifica/test | UI test per toggle lettura/modifica Piano, presenza matita vs salva, assenza controlli modifica in lettura, visibilita `Genera piano ✨` solo su piano vuoto; `npm run typecheck` OK; `npm run test -- --runInBand` OK; smoke manuale su creazione piano, modifica titolo, assegnazione pasti, generazione piano vuoto e piano gia popolato. |
+| Verifica/test | UI test aggiunti/aggiornati per toggle lettura/modifica Piano, presenza matita vs salva, assenza controlli modifica in lettura, visibilita `Genera piano ✨` solo su piano vuoto e assenza su piano popolato; App flow aggiornato per entrare in modifica prima di assegnare/renominare/generare; `npm run typecheck` OK; `npm run test -- src/test/__tests__/App.test.tsx src/test/__tests__/ui.test.tsx --runInBand` OK, 17 test passati; `npm run test -- --runInBand` OK, 56 test passati con warning `act(...)` noti. Smoke manuale runtime demandato a `TASK-027`. |
 | Logging essenziale | Non richiesto salvo errori di persistenza gia coperti da app persistence. |
-| Code docs/README | Valutare estrazione `SaveIconButton` condiviso se riusabile; aggiornare `docs/design.md` solo se si formalizza il pattern lettura/modifica o il nuovo bottone salva. |
+| Code docs/README | Estratto `SaveIconButton` condiviso in `src/shared/ui`; README non richiesto. |
 
 ### TASK-062 - Improvement test workflow EAS APK su branch android-apk
 

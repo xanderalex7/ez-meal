@@ -220,13 +220,14 @@ describe('shared UI', () => {
     );
   });
 
-  it('shows the selected plan as title and makes generation full width', async () => {
+  it('toggles planner read and edit controls', async () => {
     const model = createInitialAppModel();
     const actions = {
       generatePlan: jest.fn(() => 21),
+      renameMealPlan: jest.fn(() => null),
     } as unknown as AppActions;
 
-    const { getByLabelText, getByText, getByTestId, queryByTestId } = await render(
+    const { getByLabelText, getByText, getByTestId, queryByLabelText, queryByTestId } = await render(
       <PlannerScreen actions={actions} model={model} />,
     );
 
@@ -235,10 +236,22 @@ describe('shared UI', () => {
     expect(StyleSheet.flatten(getByTestId('plan-actions').props.style)).toEqual(
       expect.objectContaining({ justifyContent: 'flex-end' }),
     );
-    expect(StyleSheet.flatten(getByLabelText('Rinomina piano').props.style)).toEqual(
+    expect(StyleSheet.flatten(getByLabelText('Modifica piano').props.style)).toEqual(
       expect.objectContaining({
         backgroundColor: lightColors.surface,
         borderColor: lightColors.text,
+      }),
+    );
+    expect(queryByLabelText('Salva piano')).toBeNull();
+    expect(queryByTestId('plan-generator-actions')).toBeNull();
+    expect(queryByLabelText('Scegli ricetta per 2026-06-29 Colazione')).toBeNull();
+
+    fireEvent.press(getByLabelText('Modifica piano'));
+
+    expect(StyleSheet.flatten(getByLabelText('Salva piano').props.style)).toEqual(
+      expect.objectContaining({
+        backgroundColor: lightColors.surface,
+        borderColor: lightColors.success,
       }),
     );
     expect(StyleSheet.flatten(getByLabelText('Elimina piano').props.style)).toEqual(
@@ -250,6 +263,49 @@ describe('shared UI', () => {
     expect(StyleSheet.flatten(getByTestId('generate-plan-button').props.style)).toEqual(
       expect.objectContaining({ width: '100%' }),
     );
+    expect(getByLabelText('Scegli ricetta per 2026-06-29 Colazione')).toBeTruthy();
+  });
+
+  it('does not show plan generation for non-empty plans', async () => {
+    const model = createInitialAppModel();
+    const firstSlot = model.mealPlan.days[0].slots[0];
+    const filledPlan = {
+      ...model.mealPlan,
+      days: model.mealPlan.days.map((day, dayIndex) =>
+        dayIndex === 0
+          ? {
+              ...day,
+              slots: day.slots.map((slot, slotIndex) =>
+                slotIndex === 0 ? { ...slot, recipeId: 'recipe-1' } : slot,
+              ),
+            }
+          : day,
+      ),
+    };
+    const filledModel = {
+      ...model,
+      mealPlan: filledPlan,
+      mealPlans: [filledPlan],
+      recipes: [
+        {
+          id: 'recipe-1',
+          name: 'Porridge',
+          mealTypes: [firstSlot.mealType],
+          ingredientIds: [],
+          createdAt: '2026-07-04T12:00:00.000Z',
+          updatedAt: '2026-07-04T12:00:00.000Z',
+        },
+      ],
+    };
+    const actions = {} as AppActions;
+
+    const { getByLabelText, queryByTestId } = await render(
+      <PlannerScreen actions={actions} model={filledModel} />,
+    );
+
+    fireEvent.press(getByLabelText('Modifica piano'));
+
+    expect(queryByTestId('plan-generator-actions')).toBeNull();
   });
 
   it('uses a scrollable shell for long screen content', async () => {
