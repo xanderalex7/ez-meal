@@ -40,7 +40,7 @@ Requisiti MVP coperti: `REQ-001..REQ-012`, `NFR-002`, `NFR-003`, `NFR-007`, `NFR
 | `BLOCKED` | Bloccato; indicare motivo minimo. |
 | `DEFERRED` | Rinviato; indicare motivo minimo. |
 
-Snapshot corrente: `TASK-001` - `TASK-026`, `TASK-028` - `TASK-056` e `TASK-058` sono completati lato sviluppo con test automatici/verifiche asset/build; `TASK-057` ha fix e test completati ma resta in verifica manuale su APK Android installato; restano `TASK-027` come smoke test MVP finale guidato su Expo Go/APK e `TASK-059`/`TASK-060` come improvement post-MVP.
+Snapshot corrente: `TASK-001` - `TASK-026`, `TASK-028` - `TASK-056` e `TASK-058` sono completati lato sviluppo con test automatici/verifiche asset/build; `TASK-057` ha fix e test completati ma resta in verifica manuale su APK Android installato; restano `TASK-027` come smoke test MVP finale guidato su Expo Go/APK e `TASK-059`/`TASK-060`/`TASK-061`/`TASK-062` come improvement post-MVP.
 
 ## 5. Task
 
@@ -943,6 +943,36 @@ Snapshot corrente: `TASK-001` - `TASK-026`, `TASK-028` - `TASK-056` e `TASK-058`
 | Verifica/test | `rg`/review manuale su componenti e bottoni action; test UI aggiornati solo se cambiano label/struttura; `npm run typecheck` OK; `npm run test -- --runInBand` OK; smoke manuale mirato su Ricette, Ingredienti, Piano e Altro. |
 | Logging essenziale | Non richiesto. |
 | Code docs/README | Aggiornare `docs/design.md` solo se emergono nuove regole di riuso componenti; README non richiesto salvo variazioni operative. |
+
+### TASK-061 - Improvement modalita lettura/modifica piano
+
+| Campo | Valore |
+| --- | --- |
+| Stato | TODO |
+| Priorita | SHOULD |
+| Descrizione | Rendere la schermata Piano coerente con una modalita lettura/modifica: in lettura il piano e consultabile senza controlli di modifica; in modifica compaiono i controlli necessari e il bottone matita diventa un bottone salva con icona floppy disk verde. |
+| Dipendenze | TASK-036, TASK-037, TASK-045, TASK-050, TASK-052 |
+| Requisiti | REQ-003, REQ-004, REQ-011, REQ-012 |
+| Documenti | `docs/design.md`, `src/features/planner/`, `src/shared/ui/` |
+| Criteri completamento | Quando il piano e salvato/consultato appare il bottone modifica con icona matita; quando si entra in modifica, al suo posto appare il bottone salva con contorno verde e icona floppy disk verde; in lettura spariscono campo modifica titolo piano, bottoni di modifica dei pasti, rimozione/swap/assegnazione e controlli non necessari; in modifica il titolo e i pasti restano editabili; `Genera piano ✨` appare solo quando il piano selezionato e vuoto; il salvataggio riporta la vista in lettura mantenendo le modifiche; stati vuoti e accessibilita restano chiari. |
+| Verifica/test | UI test per toggle lettura/modifica Piano, presenza matita vs salva, assenza controlli modifica in lettura, visibilita `Genera piano ✨` solo su piano vuoto; `npm run typecheck` OK; `npm run test -- --runInBand` OK; smoke manuale su creazione piano, modifica titolo, assegnazione pasti, generazione piano vuoto e piano gia popolato. |
+| Logging essenziale | Non richiesto salvo errori di persistenza gia coperti da app persistence. |
+| Code docs/README | Valutare estrazione `SaveIconButton` condiviso se riusabile; aggiornare `docs/design.md` solo se si formalizza il pattern lettura/modifica o il nuovo bottone salva. |
+
+### TASK-062 - Improvement test workflow EAS APK su branch android-apk
+
+| Campo | Valore |
+| --- | --- |
+| Stato | TODO |
+| Priorita | SHOULD |
+| Descrizione | Verificare operativamente che il workflow EAS configurato in `.eas/workflows/android-apk.yml` parta quando si pusha sul branch `android-apk` e produca davvero un APK installabile su Expo/EAS. Owner operativo: utente. |
+| Dipendenze | TASK-031, TASK-057 |
+| Requisiti | REQ-011, NFR-008 |
+| Documenti | `.eas/workflows/android-apk.yml`, `eas.json`, `README.md`, Expo/EAS dashboard |
+| Criteri completamento | Repo GitHub collegato correttamente al progetto Expo/EAS; push su branch `android-apk` ricevuto da EAS Workflows; workflow `Build Android APK` avviato automaticamente; job usa profilo `apk` di `eas.json`; output finale e un file `.apk` e non `.aab`; link download disponibile nella dashboard/log EAS; APK installabile su Android. |
+| Verifica/test | Utente esegue push su `android-apk`; controlla nella dashboard Expo/EAS che il workflow parta; verifica esito build e formato artifact `.apk`; scarica/installa APK su Android; aggiorna task con esito, link build o nota errore. |
+| Logging essenziale | Non loggare token, credenziali Expo/GitHub o dati sensibili nei log/README. |
+| Code docs/README | Owner: utente. Aggiornare README solo se emergono passaggi mancanti per collegamento GitHub/EAS, trigger branch o recupero APK. |
 
 ## 6. Regole di aggiornamento
 
