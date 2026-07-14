@@ -119,6 +119,19 @@ describe('shared UI', () => {
     expect(getByText('Today')).toBeTruthy();
   });
 
+  it('shows import/export controls in settings', async () => {
+    const { findByText, getByText, queryByText } = await render(<App />);
+
+    fireEvent.press(getByText('Altro'));
+
+    expect(await findByText('Import/export')).toBeTruthy();
+    expect(await findByText('Importa o esporta ingredienti, ricette, piani, lingua e tema tramite un CSV unico.')).toBeTruthy();
+    expect(await findByText('Importa CSV')).toBeTruthy();
+    expect(await findByText('Esporta CSV')).toBeTruthy();
+    expect(queryByText('Importa')).toBeNull();
+    expect(queryByText('Lettura CSV')).toBeNull();
+  });
+
 
   it('renders an accessible floating action button', async () => {
     const { getByLabelText, getByText } = await render(

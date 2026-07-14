@@ -223,4 +223,45 @@ describe('appPersistence', () => {
       ]),
     );
   });
+
+  it('replaces local data and preferences during import', async () => {
+    const { db, runs } = createFakeQueryExecutor();
+    const persistence = await createAppPersistence(db);
+    const importedModel: AppModel = {
+      ...createInitialAppModel(),
+      ingredients: [
+        {
+          id: 'ingredient-1',
+          name: 'Pomodoro',
+          available: true,
+          createdAt: timestamp,
+          updatedAt: timestamp,
+        },
+      ],
+    };
+
+    await persistence.replaceLocalData(importedModel, 'en', 'dark');
+
+    expect(runs.map((run) => run.source).slice(0, 4)).toEqual([
+      'DELETE FROM ingredients;',
+      'DELETE FROM recipes;',
+      'DELETE FROM meal_plans;',
+      'DELETE FROM user_preferences;',
+    ]);
+    expect(runs).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          source: expect.stringContaining('INSERT OR REPLACE INTO ingredients'),
+        }),
+        expect.objectContaining({
+          params: expect.arrayContaining(['language', 'en']),
+          source: 'INSERT OR REPLACE INTO user_preferences (key, value, updated_at) VALUES (?, ?, ?);',
+        }),
+        expect.objectContaining({
+          params: expect.arrayContaining(['themeMode', 'dark']),
+          source: 'INSERT OR REPLACE INTO user_preferences (key, value, updated_at) VALUES (?, ?, ?);',
+        }),
+      ]),
+    );
+  });
 });

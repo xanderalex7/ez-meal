@@ -22,6 +22,7 @@ export type AppPersistence = {
   getLanguage: () => Promise<Language>;
   getThemeMode: () => Promise<ThemeMode>;
   load: () => Promise<AppModel>;
+  replaceLocalData: (model: AppModel, language: Language, themeMode: ThemeMode) => Promise<void>;
   resetLocalData: () => Promise<AppModel>;
   saveLanguage: (language: Language) => Promise<void>;
   saveThemeMode: (themeMode: ThemeMode) => Promise<void>;
@@ -75,6 +76,17 @@ export async function createAppPersistence(db?: QueryExecutor): Promise<AppPersi
       return writeQueue(async () => resetLocalData(database, repositories));
     },
 
+    async replaceLocalData(model, language, themeMode) {
+      await writeQueue(async () => {
+        await clearLocalData(database);
+        await saveFullModel(repositories, model);
+        const now = new Date().toISOString();
+        await unwrap(repositories.preferences.saveLanguage(language, now));
+        await unwrap(repositories.preferences.saveThemeMode(themeMode, now));
+        consoleLogger.warn('Local app data imported');
+      });
+    },
+
     async saveThemeMode(themeMode) {
       await writeQueue(() =>
         unwrap(repositories.preferences.saveThemeMode(themeMode, new Date().toISOString())),
@@ -126,13 +138,29 @@ async function resetLocalData(
   repositories: LocalRepositories,
 ): Promise<AppModel> {
   const initial = createInitialAppModel();
+  await clearLocalData(database);
+  await unwrap(repositories.mealPlans.save(initial.mealPlan));
+  consoleLogger.warn('Local app data reset');
+  return initial;
+}
+
+async function clearLocalData(database: QueryExecutor): Promise<void> {
   await database.runAsync('DELETE FROM ingredients;', []);
   await database.runAsync('DELETE FROM recipes;', []);
   await database.runAsync('DELETE FROM meal_plans;', []);
   await database.runAsync('DELETE FROM user_preferences;', []);
-  await unwrap(repositories.mealPlans.save(initial.mealPlan));
-  consoleLogger.warn('Local app data reset');
-  return initial;
+}
+
+async function saveFullModel(repositories: LocalRepositories, model: AppModel): Promise<void> {
+  for (const ingredient of model.ingredients) {
+    await unwrap(repositories.ingredients.save(ingredient));
+  }
+  for (const recipe of model.recipes) {
+    await unwrap(repositories.recipes.save(recipe));
+  }
+  for (const plan of mergeActiveMealPlan(model)) {
+    await unwrap(repositories.mealPlans.save(plan));
+  }
 }
 
 function mergeActiveMealPlan(model: AppModel) {
