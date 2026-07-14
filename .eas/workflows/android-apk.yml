@@ -1,0 +1,14 @@
+name: Build Android APK
+
+on:
+  push:
+    branches:
+      - android-apk
+
+jobs:
+  build_android_apk:
+    type: build
+    params:
+      platform: android
+      profile: apk
+      message: APK automatico da branch android-apk

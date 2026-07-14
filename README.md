@@ -168,6 +168,8 @@ Per creare un APK installabile, usare il profilo EAS `apk`:
 npx eas-cli@latest build -p android --profile apk
 ```
 
+Il repository include anche il workflow EAS `.eas/workflows/android-apk.yml`: dopo aver collegato il repo GitHub al progetto Expo/EAS, ogni push sul branch `android-apk` avvia automaticamente una build APK con lo stesso profilo `apk`.
+
 ## Struttura corrente
 
 - `App.tsx`: entry UI iniziale.
