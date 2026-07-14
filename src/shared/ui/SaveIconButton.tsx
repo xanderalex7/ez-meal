@@ -1,6 +1,7 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { useAppColors } from '../theme';
+import { IconButton } from './IconButton';
 
 type SaveIconButtonProps = {
   accessibilityLabel: string;
@@ -11,20 +12,9 @@ export function SaveIconButton({ accessibilityLabel, onPress }: SaveIconButtonPr
   const colors = useAppColors();
 
   return (
-    <Pressable
-      accessibilityLabel={accessibilityLabel}
-      accessibilityRole="button"
-      onPress={onPress}
-      style={[
-        styles.button,
-        {
-          backgroundColor: colors.surface,
-          borderColor: colors.success,
-        },
-      ]}
-    >
+    <IconButton accessibilityLabel={accessibilityLabel} borderColor={colors.success} onPress={onPress}>
       <SaveIcon color={colors.success} />
-    </Pressable>
+    </IconButton>
   );
 }
 
@@ -40,14 +30,6 @@ export function SaveIcon({ color }: { color: string }) {
 }
 
 const styles = StyleSheet.create({
-  button: {
-    alignItems: 'center',
-    borderRadius: 22,
-    borderWidth: 1,
-    height: 44,
-    justifyContent: 'center',
-    width: 44,
-  },
   diskBody: {
     borderRadius: 3,
     borderWidth: 2,

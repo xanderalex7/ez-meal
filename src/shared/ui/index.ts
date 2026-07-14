@@ -1,7 +1,9 @@
+export { ActionIconButton, PlusIcon, SwapIcon } from './ActionIconButton';
 export { Badge } from './Badge';
 export { Button } from './Button';
 export { Card } from './Card';
 export { FloatingActionButton } from './FloatingActionButton';
+export { IconButton } from './IconButton';
 export { MultiSelect } from './MultiSelect';
 export { PencilIcon, PencilIconButton } from './PencilIconButton';
 export { SaveIcon, SaveIconButton } from './SaveIconButton';
