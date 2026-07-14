@@ -1,6 +1,6 @@
 # Tasks
 
-Fonte di verita per ordine di lavoro, avanzamento e task verificabili di EZ-MEAL. Stato corrente: MVP implementato su Expo SDK 54 per compatibilita Expo Go del dispositivo di sviluppo; verifiche automatiche, audit, localizzazione UI, logo minimale, icone app cross-platform, PWA web, export web/iOS/Android in `build/` e hardening dati su APK Android completati; resta smoke test finale guidato su Expo Go/APK.
+Fonte di verita per ordine di lavoro, avanzamento e task verificabili di EZ-MEAL. Stato corrente: MVP implementato e verificato su APK Android; verifiche automatiche, audit, localizzazione UI, logo minimale, icone app cross-platform, PWA web, export web/iOS/Android in `build/`, hardening dati su APK Android, workflow EAS APK e smoke test finale completati. Resta `TASK-064` come ultimo incremento funzionale per dichiarare conclusa la versione 1.0.
 
 ## 1. Strategia MVP
 
@@ -26,7 +26,7 @@ Requisiti MVP coperti: `REQ-001..REQ-012`, `NFR-002`, `NFR-003`, `NFR-007`, `NFR
 | M3 - Gestione dati utente | DONE | CRUD ricette e ingredienti funzionanti con validazioni e feedback. |
 | M4 - Pianificazione | DONE | Piano settimanale consultabile/modificabile e generazione randomica funzionante. |
 | M5 - Home e tema | DONE | Home giornaliera, navigazione principale e tema chiaro/scuro. |
-| M6 - Hardening MVP | IN_PROGRESS | Test principali, accessibilita, sicurezza, README, logo minimale, icone app cross-platform, PWA web, export iOS/Android e hardening dati su APK Android completati; resta smoke test finale guidato su Expo Go/APK. |
+| M6 - Hardening MVP | DONE | Test principali, accessibilita, sicurezza, README, logo minimale, icone app cross-platform, PWA web, export iOS/Android, hardening dati su APK Android, workflow EAS APK e smoke test finale APK completati. |
 | M7 - Refinement UX MVP | DONE | Preferenza tema esplicita, testi italiani UTF-8, tag pasto distintivi, refinement card/azioni, generazione piano con bozza salvabile, refinement Ricette e azioni/layout Piano completati. |
 | M8 - Localizzazione | DONE | Selezione lingua e traduzioni IT/EN completate. |
 
@@ -40,7 +40,7 @@ Requisiti MVP coperti: `REQ-001..REQ-012`, `NFR-002`, `NFR-003`, `NFR-007`, `NFR
 | `BLOCKED` | Bloccato; indicare motivo minimo. |
 | `DEFERRED` | Rinviato; indicare motivo minimo. |
 
-Snapshot corrente: `TASK-001` - `TASK-026`, `TASK-028` - `TASK-061` e `TASK-063` sono completati lato sviluppo con test automatici/verifiche asset/build o analisi tecnica; restano `TASK-027` come smoke test MVP finale guidato su Expo Go/APK e `TASK-062` come improvement operativo post-MVP.
+Snapshot corrente: `TASK-001` - `TASK-063` sono completati lato sviluppo con test automatici/verifiche asset/build, analisi tecnica o verifica operativa. MVP chiuso; versione 1.0 aperta solo per `TASK-064`.
 
 ## 5. Task
 
@@ -438,14 +438,14 @@ Snapshot corrente: `TASK-001` - `TASK-026`, `TASK-028` - `TASK-061` e `TASK-063`
 
 | Campo | Valore |
 | --- | --- |
-| Stato | TODO |
+| Stato | DONE |
 | Priorita | MUST |
 | Descrizione | Validare manualmente su Expo Go i flussi principali MVP come vertical slice completa, con checklist guidata dall'assistente ed esecuzione sul dispositivo reale da parte dell'utente. |
 | Dipendenze | TASK-014, TASK-015, TASK-018, TASK-019, TASK-020, TASK-025, TASK-026, TASK-028, TASK-029, TASK-032, TASK-033, TASK-034, TASK-036, TASK-037, TASK-038, TASK-039, TASK-040, TASK-041, TASK-042, TASK-043, TASK-044, TASK-045, TASK-046, TASK-054, TASK-055, TASK-056, TASK-057, TASK-058 |
 | Requisiti | REQ-001..REQ-012 |
 | Documenti | Tutti i docs principali |
 | Criteri completamento | Su Expo Go l'utente completa la checklist MVP: avvio app; reset database locale; creazione ingredienti; blocco duplicati; creazione ricette con multiselect; cancellazioni referenziate con conferma; creazione/selezione/rinomina/cancellazione piani; assegnazione/sostituzione/rimozione pasti; generazione piano con ricette insufficienti e sufficienti; anteprima piano random modificabile/salvabile; home aggiornata; scroll/tastiera/navbar utilizzabili; scelta tema sistema/chiaro/scuro funzionante; testi italiani corretti; tag pasto distintivi e leggibili; riapertura app con dati persistiti. |
-| Verifica/test | Precondizioni automatiche: `npm run typecheck` OK; `npm run test -- --runInBand` OK; `npm run build:android` OK; `npm run build:ios` OK. Verifica manuale: assistente guida i passaggi, utente esegue su Expo Go e riporta esito `PASS/FAIL` per ogni sezione; eventuali anomalie generano nuovi task mirati. |
+| Verifica/test | Precondizioni automatiche completate durante i task: `npm run typecheck` OK; `npm run test -- --runInBand` OK; build/export Android/iOS OK dove previsto. Smoke test finale su APK Android completato dall'utente con esito positivo; nessuna anomalia bloccante riportata. |
 | Logging essenziale | Verificare assenza log rumorosi/sensibili durante flusso. |
 | Code docs/README | README aggiornato con stato MVP verificato se rilevante. |
 
@@ -963,14 +963,14 @@ Snapshot corrente: `TASK-001` - `TASK-026`, `TASK-028` - `TASK-061` e `TASK-063`
 
 | Campo | Valore |
 | --- | --- |
-| Stato | TODO |
+| Stato | DONE |
 | Priorita | SHOULD |
 | Descrizione | Verificare operativamente che il workflow EAS configurato in `.eas/workflows/android-apk.yml` parta quando si pusha sul branch `android-apk` e produca davvero un APK installabile su Expo/EAS. Owner operativo: utente. |
 | Dipendenze | TASK-031, TASK-057 |
 | Requisiti | REQ-011, NFR-008 |
 | Documenti | `.eas/workflows/android-apk.yml`, `eas.json`, `README.md`, Expo/EAS dashboard |
 | Criteri completamento | Repo GitHub collegato correttamente al progetto Expo/EAS; push su branch `android-apk` ricevuto da EAS Workflows; workflow `Build Android APK` avviato automaticamente; job usa profilo `apk` di `eas.json`; output finale e un file `.apk` e non `.aab`; link download disponibile nella dashboard/log EAS; APK installabile su Android. |
-| Verifica/test | Utente esegue push su `android-apk`; controlla nella dashboard Expo/EAS che il workflow parta; verifica esito build e formato artifact `.apk`; scarica/installa APK su Android; aggiorna task con esito, link build o nota errore. |
+| Verifica/test | Verifica operativa completata dall'utente: push su branch `android-apk` ha attivato il workflow EAS, la pipeline ha prodotto un artifact `.apk` e l'APK e stato installato correttamente su Android. |
 | Logging essenziale | Non loggare token, credenziali Expo/GitHub o dati sensibili nei log/README. |
 | Code docs/README | Owner: utente. Aggiornare README solo se emergono passaggi mancanti per collegamento GitHub/EAS, trigger branch o recupero APK. |
 
@@ -988,6 +988,23 @@ Snapshot corrente: `TASK-001` - `TASK-026`, `TASK-028` - `TASK-061` e `TASK-063`
 | Verifica/test | Sviluppo completato lato codice: `IMPORT_EXPORT.md` creato con specifica CSV unico tipizzato; moduli Expo installati per picker file, filesystem e condivisione; serializer/parser CSV testati con roundtrip e validazione ricetta incompatibile; persistence test aggiunto per sostituzione dati/preferenze in import; UI `Altro` aggiornata con sezione `Import/export`, stato iniziale con soli `Import CSV`/`Esporta CSV`, bottone `Importa` e step progress visibili solo dopo selezione/avvio, export e timestamp ultimo import/export; export web corretto con fallback download CSV via browser; `npm run typecheck` OK; `npm run test -- src/test/__tests__/importExportCsv.test.ts --runInBand` OK; `npm run test -- src/test/__tests__/ui.test.tsx --runInBand` OK; `npm run test -- --runInBand` OK, 60 test passati con warning `act(...)` noti; `npm run build:android` OK; `npm run build:web` OK. Smoke manuale utente completato: CSV completo con piano esportato da bundle Expo, condivisibile anche via app esterne, importato con successo nella webapp. |
 | Logging essenziale | Loggare solo eventi tecnici import/export e conteggi, senza contenuto di ingredienti, ricette, piani o preferenze utente. |
 | Code docs/README | `IMPORT_EXPORT.md` creato con specifica CSV; aggiornare README con link al documento e istruzioni operative quando la funzionalita viene implementata. |
+
+### TASK-064 - Pasti con piu ricette nel piano
+
+| Campo | Valore |
+| --- | --- |
+| Stato | TODO |
+| Priorita | MUST |
+| Descrizione | Consentire di associare piu ricette allo stesso slot pasto del piano settimanale. Esempio: a pranzo possono coesistere `Riso in bianco`, `Pollo` e `Frutta`. |
+| Branch | Prima di iniziare lo sviluppo, ricordare all'utente di creare/staccare un branch dedicato per `TASK-064`, evitando modifiche dirette sulla versione attuale stabile. Nome consigliato: `codex/task-064-multi-recipe-slots` o altro branch concordato. |
+| Dipendenze | TASK-035, TASK-037, TASK-039, TASK-045, TASK-063 |
+| Requisiti | REQ-001, REQ-003, REQ-004, REQ-005, REQ-006, REQ-010, REQ-011, REQ-012 |
+| Documenti | `docs/requirements.md`, `docs/architecture.md`, `docs/design.md`, `IMPORT_EXPORT.md`, `README.md`, `src/domain/planning/`, `src/features/appModel.ts`, `src/features/planner/`, `src/features/home/`, `src/data/mappers/`, `src/data/db/`, `src/features/importExport/`, `src/test/` |
+| Analisi impatti | **Dominio:** `MealSlot` oggi espone `recipeId?: string`; va portato a lista stabile, preferibilmente `recipeIds: string[]`, con helper di compatibilita per leggere dati legacy. `assignRecipeToSlot` deve diventare add non distruttivo o essere affiancato da `addRecipeToSlot`; `removeRecipeFromSlot` deve rimuovere una singola ricetta o svuotare lo slot tramite funzioni distinte. Evitare duplicati nello stesso slot. **App model:** `assignRecipeToMealSlot(date, mealType, recipeId)` deve aggiungere una ricetta compatibile senza sovrascrivere le gia presenti; serve azione per rimuovere una singola ricetta dallo slot; conteggio riferimenti e delete cascade ricetta devono cercare dentro array. `isMealPlanEmpty` deve considerare array vuoti. **Generatore:** la generazione randomica puo restare minima assegnando almeno una ricetta compatibile per slot; non introdurre logica calorie/porzioni. Se in futuro si vorranno piu ricette automatiche per slot, serviranno regole nuove. **DB/persistenza:** tabella `meal_plans` salva `days` come JSON, quindi non serve nuova tabella SQL; serve pero normalizzazione/migrazione applicativa dei JSON esistenti da `recipeId` a `recipeIds` in `rowToMealPlan` o in migration dedicata. Repository e mappers devono serializzare solo il nuovo formato. **CSV:** formato attuale `meal_slot.recipe_id` e singolo. Per compatibilita, opzione preferita: mantenere header e colonna `recipe_id`, consentendo lista `recipe-1;recipe-2` secondo regola gia esistente per liste; import deve accettare sia singolo ID legacy sia lista; export deve scrivere lista separata da `;`; `IMPORT_EXPORT.md` va aggiornato con esempi e validazioni. Valutare incremento `schema_version` solo se non si accetta retrocompatibilita nello stesso header. **UI Piano:** oggi slot mostra un solo nome ricetta e azioni add/swap/trash. Va mostrata lista compatta di ricette nello slot; `+` aggiunge ricette compatibili non ancora presenti; ogni ricetta pianificata deve avere rimozione singola con cestino o azione coerente; il concetto di swap va ripensato come `aggiungi/sostituisci lista` o rimosso se crea ambiguita. **UI Home/Oggi:** ogni pasto deve mostrare tutte le ricette dello slot, non solo la prima; empty state invariato quando lista vuota. **Import/export UI:** nessun cambio UX necessario, ma gli step e gli errori devono coprire validazione liste ricette per slot. **Docs:** `requirements.md` e `architecture.md` oggi dichiarano uno slot con zero/una ricetta (`recipeId?`); vanno aggiornati per evitare conflitto di fonti di verita. **Rischi:** migrazione dati legacy, CSV creati prima di TASK-064, delete cascade su ricette presenti in piu slot, UI mobile con slot lunghi e scroll. |
+| Criteri completamento | Ogni slot pasto supporta zero, una o piu ricette compatibili con il tag del pasto; dati legacy con `recipeId` singolo vengono letti e trasformati senza perdita; UI Piano permette aggiungere piu ricette allo stesso slot, visualizzarle in lista ordinata e rimuoverle singolarmente; l'azione swap/cambia resta comprensibile o viene adattata a una UX coerente per lista multi-ricetta; Home/Oggi mostra tutte le ricette previste per il pasto corrente; generazione randomica piano popola ogni slot con almeno una ricetta compatibile mantenendo comportamento salvabile/modificabile; cancellazione ricetta referenziata rimuove la ricetta da tutti gli slot in cui compare senza rompere il piano; persistenza locale salva il nuovo formato e normalizza quello vecchio; import/export CSV supporta slot con piu ricette e importa correttamente CSV legacy a ricetta singola; `docs/requirements.md`, `docs/architecture.md` e `IMPORT_EXPORT.md` sono allineati; empty state, conferme, contrasto, scroll e accessibilita restano coerenti. |
+| Verifica/test | Unit/domain test per slot multi-ricetta, no duplicati, rimozione singola, svuotamento slot e compatibilita tag; migration/mapper/repository/persistence test per conversione da `recipeId` singolo a `recipeIds[]`; appModel test per aggiunta, rimozione singola, conteggio riferimenti e cancellazione ricetta referenziata; generator test per piano random salvabile con slot multi-ricetta minima; import/export CSV test per roundtrip multi-ricetta, lista `recipe_id` separata da `;`, CSV legacy a singolo `recipe_id`, ricetta inesistente e ricetta incompatibile; UI/App test Piano per aggiungere `Riso in bianco`, `Pollo`, `Frutta` allo stesso pranzo e rimuovere solo una voce; UI/App test Oggi per visualizzare tutte le ricette dello slot; `npm run typecheck` OK; `npm run test -- --runInBand` OK; `npm run build:android` OK; `npm run build:web` OK se cambia import/export web; smoke manuale APK mirato su creazione piano con pranzo composto da piu ricette, riapertura app, export CSV e reimport. |
+| Logging essenziale | Loggare solo eventi tecnici con conteggi di ricette per slot se utili; non loggare nomi ricette, ingredienti o piano. |
+| Code docs/README | Aggiornare `IMPORT_EXPORT.md` se cambia la struttura CSV; aggiornare README se cambia il comportamento principale del piano; commenti codice solo su migrazione e compatibilita dati non ovvie. |
 
 ## 6. Regole di aggiornamento
 
@@ -1036,15 +1053,15 @@ Snapshot corrente: `TASK-001` - `TASK-026`, `TASK-028` - `TASK-061` e `TASK-063`
 
 | Requisito | Task principali | Decisioni future |
 | --- | --- | --- |
-| REQ-001 | TASK-019, TASK-027, TASK-035, TASK-036, TASK-045, TASK-057 | Calendario locale se impatta "oggi" |
+| REQ-001 | TASK-019, TASK-027, TASK-035, TASK-036, TASK-045, TASK-057, TASK-064 | Calendario locale se impatta "oggi" |
 | REQ-002 | TASK-007, TASK-016, TASK-027, TASK-035, TASK-036, TASK-057 | Primo giorno settimana |
-| REQ-003 | TASK-007, TASK-017, TASK-027, TASK-035, TASK-036, TASK-037, TASK-040, TASK-045, TASK-046, TASK-050, TASK-051, TASK-052, TASK-057 | Policy conflitti/cancellazioni |
-| REQ-004 | TASK-008, TASK-018, TASK-027, TASK-037, TASK-039, TASK-045, TASK-050, TASK-057 | `Genera piano` e automazione random; creazione manuale tramite FAB `+`; bozza random salvabile |
-| REQ-005 | TASK-005, TASK-014, TASK-034, TASK-040, TASK-046, TASK-047, TASK-049, TASK-058 | Eliminazione ricette referenziate |
-| REQ-006 | TASK-004, TASK-005, TASK-014, TASK-017, TASK-030, TASK-034, TASK-037, TASK-039, TASK-044, TASK-045, TASK-048 | Nessuna |
+| REQ-003 | TASK-007, TASK-017, TASK-027, TASK-035, TASK-036, TASK-037, TASK-040, TASK-045, TASK-046, TASK-050, TASK-051, TASK-052, TASK-057, TASK-064 | Policy conflitti/cancellazioni |
+| REQ-004 | TASK-008, TASK-018, TASK-027, TASK-037, TASK-039, TASK-045, TASK-050, TASK-057, TASK-064 | `Genera piano` e automazione random; creazione manuale tramite FAB `+`; bozza random salvabile |
+| REQ-005 | TASK-005, TASK-014, TASK-034, TASK-040, TASK-046, TASK-047, TASK-049, TASK-058, TASK-064 | Eliminazione ricette referenziate |
+| REQ-006 | TASK-004, TASK-005, TASK-014, TASK-017, TASK-030, TASK-034, TASK-037, TASK-039, TASK-044, TASK-045, TASK-048, TASK-064 | Nessuna |
 | REQ-007 | TASK-006, TASK-015, TASK-040, TASK-046 | Eliminazione ingredienti referenziati |
 | REQ-008 | TASK-006, TASK-015, TASK-034, TASK-040, TASK-049 | Uso ingredienti nella generazione |
 | REQ-009 | TASK-010, TASK-024, TASK-025, TASK-057 | Nessuna rete MVP |
-| REQ-010 | TASK-010, TASK-011, TASK-024, TASK-034, TASK-035, TASK-042, TASK-057 | Cifratura/backup futuri |
-| REQ-011 | TASK-001, TASK-012, TASK-023, TASK-027, TASK-031, TASK-032, TASK-033, TASK-036, TASK-037, TASK-038, TASK-039, TASK-042, TASK-043, TASK-044, TASK-045, TASK-046, TASK-047, TASK-048, TASK-049, TASK-050, TASK-051, TASK-052, TASK-053, TASK-054, TASK-055, TASK-056, TASK-057, TASK-058 | Limitazioni piattaforma |
-| REQ-012 | TASK-013, TASK-020, TASK-023, TASK-030, TASK-032, TASK-036, TASK-038, TASK-039, TASK-042, TASK-043, TASK-044, TASK-045, TASK-046, TASK-047, TASK-048, TASK-049, TASK-050, TASK-051, TASK-052, TASK-053, TASK-054, TASK-055, TASK-056, TASK-058 | Preferenza tema e lingua |
+| REQ-010 | TASK-010, TASK-011, TASK-024, TASK-034, TASK-035, TASK-042, TASK-057, TASK-064 | Cifratura/backup futuri |
+| REQ-011 | TASK-001, TASK-012, TASK-023, TASK-027, TASK-031, TASK-032, TASK-033, TASK-036, TASK-037, TASK-038, TASK-039, TASK-042, TASK-043, TASK-044, TASK-045, TASK-046, TASK-047, TASK-048, TASK-049, TASK-050, TASK-051, TASK-052, TASK-053, TASK-054, TASK-055, TASK-056, TASK-057, TASK-058, TASK-064 | Limitazioni piattaforma |
+| REQ-012 | TASK-013, TASK-020, TASK-023, TASK-030, TASK-032, TASK-036, TASK-038, TASK-039, TASK-042, TASK-043, TASK-044, TASK-045, TASK-046, TASK-047, TASK-048, TASK-049, TASK-050, TASK-051, TASK-052, TASK-053, TASK-054, TASK-055, TASK-056, TASK-058, TASK-064 | Preferenza tema e lingua |
