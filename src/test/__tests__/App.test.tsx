@@ -85,7 +85,7 @@ describe('App', () => {
       expect.objectContaining({ flexDirection: 'row', justifyContent: 'flex-end' }),
     );
 
-    fireEvent.press(await findByText('Modifica'));
+    fireEvent.press(await findByLabelText('Modifica ricetta Pasta'));
     fireEvent.changeText(await findByPlaceholderText('Nome ricetta'), 'Pasta al forno');
     fireEvent.press(await findByText('Salva'));
     expect(await findByText('Pasta al forno')).toBeTruthy();

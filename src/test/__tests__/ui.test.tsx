@@ -206,12 +206,18 @@ describe('shared UI', () => {
       deleteRecipe: jest.fn(),
     } as unknown as AppActions;
 
-    const { getAllByText } = await render(<RecipesScreen actions={actions} model={model} />);
+    const { getAllByText, getByLabelText } = await render(<RecipesScreen actions={actions} model={model} />);
 
     expect(getAllByText(/Pasta|Risotto/).map((node) => node.props.children)).toEqual([
       'Risotto',
       'Pasta',
     ]);
+    expect(StyleSheet.flatten(getByLabelText('Modifica ricetta Risotto').props.style)).toEqual(
+      expect.objectContaining({
+        backgroundColor: lightColors.surface,
+        borderColor: lightColors.text,
+      }),
+    );
   });
 
   it('shows the selected plan as title and makes generation full width', async () => {

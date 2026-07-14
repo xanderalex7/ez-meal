@@ -31,6 +31,7 @@ export type AppPersistence = {
 export async function createAppPersistence(db?: QueryExecutor): Promise<AppPersistence> {
   const database = db ?? (await openDefaultDatabase());
   const repositories = createLocalRepositories(database);
+  const writeQueue = createWriteQueue();
 
   return {
     async getLanguage() {
@@ -71,39 +72,67 @@ export async function createAppPersistence(db?: QueryExecutor): Promise<AppPersi
     },
 
     async resetLocalData() {
-      const initial = createInitialAppModel();
-      await Promise.all([
-        database.runAsync('DELETE FROM ingredients;', []),
-        database.runAsync('DELETE FROM recipes;', []),
-        database.runAsync('DELETE FROM meal_plans;', []),
-        database.runAsync('DELETE FROM user_preferences;', []),
-      ]);
-      await unwrap(repositories.mealPlans.save(initial.mealPlan));
-      consoleLogger.warn('Local app data reset');
-      return initial;
+      return writeQueue(async () => resetLocalData(database, repositories));
     },
 
     async saveThemeMode(themeMode) {
-      await unwrap(repositories.preferences.saveThemeMode(themeMode, new Date().toISOString()));
+      await writeQueue(() =>
+        unwrap(repositories.preferences.saveThemeMode(themeMode, new Date().toISOString())),
+      );
     },
 
     async saveLanguage(language) {
-      await unwrap(repositories.preferences.saveLanguage(language, new Date().toISOString()));
+      await writeQueue(() =>
+        unwrap(repositories.preferences.saveLanguage(language, new Date().toISOString())),
+      );
     },
 
     async saveSnapshot(previous, next) {
-      await saveDeletedEntities(repositories, previous, next);
-      await Promise.all([
-        ...next.ingredients.map((ingredient) => unwrap(repositories.ingredients.save(ingredient))),
-        ...next.recipes.map((recipe) => unwrap(repositories.recipes.save(recipe))),
-        ...mergeActiveMealPlan(next).map((plan) => unwrap(repositories.mealPlans.save(plan))),
-      ]);
-      consoleLogger.info('Local app state saved', {
-        ingredientCount: next.ingredients.length,
-        recipeCount: next.recipes.length,
+      await writeQueue(async () => {
+        await saveDeletedEntities(repositories, previous, next);
+        for (const ingredient of next.ingredients) {
+          await unwrap(repositories.ingredients.save(ingredient));
+        }
+        for (const recipe of next.recipes) {
+          await unwrap(repositories.recipes.save(recipe));
+        }
+        for (const plan of mergeActiveMealPlan(next)) {
+          await unwrap(repositories.mealPlans.save(plan));
+        }
+        consoleLogger.info('Local app state saved', {
+          ingredientCount: next.ingredients.length,
+          recipeCount: next.recipes.length,
+        });
       });
     },
   };
+}
+
+function createWriteQueue() {
+  let queue = Promise.resolve();
+
+  return async function enqueue<T>(operation: () => Promise<T>): Promise<T> {
+    const queued = queue.then(operation, operation);
+    queue = queued.then(
+      () => undefined,
+      () => undefined,
+    );
+    return queued;
+  };
+}
+
+async function resetLocalData(
+  database: QueryExecutor,
+  repositories: LocalRepositories,
+): Promise<AppModel> {
+  const initial = createInitialAppModel();
+  await database.runAsync('DELETE FROM ingredients;', []);
+  await database.runAsync('DELETE FROM recipes;', []);
+  await database.runAsync('DELETE FROM meal_plans;', []);
+  await database.runAsync('DELETE FROM user_preferences;', []);
+  await unwrap(repositories.mealPlans.save(initial.mealPlan));
+  consoleLogger.warn('Local app data reset');
+  return initial;
 }
 
 function mergeActiveMealPlan(model: AppModel) {
@@ -144,11 +173,15 @@ async function saveDeletedEntities(
     .filter((plan) => !nextMealPlanIds.has(plan.id))
     .map((plan) => plan.id);
 
-  await Promise.all([
-    ...deletedIngredientIds.map((id) => unwrap(repositories.ingredients.delete(id))),
-    ...deletedMealPlanIds.map((id) => unwrap(repositories.mealPlans.delete(id))),
-    ...deletedRecipeIds.map((id) => unwrap(repositories.recipes.delete(id))),
-  ]);
+  for (const id of deletedIngredientIds) {
+    await unwrap(repositories.ingredients.delete(id));
+  }
+  for (const id of deletedMealPlanIds) {
+    await unwrap(repositories.mealPlans.delete(id));
+  }
+  for (const id of deletedRecipeIds) {
+    await unwrap(repositories.recipes.delete(id));
+  }
 }
 
 async function unwrap<T>(operation: Promise<RepositoryResult<T>>): Promise<T> {

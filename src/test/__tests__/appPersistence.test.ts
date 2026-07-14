@@ -1,5 +1,6 @@
 import { createAppPersistence } from '../../features/appPersistence';
 import { createInitialAppModel, type AppModel } from '../../features/appModel';
+import type { QueryExecutor } from '../../data/repositories';
 import { createFakeQueryExecutor } from '../builders';
 
 const timestamp = '2026-07-04T12:00:00.000Z';
@@ -119,6 +120,81 @@ describe('appPersistence', () => {
         }),
       ]),
     );
+    expect(runs.map((run) => run.source).slice(0, 4)).toEqual([
+      'DELETE FROM ingredients;',
+      'DELETE FROM recipes;',
+      'DELETE FROM meal_plans;',
+      'DELETE FROM user_preferences;',
+    ]);
+  });
+
+  it('runs reset after pending snapshot writes', async () => {
+    const initial = createInitialAppModel();
+    const startedSql: string[] = [];
+    let releaseRecipeSave: (() => void) | undefined;
+    let resolveRecipeSaveStarted: (() => void) | undefined;
+    const recipeSaveStarted = new Promise<void>((resolve) => {
+      resolveRecipeSaveStarted = resolve;
+    });
+    const db: QueryExecutor = {
+      runAsync: async (source) => {
+        startedSql.push(source);
+        if (source.includes('INSERT OR REPLACE INTO recipes')) {
+          resolveRecipeSaveStarted?.();
+          await new Promise<void>((resolve) => {
+            releaseRecipeSave = resolve;
+          });
+        }
+        return {};
+      },
+      getAllAsync: async () => [],
+      getFirstAsync: async () => null,
+    };
+    const persistence = await createAppPersistence(db);
+    const next: AppModel = {
+      ...initial,
+      ingredients: [
+        {
+          id: 'ingredient-1',
+          name: 'Pomodoro',
+          available: true,
+          createdAt: timestamp,
+          updatedAt: timestamp,
+        },
+      ],
+      recipes: [
+        {
+          id: 'recipe-1',
+          name: 'Pasta',
+          mealTypes: ['lunch'],
+          ingredientIds: ['ingredient-1'],
+          createdAt: timestamp,
+          updatedAt: timestamp,
+        },
+      ],
+    };
+
+    const savePromise = persistence.saveSnapshot(initial, next);
+    await recipeSaveStarted;
+    const resetPromise = persistence.resetLocalData();
+
+    expect(startedSql).not.toContain('DELETE FROM ingredients;');
+
+    releaseRecipeSave?.();
+    await savePromise;
+    await resetPromise;
+
+    const recipeSaveIndex = startedSql.findIndex((source) =>
+      source.includes('INSERT OR REPLACE INTO recipes'),
+    );
+    const firstResetIndex = startedSql.indexOf('DELETE FROM ingredients;');
+    expect(firstResetIndex).toBeGreaterThan(recipeSaveIndex);
+    expect(startedSql.slice(firstResetIndex, firstResetIndex + 4)).toEqual([
+      'DELETE FROM ingredients;',
+      'DELETE FROM recipes;',
+      'DELETE FROM meal_plans;',
+      'DELETE FROM user_preferences;',
+    ]);
   });
 
   it('loads and saves user preferences', async () => {

@@ -30,6 +30,7 @@
     "web": "expo start --web",
     "build:android": "expo export --platform android --output-dir build/android",
     "build:android:apk": "eas build -p android --profile apk",
+    "build:web": "expo export --platform web --output-dir build/web",
     "build:ios": "expo export --platform ios --output-dir build/ios",
     "typecheck": "tsc --noEmit",
     "test": "jest"

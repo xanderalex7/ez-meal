@@ -9,6 +9,7 @@ import {
   Button,
   Card,
   FloatingActionButton,
+  PencilIconButton,
   TextField,
   TrashIcon,
   TrashIconButton,
@@ -149,7 +150,7 @@ export function PlannerScreen({ actions, model }: PlannerScreenProps) {
         </View>
       ) : null}
       <View style={styles.planActions} testID="plan-actions">
-        <PlanIconButton
+        <PencilIconButton
           accessibilityLabel={t('actionRenamePlan')}
           onPress={renameSelectedPlan}
         />
@@ -305,33 +306,6 @@ function SlotActionButton({
   );
 }
 
-function PlanIconButton({
-  accessibilityLabel,
-  onPress,
-}: {
-  accessibilityLabel: string;
-  onPress: () => void;
-}) {
-  const colors = useAppColors();
-
-  return (
-    <Pressable
-      accessibilityLabel={accessibilityLabel}
-      accessibilityRole="button"
-      onPress={onPress}
-      style={[
-        styles.iconButton,
-        {
-          backgroundColor: colors.surface,
-          borderColor: colors.text,
-        },
-      ]}
-    >
-      <PencilIcon color={colors.text} />
-    </Pressable>
-  );
-}
-
 function PlusIcon({ color }: { color: string }) {
   return (
     <View style={styles.iconCanvas}>
@@ -348,18 +322,6 @@ function SwapIcon({ color }: { color: string }) {
       <View style={[styles.swapTopHead, { borderColor: color }]} />
       <View style={[styles.swapBottomLine, { backgroundColor: color }]} />
       <View style={[styles.swapBottomHead, { borderColor: color }]} />
-    </View>
-  );
-}
-
-function PencilIcon({ color }: { color: string }) {
-  return (
-    <View style={styles.iconCanvas}>
-      <View style={styles.pencilGroup}>
-        <View style={[styles.pencilTip, { borderRightColor: color }]} />
-        <View style={[styles.pencilBody, { borderColor: color }]} />
-        <View style={[styles.pencilEraser, { backgroundColor: color }]} />
-      </View>
     </View>
   );
 }
@@ -447,31 +409,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     transform: [{ rotate: '45deg' }],
     width: 8,
-  },
-  pencilBody: {
-    borderLeftWidth: 0,
-    borderRadius: 2,
-    borderWidth: 2,
-    height: 8,
-    width: 12,
-  },
-  pencilEraser: {
-    borderBottomRightRadius: 2,
-    borderTopRightRadius: 2,
-    height: 8,
-    width: 4,
-  },
-  pencilGroup: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    transform: [{ rotate: '-45deg' }],
-  },
-  pencilTip: {
-    borderBottomColor: 'transparent',
-    borderBottomWidth: 4,
-    borderRightWidth: 6,
-    borderTopColor: 'transparent',
-    borderTopWidth: 4,
   },
   optionList: { gap: spacing.sm, paddingLeft: spacing.md },
   empty: { fontSize: 14 },

@@ -1,6 +1,6 @@
 # Tasks
 
-Fonte di verita per ordine di lavoro, avanzamento e task verificabili di EZ-MEAL. Stato corrente: MVP implementato su Expo SDK 54 per compatibilita Expo Go del dispositivo di sviluppo; verifiche automatiche, audit, localizzazione UI ed export web/iOS/Android in `build/` completati; resta smoke test finale guidato su Expo Go.
+Fonte di verita per ordine di lavoro, avanzamento e task verificabili di EZ-MEAL. Stato corrente: MVP implementato su Expo SDK 54 per compatibilita Expo Go del dispositivo di sviluppo; verifiche automatiche, audit, localizzazione UI, logo minimale, icone app cross-platform, PWA web ed export web/iOS/Android in `build/` completati; restano hardening dati su APK Android e smoke test finale guidato su Expo Go/APK.
 
 ## 1. Strategia MVP
 
@@ -26,7 +26,7 @@ Requisiti MVP coperti: `REQ-001..REQ-012`, `NFR-002`, `NFR-003`, `NFR-007`, `NFR
 | M3 - Gestione dati utente | DONE | CRUD ricette e ingredienti funzionanti con validazioni e feedback. |
 | M4 - Pianificazione | DONE | Piano settimanale consultabile/modificabile e generazione randomica funzionante. |
 | M5 - Home e tema | DONE | Home giornaliera, navigazione principale e tema chiaro/scuro. |
-| M6 - Hardening MVP | IN_PROGRESS | Test principali, accessibilita, sicurezza, README ed export iOS/Android completati; resta smoke test finale guidato su Expo Go. |
+| M6 - Hardening MVP | IN_PROGRESS | Test principali, accessibilita, sicurezza, README, logo minimale, icone app cross-platform, PWA web ed export iOS/Android completati; restano hardening dati su APK Android e smoke test finale guidato su Expo Go/APK. |
 | M7 - Refinement UX MVP | DONE | Preferenza tema esplicita, testi italiani UTF-8, tag pasto distintivi, refinement card/azioni, generazione piano con bozza salvabile, refinement Ricette e azioni/layout Piano completati. |
 | M8 - Localizzazione | DONE | Selezione lingua e traduzioni IT/EN completate. |
 
@@ -40,7 +40,7 @@ Requisiti MVP coperti: `REQ-001..REQ-012`, `NFR-002`, `NFR-003`, `NFR-007`, `NFR
 | `BLOCKED` | Bloccato; indicare motivo minimo. |
 | `DEFERRED` | Rinviato; indicare motivo minimo. |
 
-Snapshot corrente: `TASK-001` - `TASK-026`, `TASK-028` - `TASK-053` sono completati lato sviluppo con test automatici; resta `TASK-027` come smoke test MVP finale guidato su Expo Go.
+Snapshot corrente: `TASK-001` - `TASK-026`, `TASK-028` - `TASK-056` e `TASK-058` sono completati lato sviluppo con test automatici/verifiche asset/build; `TASK-057` ha fix e test completati ma resta in verifica manuale su APK Android installato; resta `TASK-027` come smoke test MVP finale guidato su Expo Go/APK.
 
 ## 5. Task
 
@@ -441,7 +441,7 @@ Snapshot corrente: `TASK-001` - `TASK-026`, `TASK-028` - `TASK-053` sono complet
 | Stato | TODO |
 | Priorita | MUST |
 | Descrizione | Validare manualmente su Expo Go i flussi principali MVP come vertical slice completa, con checklist guidata dall'assistente ed esecuzione sul dispositivo reale da parte dell'utente. |
-| Dipendenze | TASK-014, TASK-015, TASK-018, TASK-019, TASK-020, TASK-025, TASK-026, TASK-028, TASK-029, TASK-032, TASK-033, TASK-034, TASK-036, TASK-037, TASK-038, TASK-039, TASK-040, TASK-041, TASK-042, TASK-043, TASK-044, TASK-045, TASK-046 |
+| Dipendenze | TASK-014, TASK-015, TASK-018, TASK-019, TASK-020, TASK-025, TASK-026, TASK-028, TASK-029, TASK-032, TASK-033, TASK-034, TASK-036, TASK-037, TASK-038, TASK-039, TASK-040, TASK-041, TASK-042, TASK-043, TASK-044, TASK-045, TASK-046, TASK-054, TASK-055, TASK-056, TASK-057, TASK-058 |
 | Requisiti | REQ-001..REQ-012 |
 | Documenti | Tutti i docs principali |
 | Criteri completamento | Su Expo Go l'utente completa la checklist MVP: avvio app; reset database locale; creazione ingredienti; blocco duplicati; creazione ricette con multiselect; cancellazioni referenziate con conferma; creazione/selezione/rinomina/cancellazione piani; assegnazione/sostituzione/rimozione pasti; generazione piano con ricette insufficienti e sufficienti; anteprima piano random modificabile/salvabile; home aggiornata; scroll/tastiera/navbar utilizzabili; scelta tema sistema/chiaro/scuro funzionante; testi italiani corretti; tag pasto distintivi e leggibili; riapertura app con dati persistiti. |
@@ -839,6 +839,81 @@ Snapshot corrente: `TASK-001` - `TASK-026`, `TASK-028` - `TASK-053` sono complet
 | Logging essenziale | Non loggare lingua scelta salvo errori tecnici senza payload sensibili. |
 | Code docs/README | README aggiornato solo se cambia configurazione/uso rilevante; commenti non necessari salvo helper i18n non ovvi. |
 
+### TASK-054 - Verifica icona app Android, iOS e web
+
+| Campo | Valore |
+| --- | --- |
+| Stato | DONE |
+| Priorita | SHOULD |
+| Descrizione | Verificare che l'icona ufficiale dell'app sia configurata e visibile dove previsto su Android, iOS e web; aggiungere o correggere gli asset mancanti se una piattaforma mostra icone placeholder/default. |
+| Dipendenze | TASK-031, TASK-053, TASK-056 |
+| Requisiti | REQ-011, REQ-012, NFR-008 |
+| Documenti | `docs/design.md`, `README.md`, `app.json` |
+| Criteri completamento | `app.json` referenzia asset icona validi per Android adaptive icon, iOS app icon e web favicon; i file referenziati esistono in `assets/`; APK Android installato mostra icona corretta nel launcher; web mostra favicon corretta; configurazione iOS pronta per build senza placeholder; eventuali nuove icone rispettano il logo ufficiale e funzionano su sfondi chiari/scuri. |
+| Verifica/test | Asset app derivati dal logo minimale generati per `assets/icon.png`, `assets/splash-icon.png`, `assets/favicon.png`, Android adaptive foreground/background/monochrome; `file` conferma dimensioni/formati attesi; controllo visuale icona principale e foreground Android OK; `npx expo config --type public` OK; `npm run build:android` OK; export web in `build/web` OK; `npm run typecheck` OK. Verifica launcher APK/iOS runtime demandata a smoke finale/rebuild. |
+| Logging essenziale | Non richiesto. |
+| Code docs/README | Aggiornare README solo se cambiano comandi, asset richiesti o note di build/installazione. |
+
+### TASK-055 - PWA installabile da web
+
+| Campo | Valore |
+| --- | --- |
+| Stato | DONE |
+| Priorita | COULD |
+| Descrizione | Rendere la versione web installabile come Progressive Web App, così i browser compatibili possono mostrare l'azione `Installa app`/download nella barra o nel menu senza creare un installer desktop nativo. |
+| Dipendenze | TASK-031, TASK-054 |
+| Requisiti | REQ-011, REQ-012, NFR-008 |
+| Documenti | `docs/design.md`, `docs/architecture.md`, `README.md`, `app.json` |
+| Criteri completamento | Build web include manifest valido con nome, short name, theme/background color coerenti e icone richieste; esiste service worker/caching minimo compatibile col target Expo web senza rompere persistenza locale; app servita via HTTPS o ambiente locale valido risulta installabile su browser supportati; installazione desktop apre EZ-MEAL in finestra app con icona corretta; comportamento mobile web resta utilizzabile. |
+| Verifica/test | `public/manifest.webmanifest`, `public/service-worker.js` e icone PWA 192/512/maskable creati; registrazione manifest/service worker configurata solo su web; `node --check public/service-worker.js` OK; parse manifest OK; `npm run build:web` OK e copia file PWA in `build/web`; server locale su `127.0.0.1:4174` conferma `200 OK` per manifest, service worker e icone; `npm run typecheck` OK; `npm run test -- --runInBand` OK, 54 test passati. Verifica visiva del prompt installazione su Chrome/Edge demandata a smoke/manuale se necessaria. |
+| Logging essenziale | Non richiesto. |
+| Code docs/README | Aggiornare README con differenza tra PWA installabile e app desktop nativa, comandi build/serve web e prerequisito HTTPS per installazione reale. |
+
+### TASK-056 - Logo minimale ufficiale
+
+| Campo | Valore |
+| --- | --- |
+| Stato | DONE |
+| Priorita | SHOULD |
+| Descrizione | Definire e produrre il logo ufficiale di EZ-MEAL con approccio da Senior Brand/Product Designer: semplice, minimal, riconoscibile, adatto a frontend, documentazione, icone app e PWA. |
+| Dipendenze | TASK-044, TASK-053 |
+| Requisiti | REQ-011, REQ-012, NFR-008 |
+| Documenti | `docs/design.md`, `docs/requirements.md`, `assets/logo/` |
+| Criteri completamento | Logo coerente con scopo app e tono visuale; massimo 3 colori; nessun cliche AI/robot/circuiti; leggibile su sfondo chiaro e scuro; funziona in piccolo come icona/favicon e in grande come logo; asset esportati almeno in `assets/logo/logo.png`, `assets/logo/logo-dark.png`, `assets/logo/logo-light.png`, `assets/logo/logo-icon.png` e, se gestibile localmente, `assets/logo/logo.svg`; varianti trasparenti dove possibile. |
+| Verifica/test | Controllo visuale manuale su logo orizzontale, variante dark e icona OK; file SVG/PNG richiesti presenti; PNG generati a dimensioni corrette (`960x240` logo, `512x512` icona); audit colori SVG conferma massimo tre colori per variante; `npm run typecheck` OK. Aggiornamento asset app demandato a `TASK-054`. |
+| Logging essenziale | Non richiesto. |
+| Code docs/README | `docs/design.md` aggiornato con regole logo; README non richiesto. |
+
+### TASK-057 - Hardening persistenza e reset database su APK Android
+
+| Campo | Valore |
+| --- | --- |
+| Stato | IN_PROGRESS |
+| Priorita | MUST |
+| Descrizione | Su Android usando l'APK installato, il reset database locale non funziona; verificare e correggere reset, aggiornamento piano e intero flusso dati persistente in runtime release Android. |
+| Dipendenze | TASK-010, TASK-011, TASK-024, TASK-035, TASK-041, TASK-045 |
+| Requisiti | REQ-001, REQ-002, REQ-003, REQ-004, REQ-009, REQ-010, REQ-011 |
+| Documenti | `docs/architecture.md`, `docs/security.md`, `README.md` |
+| Criteri completamento | Reset database da tab `Altro` funziona su APK Android con doppia conferma e ripristina stato iniziale coerente; ingredienti, ricette, piani, lingua e tema vengono eliminati/ripristinati secondo policy; creazione/modifica/cancellazione ingredienti e ricette persiste dopo chiusura/riapertura; creazione/rinomina/cancellazione piano e assegnazione/sostituzione/rimozione pasti persistono; generazione piano e salvataggio bozza aggiornano il piano corretto; errori SQLite/repository non mandano l'app in crash e mostrano messaggi sicuri. |
+| Verifica/test | Fix codice completato: scritture SQLite serializzate con coda interna; reset sequenziale dopo eventuali snapshot pendenti; save/delete snapshot eseguiti in ordine lineare; test aggiunto per reset durante salvataggio in corso; `npm run typecheck` OK; `npm run test -- src/test/__tests__/appPersistence.test.ts --runInBand` OK; `npm run test -- --runInBand` OK, 55 test passati con warning `act(...)` noti; `npm run build:android` OK. Pendente: rebuild APK EAS e checklist manuale Android installato: reset, CRUD dati, aggiornamento piano, riapertura app. |
+| Logging essenziale | Loggare solo eventi tecnici utili a diagnosi reset/persistenza senza includere nomi ricette, ingredienti o dati utente; nessun payload sensibile. |
+| Code docs/README | Aggiornare README solo se cambiano comandi build/installazione, note Android o procedura di verifica APK. |
+
+### TASK-058 - Icona matita per modifica ricette
+
+| Campo | Valore |
+| --- | --- |
+| Stato | DONE |
+| Priorita | SHOULD |
+| Descrizione | In Ricette, sostituire il bottone testuale `Modifica` con il bottone icona matita gia usato nella schermata Piano, mantenendolo affiancato al cestino e allineato a destra. |
+| Dipendenze | TASK-046, TASK-052 |
+| Requisiti | REQ-005, REQ-011, REQ-012, NFR-008 |
+| Documenti | `docs/design.md` |
+| Criteri completamento | Il bottone modifica ricetta usa la stessa icona matita/stile base del Piano; label accessibile specifica `Modifica ricetta {{name}}`; azioni Ricette restano allineate a destra e affiancate; comportamento di apertura form modifica invariato; testo visibile `Modifica` non e piu mostrato nella card ricetta. |
+| Verifica/test | UI/App test aggiornati per usare label accessibile della matita; test stile conferma coerenza con bottone Piano; `npm run typecheck` OK; `npm run test -- --runInBand` OK. Verifica runtime finale demandata a `TASK-027`. |
+| Logging essenziale | Non richiesto. |
+| Code docs/README | Estratto `PencilIconButton` condiviso in `src/shared/ui`; README non richiesto. |
+
 ## 6. Regole di aggiornamento
 
 - Aggiornare lo stato del task nello stesso branch/PR della modifica.
@@ -886,15 +961,15 @@ Snapshot corrente: `TASK-001` - `TASK-026`, `TASK-028` - `TASK-053` sono complet
 
 | Requisito | Task principali | Decisioni future |
 | --- | --- | --- |
-| REQ-001 | TASK-019, TASK-027, TASK-035, TASK-036, TASK-045 | Calendario locale se impatta "oggi" |
-| REQ-002 | TASK-007, TASK-016, TASK-027, TASK-035, TASK-036 | Primo giorno settimana |
-| REQ-003 | TASK-007, TASK-017, TASK-027, TASK-035, TASK-036, TASK-037, TASK-040, TASK-045, TASK-046, TASK-050, TASK-051, TASK-052 | Policy conflitti/cancellazioni |
-| REQ-004 | TASK-008, TASK-018, TASK-027, TASK-037, TASK-039, TASK-045, TASK-050 | `Genera piano` e automazione random; creazione manuale tramite FAB `+`; bozza random salvabile |
-| REQ-005 | TASK-005, TASK-014, TASK-034, TASK-040, TASK-046, TASK-047, TASK-049 | Eliminazione ricette referenziate |
+| REQ-001 | TASK-019, TASK-027, TASK-035, TASK-036, TASK-045, TASK-057 | Calendario locale se impatta "oggi" |
+| REQ-002 | TASK-007, TASK-016, TASK-027, TASK-035, TASK-036, TASK-057 | Primo giorno settimana |
+| REQ-003 | TASK-007, TASK-017, TASK-027, TASK-035, TASK-036, TASK-037, TASK-040, TASK-045, TASK-046, TASK-050, TASK-051, TASK-052, TASK-057 | Policy conflitti/cancellazioni |
+| REQ-004 | TASK-008, TASK-018, TASK-027, TASK-037, TASK-039, TASK-045, TASK-050, TASK-057 | `Genera piano` e automazione random; creazione manuale tramite FAB `+`; bozza random salvabile |
+| REQ-005 | TASK-005, TASK-014, TASK-034, TASK-040, TASK-046, TASK-047, TASK-049, TASK-058 | Eliminazione ricette referenziate |
 | REQ-006 | TASK-004, TASK-005, TASK-014, TASK-017, TASK-030, TASK-034, TASK-037, TASK-039, TASK-044, TASK-045, TASK-048 | Nessuna |
 | REQ-007 | TASK-006, TASK-015, TASK-040, TASK-046 | Eliminazione ingredienti referenziati |
 | REQ-008 | TASK-006, TASK-015, TASK-034, TASK-040, TASK-049 | Uso ingredienti nella generazione |
-| REQ-009 | TASK-010, TASK-024, TASK-025 | Nessuna rete MVP |
-| REQ-010 | TASK-010, TASK-011, TASK-024, TASK-034, TASK-035, TASK-042 | Cifratura/backup futuri |
-| REQ-011 | TASK-001, TASK-012, TASK-023, TASK-027, TASK-031, TASK-032, TASK-033, TASK-036, TASK-037, TASK-038, TASK-039, TASK-042, TASK-043, TASK-044, TASK-045, TASK-046, TASK-047, TASK-048, TASK-049, TASK-050, TASK-051, TASK-052, TASK-053 | Limitazioni piattaforma |
-| REQ-012 | TASK-013, TASK-020, TASK-023, TASK-030, TASK-032, TASK-036, TASK-038, TASK-039, TASK-042, TASK-043, TASK-044, TASK-045, TASK-046, TASK-047, TASK-048, TASK-049, TASK-050, TASK-051, TASK-052, TASK-053 | Preferenza tema e lingua |
+| REQ-009 | TASK-010, TASK-024, TASK-025, TASK-057 | Nessuna rete MVP |
+| REQ-010 | TASK-010, TASK-011, TASK-024, TASK-034, TASK-035, TASK-042, TASK-057 | Cifratura/backup futuri |
+| REQ-011 | TASK-001, TASK-012, TASK-023, TASK-027, TASK-031, TASK-032, TASK-033, TASK-036, TASK-037, TASK-038, TASK-039, TASK-042, TASK-043, TASK-044, TASK-045, TASK-046, TASK-047, TASK-048, TASK-049, TASK-050, TASK-051, TASK-052, TASK-053, TASK-054, TASK-055, TASK-056, TASK-057, TASK-058 | Limitazioni piattaforma |
+| REQ-012 | TASK-013, TASK-020, TASK-023, TASK-030, TASK-032, TASK-036, TASK-038, TASK-039, TASK-042, TASK-043, TASK-044, TASK-045, TASK-046, TASK-047, TASK-048, TASK-049, TASK-050, TASK-051, TASK-052, TASK-053, TASK-054, TASK-055, TASK-056, TASK-058 | Preferenza tema e lingua |

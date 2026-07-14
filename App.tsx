@@ -27,6 +27,10 @@ export default function App() {
   const [language, setLanguage] = useState<Language>('it');
   const [themeMode, setThemeMode] = useState<ThemeMode>('system');
 
+  useEffect(() => {
+    configureWebPwa();
+  }, []);
+
   return (
     <I18nProvider language={language}>
       <AppThemeProvider themeMode={themeMode}>
@@ -39,6 +43,50 @@ export default function App() {
       </AppThemeProvider>
     </I18nProvider>
   );
+}
+
+function upsertHeadTag<K extends keyof HTMLElementTagNameMap>(
+  tagName: K,
+  selector: string,
+  attributes: Record<string, string>,
+) {
+  if (typeof document === 'undefined') {
+    return;
+  }
+  const element = document.querySelector(selector) ?? document.createElement(tagName);
+  Object.entries(attributes).forEach(([name, value]) => element.setAttribute(name, value));
+  if (!element.parentElement) {
+    document.head.appendChild(element);
+  }
+}
+
+function configureWebPwa() {
+  if (Platform.OS !== 'web' || typeof window === 'undefined' || typeof document === 'undefined') {
+    return;
+  }
+
+  upsertHeadTag('link', 'link[rel="manifest"]', { rel: 'manifest', href: '/manifest.webmanifest' });
+  upsertHeadTag('link', 'link[rel="apple-touch-icon"]', {
+    rel: 'apple-touch-icon',
+    href: '/icons/icon-192.png',
+  });
+  upsertHeadTag('meta', 'meta[name="theme-color"]', { name: 'theme-color', content: '#FAFAF7' });
+  upsertHeadTag('meta', 'meta[name="apple-mobile-web-app-capable"]', {
+    name: 'apple-mobile-web-app-capable',
+    content: 'yes',
+  });
+  upsertHeadTag('meta', 'meta[name="apple-mobile-web-app-title"]', {
+    name: 'apple-mobile-web-app-title',
+    content: 'EZ-MEAL',
+  });
+
+  if ('serviceWorker' in navigator && (window.isSecureContext || window.location.hostname === 'localhost')) {
+    window.addEventListener('load', () => {
+      void navigator.serviceWorker.register('/service-worker.js').catch(() => {
+        consoleLogger.warn('PWA service worker registration failed');
+      });
+    });
+  }
 }
 
 function AppContent({

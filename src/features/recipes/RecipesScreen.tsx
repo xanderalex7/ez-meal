@@ -10,6 +10,7 @@ import {
   Card,
   FloatingActionButton,
   MultiSelect,
+  PencilIconButton,
   TextField,
   TrashIconButton,
 } from '../../shared/ui';
@@ -158,7 +159,10 @@ export function RecipesScreen({ actions, model }: RecipesScreenProps) {
             </Text>
           </View>
           <View style={styles.recipeActions} testID="recipe-actions">
-            <Button label={t('actionEdit')} variant="ghost" onPress={() => editRecipe(recipe.id)} />
+            <PencilIconButton
+              accessibilityLabel={t('recipeEditA11y', { name: recipe.name })}
+              onPress={() => editRecipe(recipe.id)}
+            />
             <TrashIconButton
               accessibilityLabel={
                 pendingDeleteRecipeId === recipe.id

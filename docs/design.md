@@ -116,6 +116,13 @@ Regole:
 - Immagini non necessarie per MVP operativo; se introdotte, devono rappresentare ricette/ingredienti reali o contenuti utente, non decorazione generica.
 - Evitare illustrazioni decorative negli stati vuoti; usare testo breve + azione.
 
+Logo:
+
+- Il logo ufficiale usa un segno minimale piatto/check: pianificazione pasto completata, senza estetica AI, fitness aggressiva o food delivery.
+- Usare massimo tre colori per variante: verde primario, ambra secondario e testo light/dark.
+- Asset sorgente in `assets/logo/`: `logo.svg`, `logo-light.svg`, `logo-dark.svg`, `logo-icon.svg`; PNG derivati per uso raster.
+- Non aggiungere gradienti, ombre, dettagli food realistici o varianti cromatiche locali senza aggiornare questo documento.
+
 ## 7. UX guidelines
 
 Form:

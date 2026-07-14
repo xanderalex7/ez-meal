@@ -96,30 +96,41 @@ Le build locali vengono generate nella cartella `build/`, separando Android e iO
 ```bash
 npm run build:android
 npm run build:ios
+npm run build:web
 ```
 
 Output attesi:
 
 - `build/android/`: bundle/export Android.
 - `build/ios/`: bundle/export iOS.
+- `build/web/`: export web statico con manifest PWA e service worker.
 
-Queste cartelle servono a verificare che l'app venga esportata correttamente per piattaforma. Non sono ancora APK, AAB o build TestFlight/App Store: per quelli servono una configurazione EAS o pipeline native dedicate.
+Le cartelle `build/android/` e `build/ios/` servono a verificare che l'app venga esportata correttamente per piattaforma. Non sono APK, AAB o build TestFlight/App Store.
+
+Per generare un APK Android installabile tramite EAS:
+
+```bash
+npx eas-cli@latest build -p android --profile apk
+```
 
 ### Web
 
-Genera una versione statica web in una cartella temporanea:
+Genera la versione web statica:
 
 ```bash
-npx expo export --platform web --output-dir /private/tmp/ez-meal-web-export
+npm run build:web
 ```
 
-Per servirla localmente, dalla cartella generata:
+Per servirla localmente:
 
 ```bash
+cd build/web
 python3 -m http.server 4174 --bind 127.0.0.1
 ```
 
 Poi aprire `http://127.0.0.1:4174`.
+
+La build web include manifest PWA, icone e service worker. Su browser compatibili, servendo la build da `localhost` o da HTTPS, puo apparire l'azione `Installa app` nella barra o nel menu del browser. Questa installazione e una PWA: apre EZ-MEAL in una finestra app-like, ma non genera un installer nativo `.exe`, `.dmg` o `.pkg`.
 
 ### iOS
 
@@ -135,7 +146,7 @@ Per avviare l'app nel simulatore durante lo sviluppo:
 npm run ios
 ```
 
-Nota: una build installabile/TestFlight richiede configurazione Expo/EAS e credenziali Apple Developer. In questo repository non e ancora presente una configurazione `eas.json`.
+Nota: una build installabile/TestFlight richiede Expo/EAS e credenziali Apple Developer.
 
 ### Android
 
@@ -151,7 +162,11 @@ Per avviare l'app su emulatore o dispositivo durante lo sviluppo:
 npm run android
 ```
 
-Nota: una build installabile APK/AAB richiede configurazione Expo/EAS oppure una pipeline Android nativa dedicata. In questo repository non e ancora presente una configurazione `eas.json`.
+Per creare un APK installabile, usare il profilo EAS `apk`:
+
+```bash
+npx eas-cli@latest build -p android --profile apk
+```
 
 ## Struttura corrente
 
@@ -180,12 +195,14 @@ Nota: una build installabile APK/AAB richiede configurazione Expo/EAS oppure una
 Implementazione MVP parziale completata secondo `docs/tasks.md`:
 
 - Domain core, repository locali, UI shell, CRUD base ricette/ingredienti, planner con piani nominabili/selezionabili, generazione piano, home, tema selezionabile da `Altro`, error handling e logging essenziale.
-- Persistenza locale collegata alla UI tramite SQLite; lo stato applicativo viene caricato all'avvio e salvato dopo le modifiche.
+- Persistenza locale collegata alla UI tramite SQLite; lo stato applicativo viene caricato all'avvio e salvato dopo le modifiche. Le scritture locali sono serializzate per evitare conflitti tra salvataggi pendenti e reset database.
 - Nel planner e possibile creare un piano con il FAB `+`, selezionarlo, rinominarlo e cancellarlo con conferma.
 - `Genera piano ✨` crea una bozza random solo se esiste almeno una ricetta compatibile per colazione, pranzo e cena; la bozza si conferma con `Salva`, mentre se mancano ricette compatibili il piano resta invariato e viene mostrato un messaggio.
 - Hardening sicurezza MVP completato con `npm audit --omit=dev` a 0 vulnerabilita.
-- Verifiche correnti: `npm run typecheck`, `npm run test`, export web, `npm run build:ios`, `npm run build:android`, `npm audit --omit=dev`.
+- Logo minimale, icone app Android/iOS/web e asset PWA completati.
+- Verifiche correnti: `npm run typecheck`, `npm run test`, `npm run build:web`, `npm run build:ios`, `npm run build:android`, `npm audit --omit=dev`.
 
 Punti aperti:
 
+- Verifica manuale su APK Android installato per confermare reset database, CRUD dati, aggiornamento piano e riapertura app dopo il fix di `TASK-057`.
 - Smoke runtime finale guidato su Expo Go (`TASK-027`).

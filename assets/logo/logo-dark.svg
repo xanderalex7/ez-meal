@@ -1,0 +1,9 @@
+<svg width="960" height="240" viewBox="0 0 960 240" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">EZ-MEAL logo for dark surfaces</title>
+  <desc id="desc">A minimal meal planning logo with a green plate ring, amber check mark and light EZ-MEAL wordmark.</desc>
+  <g transform="translate(28 28)">
+    <circle cx="92" cy="92" r="74" stroke="#6CCF9D" stroke-width="24"/>
+    <path d="M58 94L84 120L130 68" stroke="#F6B35B" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <text x="260" y="146" fill="#F2F5EF" font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="82" font-weight="700">EZ-MEAL</text>
+</svg>
