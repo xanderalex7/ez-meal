@@ -1,9 +1,10 @@
 import type { Dispatch, SetStateAction } from 'react';
 
 import {
-  assignRecipeToSlot,
+  addRecipeToSlot,
   createEmptyMealPlan,
   generateWeeklyPlan,
+  removeRecipeFromSlotById,
   removeRecipeFromSlot,
   validateIngredientInput,
   validateRecipeInput,
@@ -40,7 +41,7 @@ export type AppActions = {
   selectMealPlan: (id: string) => void;
   assignFirstCompatibleRecipe: (date: string, mealType: MealType) => string | null;
   assignRecipeToMealSlot: (date: string, mealType: MealType, recipeId: string) => string | null;
-  removeRecipeFromMealSlot: (date: string, mealType: MealType) => void;
+  removeRecipeFromMealSlot: (date: string, mealType: MealType, recipeId?: string) => void;
   generatePlan: () => number;
   saveGeneratedPlan: () => string | null;
 };
@@ -282,13 +283,13 @@ export function createAppActions(
             day.date === date
               ? {
                   ...day,
-                  slots: day.slots.map((slot) =>
-                    slot.mealType === mealType
-                      ? assignRecipeToSlot(slot, recipe).ok
-                        ? { ...slot, recipeId: recipe.id }
-                        : slot
-                      : slot,
-                  ),
+                  slots: day.slots.map((slot) => {
+                    if (slot.mealType !== mealType) {
+                      return slot;
+                    }
+                    const assignment = addRecipeToSlot(slot, recipe);
+                    return assignment.ok ? assignment.value : slot;
+                  }),
                 }
               : day,
           ),
@@ -310,7 +311,7 @@ export function createAppActions(
         return t('errorMealSlotNotFound');
       }
 
-      const assignment = assignRecipeToSlot(candidateSlot, recipe);
+      const assignment = addRecipeToSlot(candidateSlot, recipe);
       if (!assignment.ok) {
         return t('errorRecipeIncompatible');
       }
@@ -324,7 +325,7 @@ export function createAppActions(
               ? {
                   ...day,
                   slots: day.slots.map((slot) =>
-                    slot.mealType === mealType ? { ...slot, recipeId: recipe.id } : slot,
+                    slot.mealType === mealType ? assignment.value : slot,
                   ),
                 }
               : day,
@@ -335,7 +336,7 @@ export function createAppActions(
       return null;
     },
 
-    removeRecipeFromMealSlot(date, mealType) {
+    removeRecipeFromMealSlot(date, mealType, recipeId) {
       setModel((current) => ({
         ...current,
         ...withEditableMealPlan(current, {
@@ -345,7 +346,11 @@ export function createAppActions(
               ? {
                   ...day,
                   slots: day.slots.map((slot) =>
-                    slot.mealType === mealType ? removeRecipeFromSlot(slot) : slot,
+                    slot.mealType === mealType
+                      ? recipeId
+                        ? removeRecipeFromSlotById(slot, recipeId)
+                        : removeRecipeFromSlot(slot)
+                      : slot,
                   ),
                 }
               : day,
@@ -422,7 +427,7 @@ function countRecipeMealPlanReferences(mealPlans: MealPlan[], recipeId: string) 
       count +
       plan.days.reduce(
         (dayCount, day) =>
-          dayCount + day.slots.filter((slot) => slot.recipeId === recipeId).length,
+          dayCount + day.slots.filter((slot) => slot.recipeIds.includes(recipeId)).length,
         0,
       ),
     0,
@@ -434,7 +439,7 @@ function removeRecipeFromMealPlan(mealPlan: MealPlan, recipeId: string): MealPla
     ...mealPlan,
     days: mealPlan.days.map((day) => ({
       ...day,
-      slots: day.slots.map((slot) => (slot.recipeId === recipeId ? removeRecipeFromSlot(slot) : slot)),
+      slots: day.slots.map((slot) => removeRecipeFromSlotById(slot, recipeId)),
     })),
     updatedAt: new Date().toISOString(),
   };

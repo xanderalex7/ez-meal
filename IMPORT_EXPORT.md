@@ -175,7 +175,7 @@ Ogni piano deve avere 21 righe `meal_slot`: 7 giorni x 3 pasti.
 | `parent_id` | Si | string | ID piano, deve esistere in una riga `meal_plan`. |
 | `date` | Si | `YYYY-MM-DD` | Giorno dello slot. |
 | `meal_type` | Si | `breakfast`, `lunch`, `dinner` | Tipo pasto. |
-| `recipe_id` | No | string | Vuoto se slot non assegnato; se presente deve esistere in una riga `recipe`. |
+| `recipe_id` | No | string o lista `;` | Vuoto se slot non assegnato; se presente contiene uno o piu ID ricetta separati da `;`, tutti esistenti in righe `recipe`. |
 
 Esempio:
 
@@ -183,6 +183,12 @@ Esempio:
 meal_slot,plan-current__2026-06-29__breakfast,plan-current,,,,,,2026-06-29,breakfast,,,,,
 meal_slot,plan-current__2026-06-29__lunch,plan-current,,,,,,2026-06-29,lunch,recipe-1,,,,
 meal_slot,plan-current__2026-06-29__dinner,plan-current,,,,,,2026-06-29,dinner,recipe-1,,,,
+```
+
+Esempio slot con piu ricette gia definite nel file:
+
+```csv
+meal_slot,plan-current__2026-06-29__lunch,plan-current,,,,,,2026-06-29,lunch,recipe-riso;recipe-pollo;recipe-frutta,,,,
 ```
 
 ## Esempio completo minimo
@@ -244,8 +250,9 @@ Per generare un CSV valido, seguire questi passi:
 6. Per ogni ingrediente della ricetta, creare una riga `recipe_ingredient`.
 7. Creare una riga `meal_plan` per ogni piano.
 8. Per ogni piano, creare esattamente 21 righe `meal_slot`.
-9. Ogni `meal_slot.recipe_id` deve essere vuoto oppure puntare a una ricetta esistente.
-10. Ogni ricetta assegnata a uno slot deve contenere il `meal_type` dello slot tra i propri `meal_types`.
+9. Ogni `meal_slot.recipe_id` deve essere vuoto oppure contenere uno o piu ID ricetta separati da `;`.
+10. Ogni ID in `meal_slot.recipe_id` deve puntare a una ricetta esistente.
+11. Ogni ricetta assegnata a uno slot deve contenere il `meal_type` dello slot tra i propri `meal_types`.
 
 ## Validazioni import
 
@@ -264,6 +271,7 @@ L'import deve fallire senza modificare il database se:
 - una data non rispetta il formato previsto;
 - una relazione punta a ingredienti, ricette o piani inesistenti;
 - una ricetta assegnata a uno slot non e compatibile con il `meal_type` dello slot;
+- `meal_slot.recipe_id` contiene ID duplicati nello stesso slot;
 - un piano non ha esattamente 21 slot;
 - un piano contiene duplicati per la stessa coppia `date` + `meal_type`;
 - esistono ID duplicati per lo stesso `record_type`.

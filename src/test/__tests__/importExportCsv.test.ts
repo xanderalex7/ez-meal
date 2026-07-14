@@ -21,6 +21,58 @@ describe('import/export CSV', () => {
     expect(imported.model.mealPlan.days.flatMap((day) => day.slots)).toHaveLength(21);
   });
 
+  it('roundtrips multiple recipes in the same meal slot', () => {
+    const model = createInitialAppModel();
+    const updatedModel = {
+      ...model,
+      recipes: [
+        {
+          id: 'recipe-1',
+          name: 'Riso in bianco',
+          mealTypes: ['lunch' as const],
+          ingredientIds: [],
+          createdAt: '2026-07-04T12:00:00.000Z',
+          updatedAt: '2026-07-04T12:00:00.000Z',
+        },
+        {
+          id: 'recipe-2',
+          name: 'Pollo',
+          mealTypes: ['lunch' as const],
+          ingredientIds: [],
+          createdAt: '2026-07-04T12:00:00.000Z',
+          updatedAt: '2026-07-04T12:00:00.000Z',
+        },
+      ],
+      mealPlan: {
+        ...model.mealPlan,
+        days: model.mealPlan.days.map((day, dayIndex) =>
+          dayIndex === 0
+            ? {
+                ...day,
+                slots: day.slots.map((slot) =>
+                  slot.mealType === 'lunch' ? { ...slot, recipeIds: ['recipe-1', 'recipe-2'] } : slot,
+                ),
+              }
+            : day,
+        ),
+      },
+    };
+
+    const csv = exportAppModelToCsv({
+      exportedAt: '2026-07-14T10:00:00.000Z',
+      language: 'it',
+      model: { ...updatedModel, mealPlans: [updatedModel.mealPlan] },
+      themeMode: 'system',
+    });
+    const imported = importAppModelFromCsv(csv);
+
+    expect(csv).toContain('2026-06-29,lunch,recipe-1;recipe-2');
+    expect(imported.model.mealPlan.days[0].slots.find((slot) => slot.mealType === 'lunch')?.recipeIds).toEqual([
+      'recipe-1',
+      'recipe-2',
+    ]);
+  });
+
   it('rejects planned recipes that are incompatible with the slot meal type', () => {
     const model = createInitialAppModel();
     const csv = [

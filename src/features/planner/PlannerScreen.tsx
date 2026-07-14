@@ -198,10 +198,12 @@ export function PlannerScreen({ actions, model }: PlannerScreenProps) {
           </Text>
           <View style={[styles.dayDivider, { backgroundColor: colors.border }]} />
           {day.slots.map((slot) => {
-            const recipe = model.recipes.find((candidate) => candidate.id === slot.recipeId);
+            const assignedRecipes = slot.recipeIds
+              .map((recipeId) => model.recipes.find((candidate) => candidate.id === recipeId))
+              .filter((recipe): recipe is NonNullable<typeof recipe> => Boolean(recipe));
             const slotKey = getSlotKey(slot.date, slot.mealType);
             const compatibleRecipes = model.recipes.filter((candidate) =>
-              candidate.mealTypes.includes(slot.mealType),
+              candidate.mealTypes.includes(slot.mealType) && !slot.recipeIds.includes(candidate.id),
             );
             const selectionOpen = selectionSlotKey === slotKey;
             return (
@@ -213,14 +215,11 @@ export function PlannerScreen({ actions, model }: PlannerScreenProps) {
                       size="compact"
                       tone={slot.mealType}
                     />
-                    <Text
-                      style={[
-                        styles.recipeName,
-                        { color: recipe ? colors.text : colors.textMuted },
-                      ]}
-                    >
-                      {recipe?.name ?? t('planEmptySlot')}
-                    </Text>
+                    {assignedRecipes.length === 0 ? (
+                      <Text style={[styles.recipeName, { color: colors.textMuted }]}>
+                        {t('planEmptySlot')}
+                      </Text>
+                    ) : null}
                   </View>
                   {isEditing ? (
                     <View style={styles.slotActions}>
@@ -229,31 +228,44 @@ export function PlannerScreen({ actions, model }: PlannerScreenProps) {
                           date: slot.date,
                           meal: mealTypeLabel(slot.mealType),
                         })}
-                        color={recipe ? colors.text : colors.success}
-                        icon={recipe ? 'swap' : 'add'}
+                        color={colors.success}
+                        icon="add"
                         onPress={() => {
                           setMessage(undefined);
                           setSelectionSlotKey(selectionOpen ? null : slotKey);
                         }}
                       />
-                      {recipe ? (
-                        <ActionIconButton
-                          accessibilityLabel={t('planRemoveRecipeA11y', {
-                            date: slot.date,
-                            meal: mealTypeLabel(slot.mealType),
-                          })}
-                          color={colors.error}
-                          icon="trash"
-                          onPress={() => {
-                            actions.removeRecipeFromMealSlot(slot.date, slot.mealType);
-                            setSelectionSlotKey(null);
-                            setMessage(t('planMealCleared'));
-                          }}
-                        />
-                      ) : null}
                     </View>
                   ) : null}
                 </View>
+                {assignedRecipes.length > 0 ? (
+                  <View style={styles.recipeList}>
+                    {assignedRecipes.map((recipe) => (
+                      <View key={recipe.id} style={styles.recipeRow}>
+                        <Text style={[styles.recipeName, { color: colors.text }]}>
+                          {recipe.name}
+                        </Text>
+                        {isEditing ? (
+                          <View style={styles.recipeAction}>
+                            <ActionIconButton
+                              accessibilityLabel={t('planRemoveRecipeA11y', {
+                                date: slot.date,
+                                meal: mealTypeLabel(slot.mealType),
+                              })}
+                              color={colors.error}
+                              icon="trash"
+                              onPress={() => {
+                                actions.removeRecipeFromMealSlot(slot.date, slot.mealType, recipe.id);
+                                setSelectionSlotKey(null);
+                                setMessage(t('planMealCleared'));
+                              }}
+                            />
+                          </View>
+                        ) : null}
+                      </View>
+                    ))}
+                  </View>
+                ) : null}
                 {isEditing && selectionOpen ? (
                   <View style={styles.optionList}>
                     {compatibleRecipes.length > 0 ? (
@@ -261,7 +273,7 @@ export function PlannerScreen({ actions, model }: PlannerScreenProps) {
                         <Button
                           key={candidate.id}
                           label={candidate.name}
-                          variant={candidate.id === slot.recipeId ? 'primary' : 'secondary'}
+                          variant="secondary"
                           onPress={() => assignRecipe(slot.date, slot.mealType, candidate.id)}
                         />
                       ))
@@ -297,7 +309,7 @@ export function PlannerScreen({ actions, model }: PlannerScreenProps) {
 }
 
 function isMealPlanEmpty(mealPlan: AppModel['mealPlan']) {
-  return mealPlan.days.every((day) => day.slots.every((slot) => !slot.recipeId));
+  return mealPlan.days.every((day) => day.slots.every((slot) => slot.recipeIds.length === 0));
 }
 
 const styles = StyleSheet.create({
@@ -320,10 +332,18 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   slotText: { flex: 1, gap: spacing.xs },
-  slotActions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, justifyContent: 'flex-end' },
+  slotActions: { alignItems: 'center', flexDirection: 'row', justifyContent: 'flex-end', width: 44 },
   slotContainer: { gap: spacing.sm },
   slotLabel: { fontSize: 14, fontWeight: '700' },
   recipeName: { fontSize: 17, fontWeight: '700' },
+  recipeList: { gap: spacing.xs },
+  recipeRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: spacing.sm,
+    justifyContent: 'space-between',
+  },
+  recipeAction: { alignItems: 'center', width: 44 },
   optionList: { gap: spacing.sm, paddingLeft: spacing.md },
   empty: { fontSize: 14 },
 });

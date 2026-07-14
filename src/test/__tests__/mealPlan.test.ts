@@ -1,4 +1,11 @@
-import { assignRecipeToSlot, createEmptyMealPlan, removeRecipeFromSlot, type Recipe } from '../../domain';
+import {
+  addRecipeToSlot,
+  createEmptyMealPlan,
+  normalizeMealSlot,
+  removeRecipeFromSlot,
+  removeRecipeFromSlotById,
+  type Recipe,
+} from '../../domain';
 
 const lunchRecipe: Recipe = {
   id: 'recipe-1',
@@ -21,27 +28,43 @@ describe('meal plan domain', () => {
     expect(plan.days[0]).toEqual({
       date: '2026-07-06',
       slots: [
-        { date: '2026-07-06', mealType: 'breakfast' },
-        { date: '2026-07-06', mealType: 'lunch' },
-        { date: '2026-07-06', mealType: 'dinner' },
+        { date: '2026-07-06', mealType: 'breakfast', recipeIds: [] },
+        { date: '2026-07-06', mealType: 'lunch', recipeIds: [] },
+        { date: '2026-07-06', mealType: 'dinner', recipeIds: [] },
       ],
     });
     expect(plan.days[6].date).toBe('2026-07-12');
   });
 
   it('assigns a compatible recipe to a slot', () => {
-    expect(assignRecipeToSlot({ date: '2026-07-06', mealType: 'lunch' }, lunchRecipe)).toEqual({
+    expect(addRecipeToSlot({ date: '2026-07-06', mealType: 'lunch', recipeIds: [] }, lunchRecipe)).toEqual({
       ok: true,
       value: {
         date: '2026-07-06',
         mealType: 'lunch',
-        recipeId: 'recipe-1',
+        recipeIds: ['recipe-1'],
+      },
+    });
+  });
+
+  it('does not duplicate a recipe already assigned to a slot', () => {
+    expect(
+      addRecipeToSlot(
+        { date: '2026-07-06', mealType: 'lunch', recipeIds: ['recipe-1'] },
+        lunchRecipe,
+      ),
+    ).toEqual({
+      ok: true,
+      value: {
+        date: '2026-07-06',
+        mealType: 'lunch',
+        recipeIds: ['recipe-1'],
       },
     });
   });
 
   it('rejects an incompatible recipe assignment', () => {
-    expect(assignRecipeToSlot({ date: '2026-07-06', mealType: 'dinner' }, lunchRecipe)).toEqual({
+    expect(addRecipeToSlot({ date: '2026-07-06', mealType: 'dinner', recipeIds: [] }, lunchRecipe)).toEqual({
       ok: false,
       error: {
         code: 'RECIPE_INCOMPATIBLE_WITH_SLOT',
@@ -50,9 +73,40 @@ describe('meal plan domain', () => {
     });
   });
 
-  it('removes a recipe from a slot', () => {
+  it('removes every recipe from a slot', () => {
     expect(
       removeRecipeFromSlot({
+        date: '2026-07-06',
+        mealType: 'lunch',
+        recipeIds: ['recipe-1', 'recipe-2'],
+      }),
+    ).toEqual({
+      date: '2026-07-06',
+      mealType: 'lunch',
+      recipeIds: [],
+    });
+  });
+
+  it('removes one recipe from a slot', () => {
+    expect(
+      removeRecipeFromSlotById(
+        {
+          date: '2026-07-06',
+          mealType: 'lunch',
+          recipeIds: ['recipe-1', 'recipe-2'],
+        },
+        'recipe-1',
+      ),
+    ).toEqual({
+      date: '2026-07-06',
+      mealType: 'lunch',
+      recipeIds: ['recipe-2'],
+    });
+  });
+
+  it('normalizes legacy recipeId slots', () => {
+    expect(
+      normalizeMealSlot({
         date: '2026-07-06',
         mealType: 'lunch',
         recipeId: 'recipe-1',
@@ -60,6 +114,7 @@ describe('meal plan domain', () => {
     ).toEqual({
       date: '2026-07-06',
       mealType: 'lunch',
+      recipeIds: ['recipe-1'],
     });
   });
 });

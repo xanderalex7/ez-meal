@@ -46,9 +46,9 @@ describe('generateWeeklyPlan', () => {
 
     expect(result.uncoveredSlots).toEqual([]);
     expect(result.plan.days[0].slots).toEqual([
-      { date: '2026-07-06', mealType: 'breakfast', recipeId: 'recipe-breakfast' },
-      { date: '2026-07-06', mealType: 'lunch', recipeId: 'recipe-lunch' },
-      { date: '2026-07-06', mealType: 'dinner', recipeId: 'recipe-dinner' },
+      { date: '2026-07-06', mealType: 'breakfast', recipeIds: ['recipe-breakfast'] },
+      { date: '2026-07-06', mealType: 'lunch', recipeIds: ['recipe-lunch'] },
+      { date: '2026-07-06', mealType: 'dinner', recipeIds: ['recipe-dinner'] },
     ]);
     expect(result.plan.updatedAt).toBe('2026-07-04T13:00:00.000Z');
   });
@@ -84,7 +84,7 @@ describe('generateWeeklyPlan', () => {
           ? {
               ...day,
               slots: day.slots.map((slot) =>
-                slot.mealType === 'lunch' ? { ...slot, recipeId: 'recipe-lunch' } : slot,
+                slot.mealType === 'lunch' ? { ...slot, recipeIds: ['recipe-lunch'] } : slot,
               ),
             }
           : day,
@@ -103,7 +103,7 @@ describe('generateWeeklyPlan', () => {
     expect(result.plan.days[0].slots[1]).toEqual({
       date: '2026-07-06',
       mealType: 'lunch',
-      recipeId: 'recipe-lunch',
+      recipeIds: ['recipe-lunch'],
     });
   });
 
@@ -129,7 +129,7 @@ describe('generateWeeklyPlan', () => {
     expect(result.plan.days[0].slots[1]).toEqual({
       date: '2026-07-06',
       mealType: 'lunch',
-      recipeId: 'recipe-lunch-2',
+      recipeIds: ['recipe-lunch-2'],
     });
   });
 
