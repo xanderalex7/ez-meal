@@ -40,7 +40,7 @@ Requisiti MVP coperti: `REQ-001..REQ-012`, `NFR-002`, `NFR-003`, `NFR-007`, `NFR
 | `BLOCKED` | Bloccato; indicare motivo minimo. |
 | `DEFERRED` | Rinviato; indicare motivo minimo. |
 
-Snapshot corrente: `TASK-001` - `TASK-026`, `TASK-028` - `TASK-056` e `TASK-058` sono completati lato sviluppo con test automatici/verifiche asset/build; `TASK-057` ha fix e test completati ma resta in verifica manuale su APK Android installato; resta `TASK-027` come smoke test MVP finale guidato su Expo Go/APK.
+Snapshot corrente: `TASK-001` - `TASK-026`, `TASK-028` - `TASK-056` e `TASK-058` sono completati lato sviluppo con test automatici/verifiche asset/build; `TASK-057` ha fix e test completati ma resta in verifica manuale su APK Android installato; restano `TASK-027` come smoke test MVP finale guidato su Expo Go/APK e `TASK-059`/`TASK-060` come improvement post-MVP.
 
 ## 5. Task
 
@@ -913,6 +913,36 @@ Snapshot corrente: `TASK-001` - `TASK-026`, `TASK-028` - `TASK-056` e `TASK-058`
 | Verifica/test | UI/App test aggiornati per usare label accessibile della matita; test stile conferma coerenza con bottone Piano; `npm run typecheck` OK; `npm run test -- --runInBand` OK. Verifica runtime finale demandata a `TASK-027`. |
 | Logging essenziale | Non richiesto. |
 | Code docs/README | Estratto `PencilIconButton` condiviso in `src/shared/ui`; README non richiesto. |
+
+### TASK-059 - Improvement ottimizzazione peso APK e bundle
+
+| Campo | Valore |
+| --- | --- |
+| Stato | TODO |
+| Priorita | COULD |
+| Descrizione | Analizzare e migliorare il peso della build Android/APK riducendo asset, bundle e dipendenze non necessarie senza cambiare comportamento utente. |
+| Dipendenze | TASK-031, TASK-054, TASK-055, TASK-057 |
+| Requisiti | REQ-011, NFR-003, NFR-008 |
+| Documenti | `docs/architecture.md`, `README.md`, `package.json`, `app.json`, `assets/`, `build/` |
+| Criteri completamento | Dimensione bundle/APK misurata prima e dopo; asset immagine/logo/icon auditati per dimensioni e duplicazioni; dipendenze runtime verificate e rimosse solo se inutilizzate; configurazione build controllata per minificazione/tree shaking/asset inclusion compatibili con Expo; nessuna regressione su icone, PWA, SQLite e avvio app; eventuali limiti non risolvibili documentati. |
+| Verifica/test | `npm run typecheck` OK; `npm run test -- --runInBand` OK; `npm run build:android` OK; se disponibile, nuova build EAS APK confrontata con la precedente; checklist manuale APK: avvio, icona, reset database, CRUD, piano, PWA/web non regressi se toccati asset condivisi. |
+| Logging essenziale | Non richiesto salvo errori build/diagnostica senza dati utente. |
+| Code docs/README | Aggiornare README solo se cambiano comandi build, note EAS o raccomandazioni per produrre APK leggero. |
+
+### TASK-060 - Improvement audit componenti duplicati e action buttons
+
+| Campo | Valore |
+| --- | --- |
+| Stato | TODO |
+| Priorita | COULD |
+| Descrizione | Controllare tutta la repo per individuare componenti UI duplicati o implementazioni ripetute, con attenzione speciale ai bottoni che eseguono action come aggiungi, modifica, elimina, assegna, rimuovi, cambia/swap e salva. |
+| Dipendenze | TASK-013, TASK-038, TASK-046, TASK-051, TASK-052, TASK-058 |
+| Requisiti | REQ-011, REQ-012, NFR-007, NFR-008 |
+| Documenti | `docs/design.md`, `docs/architecture.md`, `src/shared/ui/`, `src/features/` |
+| Criteri completamento | Audit dei componenti UI completato; duplicazioni reali censite; action buttons convergono su componenti condivisi quando il comportamento/stile e equivalente; varianti legittime restano motivate; accessibilita, label, colori e stati pressed/disabled restano coerenti; nessun refactor ampio non necessario. |
+| Verifica/test | `rg`/review manuale su componenti e bottoni action; test UI aggiornati solo se cambiano label/struttura; `npm run typecheck` OK; `npm run test -- --runInBand` OK; smoke manuale mirato su Ricette, Ingredienti, Piano e Altro. |
+| Logging essenziale | Non richiesto. |
+| Code docs/README | Aggiornare `docs/design.md` solo se emergono nuove regole di riuso componenti; README non richiesto salvo variazioni operative. |
 
 ## 6. Regole di aggiornamento
 
