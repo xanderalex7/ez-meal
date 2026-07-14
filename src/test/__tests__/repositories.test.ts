@@ -123,6 +123,55 @@ describe('repositories', () => {
     await expect(repository.list()).resolves.toEqual({ ok: true, value: [plan] });
   });
 
+  it('normalizes legacy meal plan slots with a single recipeId', async () => {
+    const { db, firstRows } = createFakeQueryExecutor();
+    const repository = createMealPlanRepository(db);
+    const plan = createEmptyMealPlan({
+      id: 'plan-1',
+      title: 'Piano bulk',
+      weekStartDate: '2026-07-06',
+      now: timestamp,
+    });
+    const legacyDays = plan.days.map((day, dayIndex) =>
+      dayIndex === 0
+        ? {
+            ...day,
+            slots: day.slots.map((slot) =>
+              slot.mealType === 'lunch'
+                ? { date: slot.date, mealType: slot.mealType, recipeId: 'recipe-1' }
+                : slot,
+            ),
+          }
+        : day,
+    );
+
+    firstRows.set('SELECT * FROM meal_plans WHERE week_start_date = ?;', {
+      id: 'plan-1',
+      title: 'Piano bulk',
+      week_start_date: '2026-07-06',
+      days: JSON.stringify(legacyDays),
+      created_at: timestamp,
+      updated_at: timestamp,
+    });
+
+    await expect(repository.findByWeekStartDate('2026-07-06')).resolves.toEqual({
+      ok: true,
+      value: {
+        ...plan,
+        days: plan.days.map((day, dayIndex) =>
+          dayIndex === 0
+            ? {
+                ...day,
+                slots: day.slots.map((slot) =>
+                  slot.mealType === 'lunch' ? { ...slot, recipeIds: ['recipe-1'] } : slot,
+                ),
+              }
+            : day,
+        ),
+      },
+    });
+  });
+
   it('persists theme and language preferences with fallbacks', async () => {
     const { db, firstRows } = createFakeQueryExecutor();
     const repository = createPreferenceRepository(db);

@@ -1,4 +1,4 @@
-import type { MealPlan, PlanDay } from '../../domain';
+import { normalizeMealPlan, type MealPlan, type PlanDay } from '../../domain';
 
 export type MealPlanRow = {
   id: string;
@@ -21,12 +21,12 @@ export function mealPlanToRow(plan: MealPlan) {
 }
 
 export function rowToMealPlan(row: MealPlanRow): MealPlan {
-  return {
+  return normalizeMealPlan({
     id: row.id,
     title: row.title ?? 'Piano settimanale',
     weekStartDate: row.week_start_date,
     days: JSON.parse(row.days) as PlanDay[],
     createdAt: row.created_at,
     updatedAt: row.updated_at,
-  };
+  });
 }

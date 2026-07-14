@@ -18,13 +18,25 @@ export function HomeScreen({ model }: HomeScreenProps) {
     <View style={styles.stack}>
       <Text style={[styles.title, { color: colors.text }]}>{t('homeTitle')}</Text>
       {(today?.slots ?? []).map((slot) => {
-        const recipe = model.recipes.find((candidate) => candidate.id === slot.recipeId);
+        const recipes = slot.recipeIds
+          .map((recipeId) => model.recipes.find((candidate) => candidate.id === recipeId))
+          .filter((recipe): recipe is NonNullable<typeof recipe> => Boolean(recipe));
         return (
           <Card key={slot.mealType}>
             <Badge label={mealTypeLabel(slot.mealType)} tone={slot.mealType} />
-            <Text style={[styles.recipeName, { color: colors.text }]}>
-              {recipe?.name ?? t('homeNoRecipe')}
-            </Text>
+            {recipes.length > 0 ? (
+              <View style={styles.recipeList}>
+                {recipes.map((recipe) => (
+                  <Text key={recipe.id} style={[styles.recipeName, { color: colors.text }]}>
+                    {recipe.name}
+                  </Text>
+                ))}
+              </View>
+            ) : (
+              <Text style={[styles.recipeName, { color: colors.textMuted }]}>
+                {t('homeNoRecipe')}
+              </Text>
+            )}
           </Card>
         );
       })}
@@ -42,6 +54,9 @@ const styles = StyleSheet.create({
   },
   recipeName: {
     fontSize: 16,
+  },
+  recipeList: {
+    gap: spacing.xs,
     marginTop: spacing.xs,
   },
 });

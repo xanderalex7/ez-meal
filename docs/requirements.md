@@ -24,7 +24,7 @@ Fonte di verita del comportamento atteso di EZ-MEAL. Il documento definisce cosa
 | Attore | Caso d'uso | Flusso principale | Alternative/errori |
 | --- | --- | --- | --- |
 | Utente | Consultare pasti di oggi | Apre l'app e vede colazione, pranzo e cena del giorno corrente. | Se un pasto non e pianificato, vede uno stato vuoto modificabile. |
-| Utente | Modificare piano settimanale | Seleziona settimana/giorno/pasto e assegna o rimuove una ricetta. | Se nessuna ricetta e compatibile, il sistema segnala assenza di opzioni. |
+| Utente | Modificare piano settimanale | Seleziona settimana/giorno/pasto e assegna o rimuove una o piu ricette. | Se nessuna ricetta e compatibile, il sistema segnala assenza di opzioni. |
 | Utente | Generare piano settimanale | Richiede generazione randomica e ottiene assegnazioni compatibili con le ricette disponibili. | Se le ricette sono insufficienti, il sistema genera il possibile e segnala i pasti scoperti. |
 | Utente | Gestire ricette | Crea, visualizza, modifica o elimina una ricetta con ingredienti e label pasto. | Dati obbligatori mancanti impediscono il salvataggio. |
 | Utente | Gestire ingredienti | Crea, visualizza, modifica o elimina ingredienti disponibili. | Ingredienti usati da ricette o piani richiedono gestione esplicita dell'impatto. |
@@ -97,14 +97,14 @@ Fonte di verita del comportamento atteso di EZ-MEAL. Il documento definisce cosa
 | --- | --- |
 | ID | REQ-003 |
 | Titolo | Modifica piano settimanale |
-| Descrizione | Il sistema deve consentire all'utente di assegnare, sostituire o rimuovere una ricetta da uno slot pasto del piano settimanale. |
+| Descrizione | Il sistema deve consentire all'utente di assegnare o rimuovere una o piu ricette da uno slot pasto del piano settimanale. |
 | Motivazione | Rendere il piano adattabile alle preferenze e disponibilita dell'utente. |
 | Attori | Utente |
 | Precondizioni | Esiste almeno una ricetta per poter assegnare uno slot; la rimozione non richiede ricette disponibili. |
-| Flusso principale | L'utente seleziona uno slot; sceglie una ricetta compatibile; conferma; il sistema aggiorna lo slot. |
-| Alternative/errori | Se non esistono ricette compatibili, il sistema informa l'utente; se l'utente rimuove una ricetta, lo slot torna vuoto. |
-| Regole di dominio | Una ricetta puo essere assegnata a uno slot solo se include la label del tipo pasto dello slot. |
-| Criteri di accettazione | Given uno slot pranzo e una ricetta con label pranzo, When l'utente assegna la ricetta, Then lo slot mostra quella ricetta. Given una ricetta senza label pranzo, When l'utente modifica uno slot pranzo, Then la ricetta non e selezionabile o e segnalata come incompatibile. |
+| Flusso principale | L'utente seleziona uno slot; sceglie una o piu ricette compatibili; conferma; il sistema aggiorna lo slot mantenendo le ricette gia presenti se non rimosse. |
+| Alternative/errori | Se non esistono ricette compatibili non ancora assegnate, il sistema informa l'utente; se l'utente rimuove una ricetta, viene rimossa solo quella voce e lo slot torna vuoto solo se non restano ricette. |
+| Regole di dominio | Ogni ricetta assegnata a uno slot deve includere la label del tipo pasto dello slot; la stessa ricetta non deve comparire due volte nello stesso slot. |
+| Criteri di accettazione | Given uno slot pranzo e piu ricette con label pranzo, When l'utente assegna le ricette, Then lo slot mostra tutte le ricette assegnate. Given una ricetta senza label pranzo, When l'utente modifica uno slot pranzo, Then la ricetta non e selezionabile o e segnalata come incompatibile. |
 | Impatti | Dati: modifica del piano locale. |
 | Priorita | MUST |
 | Stato | Approved |
@@ -301,7 +301,7 @@ Fonte di verita del comportamento atteso di EZ-MEAL. Il documento definisce cosa
 | --- | --- | --- | --- |
 | Ricetta | Nome, almeno una label pasto | Ricetta disponibile per consultazione, piano e generazione | Nome non vuoto; almeno una label valida; label solo tra colazione/pranzo/cena |
 | Ingrediente | Nome | Ingrediente disponibile nell'elenco | Nome non vuoto; duplicati da definire |
-| Slot pasto | Giorno, tipo pasto, ricetta opzionale | Assegnazione nel piano | Tipo pasto valido; ricetta compatibile con tipo pasto |
+| Slot pasto | Giorno, tipo pasto, zero o piu ricette | Assegnazione nel piano | Tipo pasto valido; ogni ricetta compatibile con tipo pasto; nessun duplicato nello stesso slot |
 | Piano settimanale | Settimana, sette giorni, slot pasto | Piano consultabile e modificabile | Ogni giorno usa gli slot standard; slot vuoti ammessi |
 | Tema | Preferenza tema o default | Interfaccia chiara/scura | Contenuti leggibili nel tema applicato |
 
@@ -313,6 +313,7 @@ Fonte di verita del comportamento atteso di EZ-MEAL. Il documento definisce cosa
 - Ogni giorno del piano contiene i tre tipi pasto standard.
 - Ogni settimana contiene sette giorni.
 - Una ricetta e compatibile con uno slot solo se include la label del tipo pasto.
+- Uno slot pasto puo contenere piu ricette compatibili, ad esempio un pranzo composto da riso, pollo e frutta.
 - Una ricetta deve avere un nome e almeno una label pasto.
 - Un ingrediente deve avere un nome.
 - Gli slot pasto possono restare vuoti.

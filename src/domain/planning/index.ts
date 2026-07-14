@@ -1,7 +1,12 @@
 export {
+  addRecipeToSlot,
+  clearRecipesFromSlot,
   assignRecipeToSlot,
   createEmptyMealPlan,
   generateWeeklyPlan,
+  normalizeMealPlan,
+  normalizeMealSlot,
+  removeRecipeFromSlotById,
   removeRecipeFromSlot,
 } from './mealPlan';
 export type {

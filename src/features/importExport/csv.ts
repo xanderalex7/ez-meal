@@ -119,7 +119,7 @@ export function exportAppModelToCsv(input: {
             parent_id: plan.id,
             date: slot.date,
             meal_type: slot.mealType,
-            recipe_id: slot.recipeId ?? '',
+            recipe_id: slot.recipeIds.join(';'),
           }),
         );
       });
@@ -396,15 +396,16 @@ function parseMealPlans(
         throw new Error(`Slot duplicato nel piano ${record.name}: ${key}`);
       }
       seenSlots.add(key);
-      if (slot.recipe_id) {
-        const recipe = recipeMap.get(slot.recipe_id);
+      const slotRecipeIds = parseSlotRecipeIds(slot.recipe_id);
+      slotRecipeIds.forEach((recipeId) => {
+        const recipe = recipeMap.get(recipeId);
         if (!recipe) {
-          throw new Error(`Slot con ricetta inesistente: ${slot.recipe_id}`);
+          throw new Error(`Slot con ricetta inesistente: ${recipeId}`);
         }
         if (!recipe.mealTypes.includes(slot.meal_type as MealType)) {
           throw new Error(`Ricetta non compatibile con slot ${key}.`);
         }
-      }
+      });
     });
 
     const dates = Array.from(new Set(slots.map((slot) => slot.date))).sort();
@@ -419,7 +420,7 @@ function parseMealPlans(
           return {
             date,
             mealType,
-            recipeId: matchingSlot?.recipe_id || undefined,
+            recipeIds: parseSlotRecipeIds(matchingSlot?.recipe_id ?? ''),
           };
         }),
       })),
@@ -428,6 +429,14 @@ function parseMealPlans(
     };
   });
   return plans;
+}
+
+function parseSlotRecipeIds(value: string) {
+  const recipeIds = value.split(';').filter(Boolean);
+  if (new Set(recipeIds).size !== recipeIds.length) {
+    throw new Error('Slot con ricette duplicate.');
+  }
+  return recipeIds;
 }
 
 function assertUniqueIds(records: CsvRecord[], label: string) {

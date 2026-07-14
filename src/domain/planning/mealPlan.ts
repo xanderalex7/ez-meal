@@ -6,7 +6,12 @@ export type MealPlanId = string;
 export type MealSlot = {
   date: string;
   mealType: MealType;
+  recipeIds: string[];
+};
+
+type LegacyMealSlot = Omit<MealSlot, 'recipeIds'> & {
   recipeId?: string;
+  recipeIds?: string[];
 };
 
 export type PlanDay = {
@@ -58,6 +63,7 @@ export function createEmptyMealPlan(input: {
       slots: mealTypes.map((mealType) => ({
         date,
         mealType,
+        recipeIds: [],
       })),
     })),
     createdAt: input.now,
@@ -66,6 +72,10 @@ export function createEmptyMealPlan(input: {
 }
 
 export function assignRecipeToSlot(slot: MealSlot, recipe: Recipe): AssignRecipeResult {
+  return addRecipeToSlot(slot, recipe);
+}
+
+export function addRecipeToSlot(slot: MealSlot, recipe: Recipe): AssignRecipeResult {
   if (!recipe.mealTypes.includes(slot.mealType)) {
     return {
       ok: false,
@@ -80,14 +90,51 @@ export function assignRecipeToSlot(slot: MealSlot, recipe: Recipe): AssignRecipe
     ok: true,
     value: {
       ...slot,
-      recipeId: recipe.id,
+      recipeIds: slot.recipeIds.includes(recipe.id) ? slot.recipeIds : [...slot.recipeIds, recipe.id],
     },
   };
 }
 
 export function removeRecipeFromSlot(slot: MealSlot): MealSlot {
-  const { recipeId: _recipeId, ...emptySlot } = slot;
-  return emptySlot;
+  return clearRecipesFromSlot(slot);
+}
+
+export function removeRecipeFromSlotById(slot: MealSlot, recipeId: string): MealSlot {
+  return {
+    ...slot,
+    recipeIds: slot.recipeIds.filter((candidate) => candidate !== recipeId),
+  };
+}
+
+export function clearRecipesFromSlot(slot: MealSlot): MealSlot {
+  return {
+    ...slot,
+    recipeIds: [],
+  };
+}
+
+export function normalizeMealSlot(slot: LegacyMealSlot): MealSlot {
+  const recipeIds = Array.isArray(slot.recipeIds)
+    ? slot.recipeIds
+    : slot.recipeId
+      ? [slot.recipeId]
+      : [];
+
+  return {
+    date: slot.date,
+    mealType: slot.mealType,
+    recipeIds: [...new Set(recipeIds.filter(Boolean))],
+  };
+}
+
+export function normalizeMealPlan(plan: MealPlan): MealPlan {
+  return {
+    ...plan,
+    days: plan.days.map((day) => ({
+      ...day,
+      slots: day.slots.map((slot) => normalizeMealSlot(slot as LegacyMealSlot)),
+    })),
+  };
 }
 
 export function generateWeeklyPlan(input: {
@@ -120,7 +167,7 @@ export function generateWeeklyPlan(input: {
       const selectedRecipe = compatibleRecipes[pickIndex(compatibleRecipes.length, random)];
       return {
         ...slot,
-        recipeId: selectedRecipe.id,
+        recipeIds: [selectedRecipe.id],
       };
     }),
   }));
