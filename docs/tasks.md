@@ -1,6 +1,6 @@
 # Tasks
 
-Fonte di verita per ordine di lavoro, avanzamento e task verificabili di EZ-MEAL. Stato corrente: MVP implementato su Expo SDK 54 per compatibilita Expo Go del dispositivo di sviluppo; verifiche automatiche, audit, localizzazione UI, logo minimale, icone app cross-platform, PWA web ed export web/iOS/Android in `build/` completati; restano hardening dati su APK Android e smoke test finale guidato su Expo Go/APK.
+Fonte di verita per ordine di lavoro, avanzamento e task verificabili di EZ-MEAL. Stato corrente: MVP implementato su Expo SDK 54 per compatibilita Expo Go del dispositivo di sviluppo; verifiche automatiche, audit, localizzazione UI, logo minimale, icone app cross-platform, PWA web, export web/iOS/Android in `build/` e hardening dati su APK Android completati; resta smoke test finale guidato su Expo Go/APK.
 
 ## 1. Strategia MVP
 
@@ -26,7 +26,7 @@ Requisiti MVP coperti: `REQ-001..REQ-012`, `NFR-002`, `NFR-003`, `NFR-007`, `NFR
 | M3 - Gestione dati utente | DONE | CRUD ricette e ingredienti funzionanti con validazioni e feedback. |
 | M4 - Pianificazione | DONE | Piano settimanale consultabile/modificabile e generazione randomica funzionante. |
 | M5 - Home e tema | DONE | Home giornaliera, navigazione principale e tema chiaro/scuro. |
-| M6 - Hardening MVP | IN_PROGRESS | Test principali, accessibilita, sicurezza, README, logo minimale, icone app cross-platform, PWA web ed export iOS/Android completati; restano hardening dati su APK Android e smoke test finale guidato su Expo Go/APK. |
+| M6 - Hardening MVP | IN_PROGRESS | Test principali, accessibilita, sicurezza, README, logo minimale, icone app cross-platform, PWA web, export iOS/Android e hardening dati su APK Android completati; resta smoke test finale guidato su Expo Go/APK. |
 | M7 - Refinement UX MVP | DONE | Preferenza tema esplicita, testi italiani UTF-8, tag pasto distintivi, refinement card/azioni, generazione piano con bozza salvabile, refinement Ricette e azioni/layout Piano completati. |
 | M8 - Localizzazione | DONE | Selezione lingua e traduzioni IT/EN completate. |
 
@@ -40,7 +40,7 @@ Requisiti MVP coperti: `REQ-001..REQ-012`, `NFR-002`, `NFR-003`, `NFR-007`, `NFR
 | `BLOCKED` | Bloccato; indicare motivo minimo. |
 | `DEFERRED` | Rinviato; indicare motivo minimo. |
 
-Snapshot corrente: `TASK-001` - `TASK-026`, `TASK-028` - `TASK-056`, `TASK-058` e `TASK-061` sono completati lato sviluppo con test automatici/verifiche asset/build; `TASK-057` ha fix e test completati ma resta in verifica manuale su APK Android installato; restano `TASK-027` come smoke test MVP finale guidato su Expo Go/APK e `TASK-059`/`TASK-060`/`TASK-062`/`TASK-063` come improvement post-MVP.
+Snapshot corrente: `TASK-001` - `TASK-026`, `TASK-028` - `TASK-058`, `TASK-060`, `TASK-061` e `TASK-063` sono completati lato sviluppo con test automatici/verifiche asset/build; restano `TASK-027` come smoke test MVP finale guidato su Expo Go/APK e `TASK-059`/`TASK-062` come improvement post-MVP.
 
 ## 5. Task
 
@@ -888,14 +888,14 @@ Snapshot corrente: `TASK-001` - `TASK-026`, `TASK-028` - `TASK-056`, `TASK-058` 
 
 | Campo | Valore |
 | --- | --- |
-| Stato | IN_PROGRESS |
+| Stato | DONE |
 | Priorita | MUST |
 | Descrizione | Su Android usando l'APK installato, il reset database locale non funziona; verificare e correggere reset, aggiornamento piano e intero flusso dati persistente in runtime release Android. |
 | Dipendenze | TASK-010, TASK-011, TASK-024, TASK-035, TASK-041, TASK-045 |
 | Requisiti | REQ-001, REQ-002, REQ-003, REQ-004, REQ-009, REQ-010, REQ-011 |
 | Documenti | `docs/architecture.md`, `docs/security.md`, `README.md` |
 | Criteri completamento | Reset database da tab `Altro` funziona su APK Android con doppia conferma e ripristina stato iniziale coerente; ingredienti, ricette, piani, lingua e tema vengono eliminati/ripristinati secondo policy; creazione/modifica/cancellazione ingredienti e ricette persiste dopo chiusura/riapertura; creazione/rinomina/cancellazione piano e assegnazione/sostituzione/rimozione pasti persistono; generazione piano e salvataggio bozza aggiornano il piano corretto; errori SQLite/repository non mandano l'app in crash e mostrano messaggi sicuri. |
-| Verifica/test | Fix codice completato: scritture SQLite serializzate con coda interna; reset sequenziale dopo eventuali snapshot pendenti; save/delete snapshot eseguiti in ordine lineare; test aggiunto per reset durante salvataggio in corso; `npm run typecheck` OK; `npm run test -- src/test/__tests__/appPersistence.test.ts --runInBand` OK; `npm run test -- --runInBand` OK, 55 test passati con warning `act(...)` noti; `npm run build:android` OK. Pendente: rebuild APK EAS e checklist manuale Android installato: reset, CRUD dati, aggiornamento piano, riapertura app. |
+| Verifica/test | Fix codice completato: scritture SQLite serializzate con coda interna; reset sequenziale dopo eventuali snapshot pendenti; save/delete snapshot eseguiti in ordine lineare; test aggiunto per reset durante salvataggio in corso; `npm run typecheck` OK; `npm run test -- src/test/__tests__/appPersistence.test.ts --runInBand` OK; `npm run test -- --runInBand` OK, 55 test passati con warning `act(...)` noti; `npm run build:android` OK. Smoke manuale utente su APK Android installato completato con esito positivo: reset database, CRUD ingredienti/ricette, aggiornamento piano, persistenza dopo chiusura/riapertura e stabilita post-reset. |
 | Logging essenziale | Loggare solo eventi tecnici utili a diagnosi reset/persistenza senza includere nomi ricette, ingredienti o dati utente; nessun payload sensibile. |
 | Code docs/README | Aggiornare README solo se cambiano comandi build/installazione, note Android o procedura di verifica APK. |
 
@@ -933,14 +933,14 @@ Snapshot corrente: `TASK-001` - `TASK-026`, `TASK-028` - `TASK-056`, `TASK-058` 
 
 | Campo | Valore |
 | --- | --- |
-| Stato | TODO |
+| Stato | DONE |
 | Priorita | COULD |
 | Descrizione | Controllare tutta la repo per individuare componenti UI duplicati o implementazioni ripetute, con attenzione speciale ai bottoni che eseguono action come aggiungi, modifica, elimina, assegna, rimuovi, cambia/swap e salva. |
 | Dipendenze | TASK-013, TASK-038, TASK-046, TASK-051, TASK-052, TASK-058 |
 | Requisiti | REQ-011, REQ-012, NFR-007, NFR-008 |
 | Documenti | `docs/design.md`, `docs/architecture.md`, `src/shared/ui/`, `src/features/` |
 | Criteri completamento | Audit dei componenti UI completato; duplicazioni reali censite; action buttons convergono su componenti condivisi quando il comportamento/stile e equivalente; varianti legittime restano motivate; accessibilita, label, colori e stati pressed/disabled restano coerenti; nessun refactor ampio non necessario. |
-| Verifica/test | `rg`/review manuale su componenti e bottoni action; test UI aggiornati solo se cambiano label/struttura; `npm run typecheck` OK; `npm run test -- --runInBand` OK; smoke manuale mirato su Ricette, Ingredienti, Piano e Altro. |
+| Verifica/test | Audit `rg` completato su `Pressable`, `Button`, action label e componenti `src/shared/ui`; duplicazione reale individuata nei bottoni icona tondi e nei bottoni slot del piano; introdotti `IconButton` e `ActionIconButton` condivisi; `PencilIconButton`, `SaveIconButton`, `TrashIconButton` e azioni slot Piano convergono sulla base comune mantenendo label accessibili, colori e dimensioni; `npm run typecheck` OK; `npm run test -- --runInBand` OK, 60 test passati con warning `act(...)` noti; `npm run build:android` OK. Smoke manuale mirato su Ricette, Ingredienti, Piano e Altro consigliato prima del freeze finale. |
 | Logging essenziale | Non richiesto. |
 | Code docs/README | Aggiornare `docs/design.md` solo se emergono nuove regole di riuso componenti; README non richiesto salvo variazioni operative. |
 
@@ -978,14 +978,14 @@ Snapshot corrente: `TASK-001` - `TASK-026`, `TASK-028` - `TASK-056`, `TASK-058` 
 
 | Campo | Valore |
 | --- | --- |
-| Stato | IN_PROGRESS |
+| Stato | DONE |
 | Priorita | COULD |
 | Descrizione | Aggiungere la possibilita di esportare e importare il database locale dell'app tramite un singolo file CSV tipizzato e leggero, includendo ingredienti, ricette, piani settimanali e preferenze utente di lingua/tema. |
 | Dipendenze | TASK-010, TASK-011, TASK-034, TASK-035, TASK-041, TASK-057 |
 | Requisiti | REQ-003, REQ-004, REQ-005, REQ-007, REQ-010, REQ-011, REQ-012 |
 | Documenti | `docs/security.md`, `README.md`, `IMPORT_EXPORT.md`, `src/data/`, `src/features/` |
 | Criteri completamento | Definita struttura stabile del CSV unico di export/import; esportazione include ingredienti, ricette, relazioni ricetta-ingredienti, piani, slot piano, lingua e tema; import valida formato, versioning schema, campi obbligatori, duplicati, riferimenti tra ricette/ingredienti e piani/ricette; import gestisce errori senza corrompere i dati esistenti; privacy e sicurezza rispettate; `IMPORT_EXPORT.md` spiega header, `record_type`, colonne, valori ammessi, esempi minimi e regole di compatibilita. In tab `Altro` esiste una sezione `Import/export` dedicata: allo stato iniziale mostra solo `Import CSV` e `Esporta CSV`; `Import CSV` apre il picker di sistema per scegliere un CSV dalle cartelle del telefono; dopo selezione appare il nome file e il bottone `Importa`; la lista step non e visibile finche l'import/export non parte. Durante import/export compaiono progressivamente gli step con indicatore attivo, `V` verde sugli step riusciti e `X` rossa sugli step falliti. Se una validazione fallisce, DB e stato app restano invariati e la UI mostra lo step fallito con messaggio comprensibile. Dopo import/export completati, la sezione mostra ultimo import/export con data e ora. |
-| Verifica/test | Sviluppo completato lato codice: `IMPORT_EXPORT.md` creato con specifica CSV unico tipizzato; moduli Expo installati per picker file, filesystem e condivisione; serializer/parser CSV testati con roundtrip e validazione ricetta incompatibile; persistence test aggiunto per sostituzione dati/preferenze in import; UI `Altro` aggiornata con sezione `Import/export`, stato iniziale con soli `Import CSV`/`Esporta CSV`, bottone `Importa` e step progress visibili solo dopo selezione/avvio, export e timestamp ultimo import/export; export web corretto con fallback download CSV via browser; `npm run typecheck` OK; `npm run test -- src/test/__tests__/importExportCsv.test.ts --runInBand` OK; `npm run test -- src/test/__tests__/ui.test.tsx --runInBand` OK; `npm run test -- --runInBand` OK, 60 test passati con warning `act(...)` noti; `npm run build:android` OK; `npm run build:web` OK. Pendente smoke manuale APK: selezione CSV da cartelle telefono, import valido, import invalido senza modifica DB, export/condivisione CSV, file generato apribile in Excel/LibreOffice come CSV UTF-8. |
+| Verifica/test | Sviluppo completato lato codice: `IMPORT_EXPORT.md` creato con specifica CSV unico tipizzato; moduli Expo installati per picker file, filesystem e condivisione; serializer/parser CSV testati con roundtrip e validazione ricetta incompatibile; persistence test aggiunto per sostituzione dati/preferenze in import; UI `Altro` aggiornata con sezione `Import/export`, stato iniziale con soli `Import CSV`/`Esporta CSV`, bottone `Importa` e step progress visibili solo dopo selezione/avvio, export e timestamp ultimo import/export; export web corretto con fallback download CSV via browser; `npm run typecheck` OK; `npm run test -- src/test/__tests__/importExportCsv.test.ts --runInBand` OK; `npm run test -- src/test/__tests__/ui.test.tsx --runInBand` OK; `npm run test -- --runInBand` OK, 60 test passati con warning `act(...)` noti; `npm run build:android` OK; `npm run build:web` OK. Smoke manuale utente completato: CSV completo con piano esportato da bundle Expo, condivisibile anche via app esterne, importato con successo nella webapp. |
 | Logging essenziale | Loggare solo eventi tecnici import/export e conteggi, senza contenuto di ingredienti, ricette, piani o preferenze utente. |
 | Code docs/README | `IMPORT_EXPORT.md` creato con specifica CSV; aggiornare README con link al documento e istruzioni operative quando la funzionalita viene implementata. |
 

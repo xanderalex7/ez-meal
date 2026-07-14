@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import type { AppActions, AppModel } from '../appModel';
 import type { MealType } from '../../domain';
 import { useI18n, type TranslationKey } from '../../shared/i18n';
 import {
+  ActionIconButton,
   Badge,
   Button,
   Card,
@@ -12,7 +13,6 @@ import {
   PencilIconButton,
   SaveIconButton,
   TextField,
-  TrashIcon,
   TrashIconButton,
 } from '../../shared/ui';
 import { spacing, useAppColors } from '../../shared/theme';
@@ -31,7 +31,6 @@ const weekDayLabelKeys: TranslationKey[] = [
   'weekdaySaturday',
   'weekdaySunday',
 ];
-type SlotActionIcon = 'add' | 'swap' | 'trash';
 
 export function PlannerScreen({ actions, model }: PlannerScreenProps) {
   const colors = useAppColors();
@@ -225,7 +224,7 @@ export function PlannerScreen({ actions, model }: PlannerScreenProps) {
                   </View>
                   {isEditing ? (
                     <View style={styles.slotActions}>
-                      <SlotActionButton
+                      <ActionIconButton
                         accessibilityLabel={t('planChooseRecipeA11y', {
                           date: slot.date,
                           meal: mealTypeLabel(slot.mealType),
@@ -238,7 +237,7 @@ export function PlannerScreen({ actions, model }: PlannerScreenProps) {
                         }}
                       />
                       {recipe ? (
-                        <SlotActionButton
+                        <ActionIconButton
                           accessibilityLabel={t('planRemoveRecipeA11y', {
                             date: slot.date,
                             meal: mealTypeLabel(slot.mealType),
@@ -301,59 +300,6 @@ function isMealPlanEmpty(mealPlan: AppModel['mealPlan']) {
   return mealPlan.days.every((day) => day.slots.every((slot) => !slot.recipeId));
 }
 
-function SlotActionButton({
-  accessibilityLabel,
-  color,
-  icon,
-  onPress,
-}: {
-  accessibilityLabel: string;
-  color: string;
-  icon: SlotActionIcon;
-  onPress: () => void;
-}) {
-  const colors = useAppColors();
-
-  return (
-    <Pressable
-      accessibilityLabel={accessibilityLabel}
-      accessibilityRole="button"
-      onPress={onPress}
-      style={[
-        styles.iconButton,
-        {
-          backgroundColor: colors.surface,
-          borderColor: color,
-        },
-      ]}
-    >
-      {icon === 'add' ? <PlusIcon color={color} /> : null}
-      {icon === 'swap' ? <SwapIcon color={color} /> : null}
-      {icon === 'trash' ? <TrashIcon color={color} /> : null}
-    </Pressable>
-  );
-}
-
-function PlusIcon({ color }: { color: string }) {
-  return (
-    <View style={styles.iconCanvas}>
-      <View style={[styles.plusHorizontal, { backgroundColor: color }]} />
-      <View style={[styles.plusVertical, { backgroundColor: color }]} />
-    </View>
-  );
-}
-
-function SwapIcon({ color }: { color: string }) {
-  return (
-    <View style={styles.iconCanvas}>
-      <View style={[styles.swapTopLine, { backgroundColor: color }]} />
-      <View style={[styles.swapTopHead, { borderColor: color }]} />
-      <View style={[styles.swapBottomLine, { backgroundColor: color }]} />
-      <View style={[styles.swapBottomHead, { borderColor: color }]} />
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   stack: { gap: spacing.md, paddingTop: 72, position: 'relative' },
   form: { gap: spacing.md },
@@ -378,66 +324,6 @@ const styles = StyleSheet.create({
   slotContainer: { gap: spacing.sm },
   slotLabel: { fontSize: 14, fontWeight: '700' },
   recipeName: { fontSize: 17, fontWeight: '700' },
-  iconButton: {
-    alignItems: 'center',
-    borderRadius: 22,
-    borderWidth: 1,
-    height: 44,
-    justifyContent: 'center',
-    width: 44,
-  },
-  iconCanvas: {
-    alignItems: 'center',
-    height: 20,
-    justifyContent: 'center',
-    width: 20,
-  },
-  plusHorizontal: {
-    borderRadius: 2,
-    height: 3,
-    position: 'absolute',
-    width: 15,
-  },
-  plusVertical: {
-    borderRadius: 2,
-    height: 15,
-    position: 'absolute',
-    width: 3,
-  },
-  swapTopLine: {
-    borderRadius: 2,
-    height: 3,
-    position: 'absolute',
-    top: 5,
-    width: 15,
-  },
-  swapTopHead: {
-    borderRightWidth: 3,
-    borderTopWidth: 3,
-    height: 8,
-    position: 'absolute',
-    right: 1,
-    top: 2,
-    transform: [{ rotate: '45deg' }],
-    width: 8,
-  },
-  swapBottomLine: {
-    borderRadius: 2,
-    bottom: 5,
-    height: 3,
-    position: 'absolute',
-    width: 15,
-  },
-  swapBottomHead: {
-    borderBottomWidth: 3,
-    borderLeftWidth: 3,
-    bottom: 2,
-    height: 8,
-    left: 1,
-    position: 'absolute',
-    transform: [{ rotate: '45deg' }],
-    width: 8,
-  },
   optionList: { gap: spacing.sm, paddingLeft: spacing.md },
   empty: { fontSize: 14 },
 });

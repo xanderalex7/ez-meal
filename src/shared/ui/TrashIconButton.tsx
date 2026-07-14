@@ -1,6 +1,7 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { useAppColors } from '../theme';
+import { IconButton } from './IconButton';
 
 type TrashIconButtonProps = {
   accessibilityLabel: string;
@@ -17,20 +18,14 @@ export function TrashIconButton({
   const iconColor = confirming ? colors.surface : colors.error;
 
   return (
-    <Pressable
+    <IconButton
       accessibilityLabel={accessibilityLabel}
-      accessibilityRole="button"
+      backgroundColor={confirming ? colors.error : colors.surface}
+      borderColor={colors.error}
       onPress={onPress}
-      style={[
-        styles.button,
-        {
-          backgroundColor: confirming ? colors.error : colors.surface,
-          borderColor: colors.error,
-        },
-      ]}
     >
       <TrashIcon color={iconColor} />
-    </Pressable>
+    </IconButton>
   );
 }
 
@@ -45,14 +40,6 @@ export function TrashIcon({ color }: { color: string }) {
 }
 
 const styles = StyleSheet.create({
-  button: {
-    alignItems: 'center',
-    borderRadius: 22,
-    borderWidth: 1,
-    height: 44,
-    justifyContent: 'center',
-    width: 44,
-  },
   iconCanvas: {
     alignItems: 'center',
     height: 20,

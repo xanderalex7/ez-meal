@@ -1,6 +1,7 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { useAppColors } from '../theme';
+import { IconButton } from './IconButton';
 
 type PencilIconButtonProps = {
   accessibilityLabel: string;
@@ -11,20 +12,9 @@ export function PencilIconButton({ accessibilityLabel, onPress }: PencilIconButt
   const colors = useAppColors();
 
   return (
-    <Pressable
-      accessibilityLabel={accessibilityLabel}
-      accessibilityRole="button"
-      onPress={onPress}
-      style={[
-        styles.button,
-        {
-          backgroundColor: colors.surface,
-          borderColor: colors.text,
-        },
-      ]}
-    >
+    <IconButton accessibilityLabel={accessibilityLabel} borderColor={colors.text} onPress={onPress}>
       <PencilIcon color={colors.text} />
-    </Pressable>
+    </IconButton>
   );
 }
 
@@ -41,14 +31,6 @@ export function PencilIcon({ color }: { color: string }) {
 }
 
 const styles = StyleSheet.create({
-  button: {
-    alignItems: 'center',
-    borderRadius: 22,
-    borderWidth: 1,
-    height: 44,
-    justifyContent: 'center',
-    width: 44,
-  },
   iconCanvas: {
     alignItems: 'center',
     height: 20,
