@@ -1,39 +1,32 @@
-# Workflow di sviluppo e release
+# Development and Release Workflow
 
-Questo documento descrive il flusso operativo corrente di EZ-MEAL per sviluppo, versionamento, tagging e build APK Android.
+This document describes the current EZ-MEAL workflow for development, versioning, tagging and Android APK builds.
 
-## Principi
+## Principles
 
-- `main` e la fonte stabile del progetto.
-- I tag `vX.Y.Z` devono essere creati solo da commit stabili su `main`.
-- I branch di sviluppo partono da `main` e rientrano in `main` solo dopo verifiche.
-- `android-apk` e un branch tecnico per generare APK installabili tramite pipeline EAS.
-- Non sviluppare direttamente su `android-apk`.
+- `main` is the stable source of truth.
+- Tags `vX.Y.Z` must be created only from stable commits on `main`.
+- Development branches start from `main` and are merged back only after checks.
+- `android-apk` is a technical branch used only to trigger the EAS APK workflow.
+- Do not develop directly on `android-apk`.
 
-## Branch attuali
+## Current Branches
 
-| Branch | Scopo |
+| Branch | Purpose |
 | --- | --- |
-| `main` | Stato stabile, versioni ufficiali e tag. |
-| `android-apk` | Trigger pipeline EAS per APK Android installabile. |
-| `feature/*`, `task/*`, `fix/*` | Branch temporanei di sviluppo staccati da `main`. |
+| `main` | Stable state, official versions and tags. |
+| `android-apk` | Triggers EAS workflow for installable Android APKs. |
+| `feature/*`, `task/*`, `fix/*` | Temporary development branches from `main`. |
 
-## 1. Iniziare uno sviluppo
-
-Partire sempre da `main` aggiornata:
+## 1. Start Development
 
 ```bash
 git checkout main
 git pull
+git checkout -b feature/work-name
 ```
 
-Creare un branch dedicato:
-
-```bash
-git checkout -b feature/nome-lavoro
-```
-
-Esempi:
+Examples:
 
 ```bash
 git checkout -b feature/new-logo
@@ -41,70 +34,50 @@ git checkout -b task/multi-recipe-slots
 git checkout -b fix/today-weekday
 ```
 
-## 2. Lavorare sul branch
+## 2. Work on the Branch
 
-Durante lo sviluppo:
+Run checks while developing:
 
 ```bash
 npm run typecheck
 npm run test
 ```
 
-Se la modifica riguarda Expo, asset, icone o configurazione app:
+If Expo config, assets or icons changed:
 
 ```bash
 npx expo config --type public
 ```
 
-Commitare il lavoro sul branch:
+Commit the work:
 
 ```bash
 git status
 git add .
-git commit -m "descrizione modifica"
+git commit -m "describe change"
 ```
 
-## 3. Portare il lavoro su main
-
-Quando il branch e pronto:
+## 3. Merge Back to Main
 
 ```bash
 git checkout main
 git pull
-git merge feature/nome-lavoro
-```
-
-Rilanciare le verifiche principali:
-
-```bash
+git merge feature/work-name
 npm run typecheck
 npm run test
 npx expo config --type public
-```
-
-Pushare `main`:
-
-```bash
 git push origin main
 ```
 
-## 4. Preparare una release
+## 4. Prepare a Release
 
-Su `main`, aggiornare versione e build number:
+On `main`, bump version and build numbers:
 
 ```bash
 npm run version:bump -- 1.2.1
 ```
 
-Il comando aggiorna:
-
-- `package.json`
-- `package-lock.json`
-- `app.json > expo.version`
-- `app.json > expo.android.versionCode`
-- `app.json > expo.ios.buildNumber`
-
-Eseguire le verifiche:
+Run checks:
 
 ```bash
 npm run typecheck
@@ -112,7 +85,7 @@ npm run test
 npx expo config --type public
 ```
 
-Commitare la release:
+Commit the release:
 
 ```bash
 git status
@@ -121,41 +94,35 @@ git commit -m "release: bump version"
 git push origin main
 ```
 
-## 5. Creare e pubblicare il tag
+## 5. Tag the Release
 
-Creare il tag locale dalla versione corrente:
+Create the local annotated tag from the current version:
 
 ```bash
 npm run version:tag
 ```
 
-Il comando verifica che le versioni siano allineate e crea un tag annotato `vX.Y.Z`.
-
-Pushare il tag:
+Push it:
 
 ```bash
 npm run version:tag:push
 ```
 
-In alternativa, dopo `npm run version:tag`, usare il comando manuale stampato dallo script:
+Or use the manual command printed by `version:tag`, for example:
 
 ```bash
 git push origin v1.2.1
 ```
 
-Verificare il tag remoto:
+Verify:
 
 ```bash
 git ls-remote --tags origin v1.2.1
 ```
 
-Se compare `refs/tags/v1.2.1`, il tag e stato pubblicato.
+## 6. Build an Installable Android APK
 
-## 6. Generare APK Android installabile
-
-Il branch `android-apk` serve solo a triggerare la pipeline APK.
-
-Dopo che `main` e stabile, pushata e taggata:
+After `main` is stable, pushed and tagged:
 
 ```bash
 git checkout android-apk
@@ -164,38 +131,29 @@ git merge main
 git push origin android-apk
 ```
 
-Il push su `android-apk` avvia la pipeline EAS configurata per generare un APK installabile.
+The push to `android-apk` starts the EAS workflow that produces an installable APK.
 
-Controllare la dashboard Expo/EAS e scaricare l'APK prodotto.
+## Rules
 
-## 7. Regole operative
-
-- Non creare tag da branch feature.
-- Non taggare prima di aver committato il bump versione.
-- Non sviluppare direttamente su `android-apk`.
-- Non usare `android-apk` come branch stabile: la stabilita appartiene a `main`.
-- Se un tag esiste gia e punta a un commit sbagliato, fermarsi e valutare prima di cancellarlo o ricrearlo.
-- Ogni build APK dovrebbe essere riconducibile a una versione presente su `main`.
+- Do not tag from feature branches.
+- Do not tag before committing the version bump.
+- Do not develop on `android-apk`.
+- Do not treat `android-apk` as a stable branch; stability belongs to `main`.
+- If a tag already exists and points to the wrong commit, stop and decide deliberately before deleting or recreating it.
+- Every APK build should be traceable to a version on `main`.
 
 ## Future
 
-Questi branch/workflow non sono ancora parte del flusso effettivo. Verranno spostati nel workflow principale quando saranno creati e configurati.
+The following branches/workflows are not part of the active process yet.
 
-### Branch store release
+### `store-release`
 
-Possibile branch futuro:
+Possible future branch for store builds:
 
-```text
-store-release
-```
+- Android Play Store: AAB through EAS production profile.
+- iOS App Store/TestFlight: iOS production build.
 
-Scopo:
-
-- generare build destinate agli store;
-- Android Play Store: AAB tramite profilo EAS production;
-- iOS App Store/TestFlight: build iOS tramite profilo EAS production.
-
-Flusso previsto:
+Expected flow:
 
 ```bash
 git checkout store-release
@@ -204,16 +162,13 @@ git merge main
 git push origin store-release
 ```
 
-La pipeline associata dovrebbe produrre build store, non APK manuali.
+### Platform-Specific Store Branches
 
-### Branch separati per store
-
-Se servira separare ulteriormente le piattaforme, si potranno valutare branch dedicati:
+Possible future alternatives:
 
 ```text
 android-store
 ios-store
 ```
 
-Per ora non sono necessari.
-
+Not needed yet.

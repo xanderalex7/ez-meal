@@ -1,161 +1,100 @@
 # Security
 
-Fonte di verita per guardrail, policy, rischi e vincoli di sicurezza di EZ-MEAL. Le misure sono proporzionate a un'app client-only, offline-first, con dati locali e nessun backend nel MVP.
+## Principles
 
-## 1. Principi
+- Security by default.
+- Least privilege.
+- Fail securely.
+- Defense in depth where proportionate.
+- Secure by design without overengineering a local-first app.
 
-- **Security by default**: configurazioni sicure senza interventi manuali.
-- **Least privilege**: accedere solo a dati, storage e permessi necessari al flusso corrente.
-- **Fail securely**: in caso di errore, non perdere dati, non esporre dettagli tecnici, non confermare salvataggi falliti.
-- **Defense in depth**: validazioni nel dominio, repository sicuri, UI chiara per azioni distruttive.
-- **Secure by design**: privacy locale, niente account/sync nel MVP, logging minimo e utile.
+## Secrets
 
-## 2. Segreti
+- Do not commit secrets, tokens, keystores, certificates or private environment files.
+- Use environment variables or provider-managed secret storage for future build/release credentials.
+- `.env`, `.env.*`, `.expo/`, `build/`, native build folders and private key/certificate formats must remain ignored.
+- Never log tokens, passwords, private keys, certificates or sensitive local data.
 
-- Nessun segreto, token, chiave API, certificato privato o credenziale nel codice, nei test, nei log o in Git.
-- Il MVP non richiede segreti applicativi.
-- Se in futuro servono servizi esterni, usare variabili d'ambiente o secret manager della piattaforma.
-- File locali di configurazione con segreti devono essere ignorati da Git.
-- Vietato loggare segreti, token, password, PII, payload sensibili, prompt/input utente sensibili o output AI sensibili.
+## Authentication and Sessions
 
-## 3. Autenticazione e sessioni
+No user authentication or session management is required for the MVP. If cloud sync or accounts are introduced later, this document must be updated before implementation.
 
-- Il MVP non prevede account, login, password, token o sessioni utente.
-- Non introdurre schermate o stati di autenticazione senza requisito approvato.
-- Se in futuro vengono introdotti account o sync:
-  - usare token a breve durata e refresh sicuro;
-  - proteggere storage di token con meccanismi sicuri di piattaforma;
-  - definire logout, scadenza sessione, revoca e recupero account;
-  - registrare la decisione in `docs/decisions.md`.
+## Authorization
 
-## 4. Autorizzazione
+No roles or multi-user permission model exist in the MVP. All local data belongs to the local app user.
 
-- Il MVP ha un solo attore locale: utente del dispositivo/contesto app.
-- Non esistono ruoli applicativi o permessi server-side nel MVP.
-- I controlli business restano obbligatori: ricette compatibili con slot, label valide, eliminazioni con impatto gestito.
-- Se future API, condivisione o multiutente vengono introdotti, autorizzazione e ownership devono essere definiti prima dell'implementazione.
+## Input Validation and Output Handling
 
-## 5. Input validation e output handling
+- Validate all user-provided names after trimming.
+- Validate CSV header, row type, references, language and theme before applying imports.
+- Reject invalid import files without partially corrupting local data.
+- Do not show raw stack traces to users.
+- Keep error messages understandable and non-sensitive.
 
-- Validare input nel domain layer prima della persistenza.
-- Usare whitelist per enum e valori finiti: meal type, tema, stati, azioni.
-- Rifiutare o normalizzare stringhe vuote, solo spazi e valori fuori dominio.
-- Applicare limiti ragionevoli a campi testuali locali per evitare UI degradata o storage anomalo; soglie da definire.
-- Usare query parametrizzate per ogni accesso SQLite.
-- Non mostrare stacktrace, query, path locali o dettagli interni all'utente.
-- Output UI deve usare rendering testuale sicuro; nessun HTML/script generato da input utente.
-- Messaggi utente: chiari, recuperabili, senza dettagli tecnici sensibili.
+## Logging and Error Handling
 
-## 6. Logging ed error handling
+- Log only diagnostic events that help understand failures.
+- Redact or avoid full user datasets, CSV content and file paths when not necessary.
+- Do not log secrets, tokens, passwords, certificates, PII-like free text, full prompts or sensitive outputs.
+- Import/export and reset flows should report safe progress and failure messages to the user.
 
-Livelli:
+## Communications
 
-| Livello | Uso |
-| --- | --- |
-| `debug` | Solo sviluppo/test, dettagli tecnici non sensibili. |
-| `info` | Eventi significativi: migrazione completata, generazione confermata, preferenza tema aggiornata. |
-| `warn` | Condizioni recuperabili: ricette insufficienti, conflitto eliminazione, dati locali inattesi ma gestiti. |
-| `error` | Errori tecnici gestiti: fallimento storage, migrazione fallita, eccezione recuperata. |
+The MVP has no backend communication requirement. Future network features must use HTTPS/TLS and reject insecure protocols unless there is a documented local-development exception.
 
-Policy:
+## Database and Filesystem
 
-- Log proporzionati alla diagnosi; evitare rumore operativo.
-- Vietato loggare segreti, token, password, PII, dati alimentari dettagliati, payload completi, prompt/input utente sensibili, output AI sensibili.
-- Preferire conteggi, categorie, error code e ID tecnici non sensibili.
-- Errori di validazione non sono errori tecnici: mostrarli in UI, non loggarli come `error`.
-- Stacktrace solo in sviluppo/test e mai mostrati all'utente.
-- Correlation/request id non necessario nel MVP locale sincrono; introdurlo per future API, sync, import/export o operazioni asincrone multi-step.
-- Redaction/masking obbligatori prima di inviare log a qualunque servizio futuro.
+- Use structured persistence APIs and parameterized operations where applicable.
+- Keep local database access scoped to app data.
+- Validate file type/content for CSV imports.
+- Do not trust file names or paths from external pickers.
+- Generated build artifacts must not be committed.
 
-## 7. Comunicazioni
+## APIs and Integrations
 
-- Il MVP non richiede comunicazioni di rete per funzioni core.
-- Se future funzioni usano rete:
-  - usare solo HTTPS/TLS valido;
-  - vietare HTTP e protocolli insicuri;
-  - non disabilitare verifica certificati;
-  - definire timeout, retry e gestione offline;
-  - documentare rischi e decisioni in `docs/decisions.md`.
+Current external integration is limited to platform file sharing/picking and Expo/EAS build workflows. Future APIs must define timeout, retry, validation and rate-limit behavior.
 
-## 8. Database e filesystem
+## Frontend and UX Security
 
-- Usare query parametrizzate; vietata concatenazione SQL con input utente.
-- Validare schema e migrazioni in modo idempotente.
-- Limitare accesso al solo storage locale dell'app.
-- Non scrivere dati utente in path arbitrari.
-- Validare path per eventuali import/export futuri.
-- Backup/retention non sono previsti nel MVP; se introdotti, definire cifratura, ambito, retention e consenso.
-- Le eliminazioni di ricette/ingredienti referenziati devono seguire policy esplicita e conferma UX quando distruttive.
+- Destructive actions require clear confirmation.
+- Import errors must not expose internals.
+- Reset database must clearly state the consequence.
+- Theme/language/import controls must not obscure security-relevant confirmations.
 
-## 9. API e integrazioni
+## Privacy
 
-- Nessuna API o integrazione esterna nel MVP.
-- Se introdotte in futuro:
-  - validare request e response;
-  - applicare timeout e retry controllati;
-  - limitare rate e concorrenza;
-  - gestire errori senza esporre dettagli interni;
-  - non inviare dati locali non necessari;
-  - registrare decisioni, rischi e dati scambiati in `docs/decisions.md`.
+- Data is local-first and personal to the device/browser.
+- Collect no analytics by default.
+- Exported CSV files contain user meal data and should be treated as private by the user.
+- No retention policy is required server-side because there is no backend.
 
-## 10. Frontend e UX di sicurezza
+## Dependencies
 
-- Confermare azioni distruttive o massive: eliminazioni, sovrascrittura piano, modifiche con impatto su slot.
-- Testo conferma deve spiegare impatto concreto senza allarmismo.
-- Errori devono preservare input recuperabile e non far credere che un salvataggio fallito sia riuscito.
-- Stati offline/locali devono essere chiari senza suggerire sync inesistente.
-- Focus, contrasto e label accessibili aiutano a evitare errori operativi.
-- Toast solo per feedback non critico; errori bloccanti restano visibili finche risolti.
+- Keep dependencies minimal and maintained.
+- Do not install packages directly when Expo warns they should be managed by Expo.
+- Run dependency checks before public release when practical.
 
-## 11. Privacy
+## Threats, Mitigations and Residual Risks
 
-- Dati trattati: ricette, ingredienti, piano pasti, preferenze tema; possono rivelare abitudini alimentari.
-- Minimizzazione: salvare solo dati necessari al MVP.
-- Local-first: nel MVP i dati restano sul dispositivo/contesto locale e non vengono inviati a servizi remoti.
-- Nessun account, tracking o analytics richiesti nel MVP.
-- Retention: dati conservati finche l'utente li elimina o disinstalla/cancella storage app.
-- Se future funzioni esportano, sincronizzano o analizzano dati, richiedono nuova valutazione privacy e decisione documentata.
+| Threat | Mitigation | Residual risk |
+| --- | --- | --- |
+| Secret accidentally committed | `.gitignore`, repo scan before public release | Historical Git history still requires review before public publication. |
+| Malformed CSV corrupts data | Validate before applying import | Parser bugs remain possible. |
+| User deletes local data accidentally | Confirmation for destructive reset/delete | User can still confirm unintended actions. |
+| Sensitive meal data shared | User-controlled export/share flow | Shared CSV may leave device through user action. |
+| Build credentials leaked | Store credentials outside repo/provider-managed | Misconfigured external tooling can still leak data. |
 
-## 12. Dipendenze
+## Prohibited Practices
 
-- Usare dipendenze minime, mantenute e coerenti con `docs/architecture.md`.
-- Evitare librerie non necessarie per validazioni semplici o logica locale.
-- Bloccare versioni tramite lockfile.
-- Aggiornare dipendenze con regolarita e verificare breaking changes.
-- Rimuovere pacchetti inutilizzati.
-- Non usare pacchetti abbandonati, non verificabili o con vulnerabilita note non mitigate.
+- Hardcoded secrets.
+- Secrets committed to Git.
+- Disabling TLS verification.
+- Exposing stack traces to users.
+- Logging sensitive data or full import files.
+- Concatenated SQL or unvalidated filesystem paths.
+- Unmaintained dependencies kept without reason.
+- Disabling safety checks without a documented decision.
 
-## 13. Minacce, mitigazioni e rischi residui
+## Decisions to Record
 
-| Minaccia | Area | Mitigazioni | Rischio residuo |
-| --- | --- | --- | --- |
-| Esposizione dati alimentari locali | Privacy, storage | Nessuna rete MVP; logging minimizzato; storage app locale | Accesso fisico o compromissione dispositivo fuori controllo app |
-| Corruzione/perdita dati locali | DB | Migrazioni idempotenti; error handling sicuro; test repository | Backup non previsto nel MVP |
-| SQL injection locale | DB | Query parametrizzate; validazione input | Basso se repository rispettano policy |
-| XSS/rendering input utente su web | Frontend | Rendering testuale sicuro; niente HTML da input utente | Dipende da discipline UI future |
-| Log sensibili | Logging | Redaction, divieti espliciti, log a conteggi/ID | Medio se futuri servizi remoti aggiungono telemetria |
-| Azioni distruttive accidentali | UX, dati | Conferme, impatto esplicito, stati chiari | Medio finche non definita policy finale cascade/blocco |
-| Dipendenze vulnerabili | Supply chain | Dipendenze minime, lockfile, aggiornamenti | Medio, richiede manutenzione continua |
-| Rete futura insicura | Comunicazioni | HTTPS/TLS obbligatorio; no SSL disabilitato | Non applicabile nel MVP; rivalutare per sync/API |
-
-## 14. Pratiche vietate
-
-- Segreti hardcoded.
-- Segreti o file `.env` sensibili in Git.
-- SQL concatenato con input utente.
-- SSL/TLS disabilitato o verifica certificati bypassata.
-- Stacktrace, query, path o dettagli interni mostrati all'utente.
-- Log di segreti, token, password, PII, payload sensibili, dati alimentari dettagliati, prompt/input utente sensibili o output AI sensibili.
-- Controlli di validazione disattivati senza decisione documentata.
-- Dipendenze obsolete, abbandonate o inutilizzate.
-- Invio remoto di dati utente senza requisito, consenso e decisione documentata.
-- UI che conferma successo quando salvataggio o persistenza sono falliti.
-
-## Decisioni da registrare
-
-Registrare in `docs/decisions.md` quando definite:
-
-- Policy per eliminazione di ricette/ingredienti referenziati: blocco, cascade o conferma.
-- Eventuale cifratura locale se richiesta da futuri requisiti o piattaforme target.
-- Qualunque introduzione di account, sync, API, analytics, backup, import/export o servizi remoti.
-- Soglie di lunghezza input e policy duplicati ingredienti/ricette se hanno impatti di sicurezza o integrita.
+Record security-significant changes in `docs/decisions.md`, especially cloud sync, authentication, analytics, external APIs, store credentials and import/export format changes.

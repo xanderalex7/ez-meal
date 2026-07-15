@@ -1,31 +1,22 @@
 # EZ-MEAL
 
-App offline-first per pianificare colazione, pranzo e cena a partire da ricette e ingredienti disponibili.
+Offline-first app to plan breakfast, lunch and dinner from available recipes and ingredients.
 
 ## Stack
 
 - React Native + Expo SDK 54
 - TypeScript
-- Target: iOS, Android, web
+- Targets: Android, iOS and web
+- Local persistence with SQLite
 
-## Prerequisiti
+## Prerequisites
 
-- Node.js 26.x e npm installati. Versioni piu vecchie, ad esempio Node 18, possono far fallire Metro con `configs.toReversed is not a function`.
-- Per iOS: macOS con Xcode installato, Command Line Tools configurati e almeno un simulatore iOS disponibile.
-- Per Android: Android Studio installato, Android SDK configurato, un emulatore disponibile o un dispositivo fisico collegato con debug USB attivo.
-- Per provare rapidamente su telefono reale: app Expo Go installata sul dispositivo.
+- Node.js 26.x and npm. Older versions, such as Node 18, can break Metro with `configs.toReversed is not a function`.
+- Android Studio, Android SDK and either an emulator or a physical Android device for Android development.
+- macOS with Xcode for iOS development.
+- Expo Go for quick development testing on a physical device.
 
-Nota compatibilita Expo Go: il progetto usa Expo SDK 54 per funzionare con la versione di Expo Go disponibile sul telefono di sviluppo.
-
-## Setup iniziale
-
-Aprire un terminale nella cartella del progetto e installare le dipendenze:
-
-```bash
-npm install
-```
-
-Se si usa `nvm`, selezionare Node 26 prima di eseguire i comandi del progetto:
+If using `nvm`:
 
 ```bash
 nvm install 26
@@ -33,125 +24,87 @@ nvm use 26
 node -v
 ```
 
-`node -v` deve mostrare una versione `v26.x.x`. Se `npm` o `node` non sono riconosciuti, installare Node.js 26 e riaprire il terminale.
+`node -v` should print a `v26.x.x` version.
 
-## Avvio in sviluppo
+## Setup
 
-Avviare Expo:
+```bash
+npm install
+```
+
+## Development
+
+Start Expo:
 
 ```bash
 npm run start
 ```
 
-Da qui si puo:
-
-- premere `w` per aprire la versione web;
-- premere `i` per aprire il simulatore iOS, se Xcode e disponibile;
-- premere `a` per aprire Android, se Android Studio/emulatore o dispositivo sono disponibili;
-- scansionare il QR code con Expo Go per provare l'app su telefono.
-
-Se Expo Go mostra `UnexpectedServerData: Unexpected server error: No returned query result`, avviare Expo senza chiamate ai servizi remoti:
+Useful alternatives:
 
 ```bash
 npm run start:offline
-```
-
-Poi scansionare il nuovo QR code. Questo errore arriva dal client Expo/servizi Expo, non dai dati locali dell'app.
-
-Se Expo Go segnala che il progetto richiede una versione piu nuova di Expo Go, verificare di avere reinstallato l'app dal Play Store e rilanciare Metro dopo `npm install`. Il progetto e stato allineato a SDK 54 proprio per evitare l'incompatibilita con Expo Go disponibile sul dispositivo.
-
-Dopo il downgrade o se Expo Go continua a leggere un manifest vecchio, svuotare la cache Metro:
-
-```bash
 npm run start:offline:clear
-```
-
-Comandi diretti equivalenti:
-
-```bash
 npm run web
 npm run ios
 npm run android
 ```
 
-## Verifiche locali
+Use offline start if Expo Go reports `UnexpectedServerData: Unexpected server error: No returned query result`.
 
-Prima di considerare una modifica pronta, eseguire:
+## Local Checks
 
 ```bash
 npm run typecheck
 npm run test
-```
-
-Controllo sicurezza dipendenze:
-
-```bash
 npm audit --omit=dev
 ```
 
-## Release e versionamento
-
-Per preparare una release, seguire questi passaggi in ordine.
-
-1. Aggiornare la versione in modo allineato tra npm, Expo, Android e iOS:
+If the change affects Expo config, assets or app icons:
 
 ```bash
-npm run version:bump -- 1.2.0
-```
-
-Il comando aggiorna `package.json`, `package-lock.json`, `app.json > expo.version`, incrementa `android.versionCode` e incrementa `ios.buildNumber`. Usare sempre una versione semver `x.y.z`.
-
-2. Eseguire le verifiche principali:
-
-```bash
-npm run typecheck
-npm run test
 npx expo config --type public
 ```
 
-3. Commitare le modifiche della release:
+## Release Versioning
+
+Update npm, Expo, Android and iOS versions together:
 
 ```bash
-git status
-git add package.json package-lock.json app.json README.md tagging.md scripts
-git commit -m "release: bump version"
+npm run version:bump -- 1.2.1
 ```
 
-4. Creare il tag Git locale dalla versione corrente:
+The command updates:
+
+- `package.json`
+- `package-lock.json`
+- `app.json > expo.version`
+- `app.json > expo.android.versionCode`
+- `app.json > expo.ios.buildNumber`
+
+Create the local Git tag from the current version:
 
 ```bash
 npm run version:tag
 ```
 
-Il comando legge la versione da `package.json`/`app.json`, verifica che siano allineati, controlla `android.versionCode` e `ios.buildNumber`, richiede working tree pulita e crea il tag annotato `vX.Y.Z`. Se qualcosa e disallineato, stampa un errore e si ferma.
-
-5. Pushare il tag.
-
-Opzione consigliata:
+Push the tag:
 
 ```bash
 npm run version:tag:push
 ```
 
-Oppure push manuale usando la versione corrente:
+Or push manually with the command printed by `version:tag`, for example:
 
 ```bash
-git push origin v1.2.0
+git push origin v1.2.1
 ```
 
-Dopo `npm run version:tag`, lo script stampa anche il comando `git push origin vX.Y.Z` corretto per la versione corrente.
+See `tagging.md` and `WORKFLOW.md` for the full release flow.
 
-6. Verificare il tag remoto:
+## Build / Export
 
-```bash
-git ls-remote --tags origin v1.2.0
-```
-
-Se compare `refs/tags/v1.2.0`, il tag e stato pubblicato correttamente.
-
-## Build/export
-
-Le build locali vengono generate nella cartella `build/`, separando Android e iOS:
+Local exports are generated in `build/`:
 
 ```bash
 npm run build:android
@@ -159,115 +112,53 @@ npm run build:ios
 npm run build:web
 ```
 
-Output attesi:
+Expected outputs:
 
-- `build/android/`: bundle/export Android.
-- `build/ios/`: bundle/export iOS.
-- `build/web/`: export web statico con manifest PWA e service worker.
+- `build/android/`: Android export bundle.
+- `build/ios/`: iOS export bundle.
+- `build/web/`: static web/PWA export.
 
-Le cartelle `build/android/` e `build/ios/` servono a verificare che l'app venga esportata correttamente per piattaforma. Non sono APK, AAB o build TestFlight/App Store.
+`build/` is generated output and is ignored by Git.
 
-Per generare un APK Android installabile tramite EAS:
-
-```bash
-npx eas-cli@latest build -p android --profile apk
-```
-
-### Web
-
-Genera la versione web statica:
-
-```bash
-npm run build:web
-```
-
-Per servirla localmente:
-
-```bash
-cd build/web
-python3 -m http.server 4174 --bind 127.0.0.1
-```
-
-Poi aprire `http://127.0.0.1:4174`.
-
-La build web include manifest PWA, icone e service worker. Su browser compatibili, servendo la build da `localhost` o da HTTPS, puo apparire l'azione `Installa app` nella barra o nel menu del browser. Questa installazione e una PWA: apre EZ-MEAL in una finestra app-like, ma non genera un installer nativo `.exe`, `.dmg` o `.pkg`.
-
-### iOS
-
-Verifica che il bundle iOS venga generato correttamente:
-
-```bash
-npm run build:ios
-```
-
-Per avviare l'app nel simulatore durante lo sviluppo:
-
-```bash
-npm run ios
-```
-
-Nota: una build installabile/TestFlight richiede Expo/EAS e credenziali Apple Developer.
-
-### Android
-
-Verifica che il bundle Android venga generato correttamente:
-
-```bash
-npm run build:android
-```
-
-Per avviare l'app su emulatore o dispositivo durante lo sviluppo:
-
-```bash
-npm run android
-```
-
-Per creare un APK installabile, usare il profilo EAS `apk`:
+To create an installable Android APK through EAS:
 
 ```bash
 npx eas-cli@latest build -p android --profile apk
 ```
 
-Il repository include anche il workflow EAS `.eas/workflows/android-apk.yml`: dopo aver collegato il repo GitHub al progetto Expo/EAS, ogni push sul branch `android-apk` avvia automaticamente una build APK con lo stesso profilo `apk`.
+The repository also includes `.eas/workflows/android-apk.yml`: pushing to `android-apk` triggers the APK build workflow.
 
-## Struttura corrente
+## Project Structure
 
-- `App.tsx`: entry UI iniziale.
-- `index.ts`: entry Expo.
-- `app/`: area route/layout prevista dall'architettura.
-- `metro.config.js`: configurazione Expo Metro, include asset `.wasm` richiesti da `expo-sqlite` su web.
-- `src/domain/`: tipi, regole e use case puri.
-- `src/data/`: persistenza locale, repository, mapping e migrazioni.
-- `src/features/`: feature UI per home, planner, ricette, ingredienti e impostazioni.
-- `src/shared/`: componenti, tema, errori, logging e utility condivise.
-- `src/test/`: fixture e builder per test.
-- `assets/`: asset app e logo.
-- `docs/`: fonte operativa per requisiti, architettura, design, sicurezza e task.
+- `App.tsx`: app shell and root UI.
+- `index.ts`: Expo entry point.
+- `src/domain/`: pure domain types and rules.
+- `src/data/`: SQLite persistence, repositories, mappers and migrations.
+- `src/features/`: feature screens and application model.
+- `src/shared/`: shared UI, theme, i18n, logging and utilities.
+- `src/test/`: tests, fixtures and builders.
+- `assets/`: logo and app icon assets.
+- `docs/`: requirements, architecture, design, security and tasks.
+- `IMPORT_EXPORT.md`: single-CSV import/export format.
+- `WORKFLOW.md`: development, release, tagging and APK workflow.
 
-## Documentazione
+## Current Capabilities
 
-- `docs/requirements.md`
-- `docs/architecture.md`
-- `docs/design.md`
-- `docs/security.md`
-- `docs/tasks.md`
-- `IMPORT_EXPORT.md`: formato CSV unico per import/export dati locali.
-- `WORKFLOW.md`: workflow operativo per sviluppo, release, tagging e APK Android.
+- Local recipe and ingredient management.
+- Weekly meal plans with named/selectable plans.
+- Multiple recipes per meal slot.
+- Random meal plan draft generation.
+- Today view based on weekday, not absolute calendar date.
+- Light/dark/system theme preference.
+- Italian/English UI language preference.
+- Local SQLite persistence.
+- CSV import/export for ingredients, recipes, meal plans, language and theme.
+- Local database reset from settings.
+- PWA-ready web export.
+- Android APK workflow through EAS.
 
-## Stato
+## Public Repository Notes
 
-Implementazione MVP parziale completata secondo `docs/tasks.md`:
-
-- Domain core, repository locali, UI shell, CRUD base ricette/ingredienti, planner con piani nominabili/selezionabili, generazione piano, home, tema selezionabile da `Altro`, error handling e logging essenziale.
-- Persistenza locale collegata alla UI tramite SQLite; lo stato applicativo viene caricato all'avvio e salvato dopo le modifiche. Le scritture locali sono serializzate per evitare conflitti tra salvataggi pendenti e reset database.
-- Nel planner e possibile creare un piano con il FAB `+`, selezionarlo, rinominarlo e cancellarlo con conferma.
-- Ogni slot pasto del piano puo contenere piu ricette compatibili, ad esempio un pranzo composto da riso, pollo e frutta; ogni ricetta puo essere rimossa singolarmente.
-- `Genera piano ✨` crea una bozza random solo se esiste almeno una ricetta compatibile per colazione, pranzo e cena; la bozza si conferma con `Salva`, mentre se mancano ricette compatibili il piano resta invariato e viene mostrato un messaggio.
-- `Altro` include import/export CSV dei dati locali con formato documentato in `IMPORT_EXPORT.md`, inclusi slot pasto con piu ricette.
-- Hardening sicurezza MVP completato con `npm audit --omit=dev` a 0 vulnerabilita.
-- Logo minimale, icone app Android/iOS/web e asset PWA completati.
-- Verifiche correnti: `npm run typecheck`, `npm run test`, `npm run build:web`, `npm run build:ios`, `npm run build:android`, `npm audit --omit=dev`.
-
-Punti aperti:
-
-- Smoke manuale APK mirato dopo `TASK-064`: creare un piano con piu ricette nello stesso pasto, riaprire l'app, esportare CSV e reimportare i dati.
+- No secrets are expected in the repository.
+- `.env`, `.env.*`, `.expo/`, `build/`, native build folders and private key/certificate formats are ignored.
+- Do not commit EAS credentials, keystores, Apple certificates, API tokens or private environment files.

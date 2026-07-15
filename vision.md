@@ -1,15 +1,14 @@
-# EZ-MEAL
+# Vision
 
-## Cosa è ez-meal
+EZ-MEAL is an offline-first meal planning app for people who want to organize breakfast, lunch and dinner from the recipes and ingredients they already have.
 
-ez-meal è un'applicazione disponibile per iphone, android e via web, che consente di creare un piano di alimentazione settimanale in base agli ingredienti che si hanno a disposizione.
+The product focuses on a simple weekly plan, local data ownership, fast editing, import/export through CSV, and a calm mobile-first experience.
 
-## Come è strutturato
+Core value:
 
-- schermata principale che mostra i pasti (colazione, pranzo, cena) della giornata odierna
-- schermata per visualizzare e modificare un piano settimanale dove è anche possibile generare un piano in maniera randomica in base alle ricette disponibili
-- schermata per visualizzare e modificare una ricetta, le ricette hanno delle label per capire se possono essere inserite in pasto colazione, pranzo, o cena
-- schermata per visualizzare e modificare ingredienti
+- reduce friction when planning meals;
+- reuse available ingredients and recipes;
+- keep data local by default;
+- support Android, iOS and web through Expo/React Native;
+- keep the app understandable, lightweight and practical.
 
-## Informazioni tecniche
-Vogliamo un'app che sia nativamente offline, sfruttiamo react native e facciamo in modo che una volta installata su dispositivo non necessiti di rete. I dati vengono salvati localmente, per questo devono essere ottimizzati. Possibilità di avere dark mode
