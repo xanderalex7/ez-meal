@@ -1,86 +1,89 @@
-# Git Tagging Cheatsheet
+# Git Tagging
 
-## Recommended EZ-MEAL Flow
+This document defines EZ-MEAL release tag policy and commands.
 
-Use npm scripts to avoid version mismatches.
+Use `WORKFLOW.md` for the full development and release process. This file focuses only on version alignment and Git tags.
 
-1. Bump version and build numbers:
+## Tag Policy
 
-```bash
-npm run version:bump -- 1.2.1
-```
+- Tags use the format `vX.Y.Z`, for example `v1.2.0`.
+- Tags must be created from stable commits on `main`.
+- A tag must match the version stored in `package.json` and `app.json`.
+- Published release tags should be treated as immutable.
+- Do not create release tags from feature, fix, release candidate or APK workflow branches.
+- `release/<version>` branches may contain the version bump, but the official tag is created only after that branch is verified and merged into `main`.
 
-2. Run checks:
+## Version Alignment
 
-```bash
-npm run typecheck
-npm run test
-npx expo config --type public
-```
-
-3. Commit the release:
+Before tagging a release, bump the shared app version:
 
 ```bash
-git status
-git add package.json package-lock.json app.json README.md tagging.md WORKFLOW.md scripts
-git commit -m "release: bump version"
+npm run version:bump -- <version>
 ```
 
-4. Create the local tag:
+This updates:
+
+- `package.json`
+- `package-lock.json`
+- `app.json > expo.version`
+- `app.json > expo.android.versionCode`
+- `app.json > expo.ios.buildNumber`
+
+Commit the version bump before creating the tag.
+
+## Create a Local Tag
 
 ```bash
 npm run version:tag
 ```
 
-5. Push the tag:
+The script reads the current version from the project files and creates the matching local annotated tag.
+
+## Push a Tag
+
+Preferred command:
 
 ```bash
 npm run version:tag:push
 ```
 
-Or push manually:
+Manual equivalent:
 
 ```bash
-git push origin v1.2.1
+git push origin vX.Y.Z
 ```
 
-6. Verify the remote tag:
+## Verify a Remote Tag
 
 ```bash
-git ls-remote --tags origin v1.2.1
+git ls-remote --tags origin vX.Y.Z
 ```
 
-## Script Checks
+## Script Safeguards
 
-`npm run version:tag` and `npm run version:tag:push` fail if:
+The tag scripts fail if:
 
 - `package.json` and `app.json` versions differ;
 - `package-lock.json` is not aligned;
-- `android.versionCode` or `ios.buildNumber` are missing or invalid;
+- Android or iOS build numbers are missing or invalid;
 - the working tree is not clean;
 - the local tag already exists and points to a different commit;
-- the remote tag already exists during `version:tag:push`.
+- the remote tag already exists when using `version:tag:push`.
 
-## Manual Tagging
+## Manual Recovery
 
-Use manual tagging only if the scripts are unavailable.
-
-```bash
-git tag -a v1.2.1 -m "Release v1.2.1"
-git push origin v1.2.1
-git ls-remote --tags origin v1.2.1
-```
+Use manual commands only when the scripts are unavailable or a deliberate recovery is needed.
 
 Delete a wrong local tag:
 
 ```bash
-git tag -d v1.2.1
+git tag -d vX.Y.Z
 ```
 
 Delete a wrong remote tag:
 
 ```bash
-git push origin :refs/tags/v1.2.1
+git push origin :refs/tags/vX.Y.Z
 ```
 
-Only delete tags intentionally; published release tags should normally be immutable.
+Only delete tags intentionally and after checking whether they were already used for a public build or release.
