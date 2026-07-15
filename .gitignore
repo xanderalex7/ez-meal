@@ -7,6 +7,7 @@ node_modules/
 .expo/
 dist/
 web-build/
+build/
 expo-env.d.ts
 
 # Native
@@ -31,6 +32,8 @@ yarn-error.*
 *.pem
 
 # local env files
+.env
+.env.*
 .env*.local
 
 # typescript
@@ -42,4 +45,3 @@ yarn-error.*
 
 # other
 .csv
-

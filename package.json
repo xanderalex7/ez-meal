@@ -35,7 +35,10 @@
     "build:web": "expo export --platform web --output-dir build/web",
     "build:ios": "expo export --platform ios --output-dir build/ios",
     "typecheck": "tsc --noEmit",
-    "test": "jest"
+    "test": "jest",
+    "version:bump": "node scripts/bump-version.js",
+    "version:tag": "node scripts/tag-and-push-version.js",
+    "version:tag:push": "node scripts/tag-and-push-version.js --push"
   },
   "overrides": {
     "postcss": "^8.5.10",
