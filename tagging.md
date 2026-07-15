@@ -13,7 +13,72 @@ Esempi:
 - `v1.1.0`: nuova funzionalita compatibile.
 - `v2.0.0`: cambio importante o non compatibile.
 
-## Prima di taggare
+## Flusso consigliato EZ-MEAL
+
+Usare gli script npm per evitare disallineamenti tra `package.json`, `app.json`, Android, iOS e Git.
+
+1. Aggiornare versione e build number:
+
+```bash
+npm run version:bump -- 1.2.0
+```
+
+2. Eseguire verifiche:
+
+```bash
+npm run typecheck
+npm run test
+npx expo config --type public
+```
+
+3. Commitare la release:
+
+```bash
+git status
+git add package.json package-lock.json app.json README.md tagging.md scripts
+git commit -m "release: bump version"
+```
+
+4. Creare il tag locale dalla versione corrente:
+
+```bash
+npm run version:tag
+```
+
+Lo script legge la versione corrente, verifica gli allineamenti, crea un tag annotato `vX.Y.Z` e stampa il comando di push corretto.
+
+5. Pushare il tag.
+
+Opzione con script:
+
+```bash
+npm run version:tag:push
+```
+
+Oppure push manuale:
+
+```bash
+git push origin v1.2.0
+```
+
+6. Verificare il tag remoto:
+
+```bash
+git ls-remote --tags origin v1.2.0
+```
+
+## Controlli automatici dello script
+
+`npm run version:tag` e `npm run version:tag:push` falliscono se:
+
+- `package.json` e `app.json` non hanno la stessa versione;
+- `package-lock.json` non e allineato;
+- `android.versionCode` o `ios.buildNumber` mancano o non sono validi;
+- la working tree non e pulita;
+- il tag locale esiste gia;
+- il tag remoto esiste gia, solo durante `version:tag:push`.
+
+## Prima di taggare manualmente
 
 Verifica branch, stato repo e ultimo commit.
 
@@ -110,14 +175,9 @@ git push origin :refs/tags/v1.0.0
 
 Usalo solo se il tag e sbagliato e non deve rappresentare una release valida.
 
-## Flusso consigliato per EZ-MEAL
+## Flusso manuale alternativo
 
-1. Finire sviluppo e smoke test su APK.
-2. Portare le modifiche su `main`.
-3. Verificare repo pulita.
-4. Creare tag annotato.
-5. Pushare tag singolo.
-6. Verificare tag remoto.
+Usare questo flusso solo se lo script non e disponibile.
 
 Comandi tipici:
 
@@ -129,4 +189,3 @@ git tag -a v1.0.0 -m "Release v1.0.0"
 git push origin v1.0.0
 git ls-remote --tags origin v1.0.0
 ```
-

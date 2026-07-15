@@ -89,6 +89,66 @@ Controllo sicurezza dipendenze:
 npm audit --omit=dev
 ```
 
+## Release e versionamento
+
+Per preparare una release, seguire questi passaggi in ordine.
+
+1. Aggiornare la versione in modo allineato tra npm, Expo, Android e iOS:
+
+```bash
+npm run version:bump -- 1.2.0
+```
+
+Il comando aggiorna `package.json`, `package-lock.json`, `app.json > expo.version`, incrementa `android.versionCode` e incrementa `ios.buildNumber`. Usare sempre una versione semver `x.y.z`.
+
+2. Eseguire le verifiche principali:
+
+```bash
+npm run typecheck
+npm run test
+npx expo config --type public
+```
+
+3. Commitare le modifiche della release:
+
+```bash
+git status
+git add package.json package-lock.json app.json README.md tagging.md scripts
+git commit -m "release: bump version"
+```
+
+4. Creare il tag Git locale dalla versione corrente:
+
+```bash
+npm run version:tag
+```
+
+Il comando legge la versione da `package.json`/`app.json`, verifica che siano allineati, controlla `android.versionCode` e `ios.buildNumber`, richiede working tree pulita e crea il tag annotato `vX.Y.Z`. Se qualcosa e disallineato, stampa un errore e si ferma.
+
+5. Pushare il tag.
+
+Opzione consigliata:
+
+```bash
+npm run version:tag:push
+```
+
+Oppure push manuale usando la versione corrente:
+
+```bash
+git push origin v1.2.0
+```
+
+Dopo `npm run version:tag`, lo script stampa anche il comando `git push origin vX.Y.Z` corretto per la versione corrente.
+
+6. Verificare il tag remoto:
+
+```bash
+git ls-remote --tags origin v1.2.0
+```
+
+Se compare `refs/tags/v1.2.0`, il tag e stato pubblicato correttamente.
+
 ## Build/export
 
 Le build locali vengono generate nella cartella `build/`, separando Android e iOS:
@@ -192,6 +252,7 @@ Il repository include anche il workflow EAS `.eas/workflows/android-apk.yml`: do
 - `docs/security.md`
 - `docs/tasks.md`
 - `IMPORT_EXPORT.md`: formato CSV unico per import/export dati locali.
+- `WORKFLOW.md`: workflow operativo per sviluppo, release, tagging e APK Android.
 
 ## Stato
 
