@@ -1,102 +1,73 @@
-# Workflow di sviluppo e release
+# Development and Release Workflow
 
-Questo documento descrive il flusso operativo corrente di EZ-MEAL per sviluppo, versionamento, tagging e build APK Android.
+This document defines how EZ-MEAL development, release preparation, Android APK builds and web deployment are managed.
 
-## Principi
+Tag-specific commands and validation rules live in `tagging.md`. This file only describes when tagging happens in the broader workflow.
 
-- `main` e la fonte stabile del progetto.
-- I tag `vX.Y.Z` devono essere creati solo da commit stabili su `main`.
-- I branch di sviluppo partono da `main` e rientrano in `main` solo dopo verifiche.
-- `android-apk` e un branch tecnico per generare APK installabili tramite pipeline EAS.
-- Non sviluppare direttamente su `android-apk`.
+## Principles
 
-## Branch attuali
+- `main` is the last verified stable release.
+- Development happens on short-lived branches created from `main`.
+- Release candidates are prepared on `release/<version>` branches before reaching `main`.
+- Tags are created only from `main` after the release candidate has been verified.
+- GitHub Pages deploys the web app from `main` only.
+- `android-apk` is a technical branch used only to trigger installable Android APK builds.
+- Do not develop directly on `android-apk`.
+- Keep generated files and private credentials out of Git.
 
-| Branch | Scopo |
+## Branches
+
+| Branch | Purpose |
 | --- | --- |
-| `main` | Stato stabile, versioni ufficiali e tag. |
-| `android-apk` | Trigger pipeline EAS per APK Android installabile. |
-| `feature/*`, `task/*`, `fix/*` | Branch temporanei di sviluppo staccati da `main`. |
+| `main` | Last verified stable release and official tags. |
+| `release/<version>` | Release candidate branch used for version bump, fixes and APK validation before merging to `main`. |
+| `android-apk` | Technical branch that receives a release candidate and triggers the EAS APK workflow. |
+| GitHub Pages workflow | Deploys the web build from `main` after stable changes are promoted. |
+| `feature/*`, `task/*`, `fix/*` | Temporary development branches from `main`. |
 
-## 1. Iniziare uno sviluppo
+## Standard Development Flow
 
-Partire sempre da `main` aggiornata:
+1. Start from an updated `main`.
+2. Create a short-lived branch for the change.
+3. Implement the change and update relevant docs.
+4. Run local checks.
+5. Merge finished work into the appropriate release candidate when preparing a release.
+6. Keep `main` untouched until the release candidate is verified.
 
-```bash
-git checkout main
-git pull
-```
-
-Creare un branch dedicato:
-
-```bash
-git checkout -b feature/nome-lavoro
-```
-
-Esempi:
-
-```bash
-git checkout -b feature/new-logo
-git checkout -b task/multi-recipe-slots
-git checkout -b fix/today-weekday
-```
-
-## 2. Lavorare sul branch
-
-Durante lo sviluppo:
+Recommended local checks:
 
 ```bash
 npm run typecheck
 npm run test
 ```
 
-Se la modifica riguarda Expo, asset, icone o configurazione app:
+If Expo config, assets, icons or build settings changed, also verify:
 
 ```bash
 npx expo config --type public
 ```
 
-Commitare il lavoro sul branch:
+## Release Flow
+
+1. Start from updated `main`.
+2. Create `release/<version>`, for example `release/1.3.1`.
+3. Merge or implement the release changes on `release/<version>`.
+4. Bump the app version and native build numbers on `release/<version>`.
+5. Run the required local checks.
+6. Commit the release candidate.
+7. Build and smoke-test the release candidate through the pipeline branch.
+8. If the candidate is broken, fix it on `release/<version>` and rebuild.
+9. When the candidate is verified, merge `release/<version>` into `main`.
+10. Create and push the official release tag from `main` using `tagging.md`.
+11. Deploy the web app to GitHub Pages from `main`.
+
+Version bump command:
 
 ```bash
-git status
-git add .
-git commit -m "descrizione modifica"
+npm run version:bump -- <version>
 ```
 
-## 3. Portare il lavoro su main
-
-Quando il branch e pronto:
-
-```bash
-git checkout main
-git pull
-git merge feature/nome-lavoro
-```
-
-Rilanciare le verifiche principali:
-
-```bash
-npm run typecheck
-npm run test
-npx expo config --type public
-```
-
-Pushare `main`:
-
-```bash
-git push origin main
-```
-
-## 4. Preparare una release
-
-Su `main`, aggiornare versione e build number:
-
-```bash
-npm run version:bump -- 1.2.1
-```
-
-Il comando aggiorna:
+The command keeps these files aligned:
 
 - `package.json`
 - `package-lock.json`
@@ -104,116 +75,101 @@ Il comando aggiorna:
 - `app.json > expo.android.versionCode`
 - `app.json > expo.ios.buildNumber`
 
-Eseguire le verifiche:
+The public app version should stay stable for the release candidate, for example `1.3.1`. If multiple APK candidates are needed before the release is accepted, keep `expo.version` as `1.3.1` and increment only the native build numbers when required.
+
+Example:
+
+| Candidate | App version | Android `versionCode` | iOS `buildNumber` | Outcome |
+| --- | --- | --- | --- | --- |
+| First APK | `1.3.1` | `13` | `13` | Broken, discarded. |
+| Second APK | `1.3.1` | `14` | `14` | Verified, promoted to `main`. |
+
+The Git history should then expose public release tags as `v1.3.0 -> v1.3.1`, not skip to `v1.3.2` just because an internal candidate failed.
+
+## Android APK Flow
+
+Use this flow only when an installable APK is needed.
+
+1. Confirm `release/<version>` contains the candidate to test.
+2. Merge `release/<version>` into `android-apk`.
+3. Push `android-apk`.
+4. Wait for the EAS workflow to produce the APK.
+5. Install and smoke-test the APK.
+
+The workflow file is `.eas/workflows/android-apk.yml`.
+
+Do not apply direct fixes on `android-apk`. If the APK is broken, fix `release/<version>`, then merge the release branch into `android-apk` again.
+
+## Promotion to Main
+
+After the release candidate passes smoke testing:
+
+1. Switch to `main`.
+2. Merge `release/<version>`.
+3. Run the final checks.
+4. Push `main`.
+5. Create and push the tag from `main`.
+
+At this point `main` represents the verified release.
+
+## GitHub Pages Web Deploy
+
+Use this flow only after the release candidate has been promoted to `main`.
+
+1. Confirm `main` contains the verified release.
+2. Confirm the official release tag has been created and pushed when the change is a release.
+3. Run the web export from `main`.
+4. Deploy the generated web build to GitHub Pages.
+5. Smoke-test the published URL.
+
+The expected web export command is:
 
 ```bash
-npm run typecheck
-npm run test
-npx expo config --type public
+npm run build:web
 ```
 
-Commitare la release:
-
-```bash
-git status
-git add package.json package-lock.json app.json README.md tagging.md WORKFLOW.md scripts
-git commit -m "release: bump version"
-git push origin main
-```
-
-## 5. Creare e pubblicare il tag
-
-Creare il tag locale dalla versione corrente:
-
-```bash
-npm run version:tag
-```
-
-Il comando verifica che le versioni siano allineate e crea un tag annotato `vX.Y.Z`.
-
-Pushare il tag:
-
-```bash
-npm run version:tag:push
-```
-
-In alternativa, dopo `npm run version:tag`, usare il comando manuale stampato dallo script:
-
-```bash
-git push origin v1.2.1
-```
-
-Verificare il tag remoto:
-
-```bash
-git ls-remote --tags origin v1.2.1
-```
-
-Se compare `refs/tags/v1.2.1`, il tag e stato pubblicato.
-
-## 6. Generare APK Android installabile
-
-Il branch `android-apk` serve solo a triggerare la pipeline APK.
-
-Dopo che `main` e stabile, pushata e taggata:
-
-```bash
-git checkout android-apk
-git pull
-git merge main
-git push origin android-apk
-```
-
-Il push su `android-apk` avvia la pipeline EAS configurata per generare un APK installabile.
-
-Controllare la dashboard Expo/EAS e scaricare l'APK prodotto.
-
-## 7. Regole operative
-
-- Non creare tag da branch feature.
-- Non taggare prima di aver committato il bump versione.
-- Non sviluppare direttamente su `android-apk`.
-- Non usare `android-apk` come branch stabile: la stabilita appartiene a `main`.
-- Se un tag esiste gia e punta a un commit sbagliato, fermarsi e valutare prima di cancellarlo o ricrearlo.
-- Ogni build APK dovrebbe essere riconducibile a una versione presente su `main`.
-
-## Future
-
-Questi branch/workflow non sono ancora parte del flusso effettivo. Verranno spostati nel workflow principale quando saranno creati e configurati.
-
-### Branch store release
-
-Possibile branch futuro:
+The generated output is:
 
 ```text
-store-release
+build/web
 ```
 
-Scopo:
+GitHub Pages should expose only stable `main` content. Do not deploy directly from feature, fix, release candidate or `android-apk` branches.
 
-- generare build destinate agli store;
-- Android Play Store: AAB tramite profilo EAS production;
-- iOS App Store/TestFlight: build iOS tramite profilo EAS production.
+When the GitHub Pages workflow is implemented, it should:
 
-Flusso previsto:
+- use Node.js 26;
+- install dependencies with the lockfile;
+- run the web build;
+- publish `build/web`;
+- avoid committing generated build output to the repository.
 
-```bash
-git checkout store-release
-git pull
-git merge main
-git push origin store-release
-```
+The workflow file is `.github/workflows/github-pages.yml`.
 
-La pipeline associata dovrebbe produrre build store, non APK manuali.
+## Release Smoke Test
 
-### Branch separati per store
+Before considering a release complete, verify at least:
 
-Se servira separare ulteriormente le piattaforme, si potranno valutare branch dedicati:
+- app launch;
+- ingredient create/delete;
+- recipe create/edit/delete;
+- plan create/edit/save/delete;
+- multiple recipes in one meal slot;
+- Today view based on weekday;
+- theme and language selection;
+- CSV export/import;
+- web app from GitHub Pages when web deployment is enabled;
+- local database reset;
+- app data after close/reopen.
 
-```text
-android-store
-ios-store
-```
+## Future Workflows
 
-Per ora non sono necessari.
+The following workflows are not active yet.
 
+| Future branch/workflow | Purpose |
+| --- | --- |
+| `store-release` | Possible unified branch for App Store/TestFlight and Play Store builds. |
+| `android-store` | Possible Android store-specific release branch. |
+| `ios-store` | Possible iOS store-specific release branch. |
+
+When store workflows are introduced, this document should become the source of truth for the active branch strategy.

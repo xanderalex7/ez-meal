@@ -1,191 +1,89 @@
-# Git Tagging Cheatsheet
+# Git Tagging
 
-Guida rapida per salvare versioni stabili del progetto con tag Git, ad esempio `v1.0.0`.
+This document defines EZ-MEAL release tag policy and commands.
 
-## Quando creare un tag
+Use `WORKFLOW.md` for the full development and release process. This file focuses only on version alignment and Git tags.
 
-Crea un tag quando una versione e stabile, testata e installabile.
+## Tag Policy
 
-Esempi:
+- Tags use the format `vX.Y.Z`, for example `v1.2.0`.
+- Tags must be created from stable commits on `main`.
+- A tag must match the version stored in `package.json` and `app.json`.
+- Published release tags should be treated as immutable.
+- Do not create release tags from feature, fix, release candidate or APK workflow branches.
+- `release/<version>` branches may contain the version bump, but the official tag is created only after that branch is verified and merged into `main`.
 
-- `v1.0.0`: prima versione stabile.
-- `v1.0.1`: fix piccolo senza nuove funzionalita.
-- `v1.1.0`: nuova funzionalita compatibile.
-- `v2.0.0`: cambio importante o non compatibile.
+## Version Alignment
 
-## Flusso consigliato EZ-MEAL
-
-Usare gli script npm per evitare disallineamenti tra `package.json`, `app.json`, Android, iOS e Git.
-
-1. Aggiornare versione e build number:
+Before tagging a release, bump the shared app version:
 
 ```bash
-npm run version:bump -- 1.2.0
+npm run version:bump -- <version>
 ```
 
-2. Eseguire verifiche:
+This updates:
 
-```bash
-npm run typecheck
-npm run test
-npx expo config --type public
-```
+- `package.json`
+- `package-lock.json`
+- `app.json > expo.version`
+- `app.json > expo.android.versionCode`
+- `app.json > expo.ios.buildNumber`
 
-3. Commitare la release:
+Commit the version bump before creating the tag.
 
-```bash
-git status
-git add package.json package-lock.json app.json README.md tagging.md scripts
-git commit -m "release: bump version"
-```
-
-4. Creare il tag locale dalla versione corrente:
+## Create a Local Tag
 
 ```bash
 npm run version:tag
 ```
 
-Lo script legge la versione corrente, verifica gli allineamenti, crea un tag annotato `vX.Y.Z` e stampa il comando di push corretto.
+The script reads the current version from the project files and creates the matching local annotated tag.
 
-5. Pushare il tag.
+## Push a Tag
 
-Opzione con script:
+Preferred command:
 
 ```bash
 npm run version:tag:push
 ```
 
-Oppure push manuale:
+Manual equivalent:
 
 ```bash
-git push origin v1.2.0
+git push origin vX.Y.Z
 ```
 
-6. Verificare il tag remoto:
+## Verify a Remote Tag
 
 ```bash
-git ls-remote --tags origin v1.2.0
+git ls-remote --tags origin vX.Y.Z
 ```
 
-## Controlli automatici dello script
+## Script Safeguards
 
-`npm run version:tag` e `npm run version:tag:push` falliscono se:
+The tag scripts fail if:
 
-- `package.json` e `app.json` non hanno la stessa versione;
-- `package-lock.json` non e allineato;
-- `android.versionCode` o `ios.buildNumber` mancano o non sono validi;
-- la working tree non e pulita;
-- il tag locale esiste gia;
-- il tag remoto esiste gia, solo durante `version:tag:push`.
+- `package.json` and `app.json` versions differ;
+- `package-lock.json` is not aligned;
+- Android or iOS build numbers are missing or invalid;
+- the working tree is not clean;
+- the local tag already exists and points to a different commit;
+- the remote tag already exists when using `version:tag:push`.
 
-## Prima di taggare manualmente
+## Manual Recovery
 
-Verifica branch, stato repo e ultimo commit.
+Use manual commands only when the scripts are unavailable or a deliberate recovery is needed.
+
+Delete a wrong local tag:
 
 ```bash
-git branch --show-current
-git status
-git log --oneline -5
+git tag -d vX.Y.Z
 ```
 
-La working tree dovrebbe essere pulita:
-
-```text
-nothing to commit, working tree clean
-```
-
-## Creare un tag locale
-
-Usa tag annotati, cosi il tag contiene autore, data e messaggio.
+Delete a wrong remote tag:
 
 ```bash
-git tag -a v1.0.0 -m "Release v1.0.0"
+git push origin :refs/tags/vX.Y.Z
 ```
 
-## Verificare il tag locale
-
-```bash
-git tag
-git show v1.0.0
-```
-
-## Pushare il tag su GitHub
-
-```bash
-git push origin v1.0.0
-```
-
-Oppure, per pushare tutti i tag locali non ancora remoti:
-
-```bash
-git push origin --tags
-```
-
-Preferisci il push del singolo tag quando stai pubblicando una release precisa.
-
-## Verificare che il tag sia remoto
-
-```bash
-git ls-remote --tags origin
-```
-
-Per cercare un tag specifico:
-
-```bash
-git ls-remote --tags origin v1.0.0
-```
-
-Se compare una riga con `refs/tags/v1.0.0`, il tag e su GitHub.
-
-## Spostarsi su una versione taggata
-
-Solo per consultare o testare una versione:
-
-```bash
-git checkout v1.0.0
-```
-
-Questo porta in detached HEAD. Per tornare al branch principale:
-
-```bash
-git checkout main
-```
-
-## Creare un branch da un tag
-
-Utile se devi correggere una versione stabile gia rilasciata.
-
-```bash
-git checkout -b hotfix/v1.0.1 v1.0.0
-```
-
-## Eliminare un tag creato per errore
-
-Eliminare tag locale:
-
-```bash
-git tag -d v1.0.0
-```
-
-Eliminare tag remoto:
-
-```bash
-git push origin :refs/tags/v1.0.0
-```
-
-Usalo solo se il tag e sbagliato e non deve rappresentare una release valida.
-
-## Flusso manuale alternativo
-
-Usare questo flusso solo se lo script non e disponibile.
-
-Comandi tipici:
-
-```bash
-git checkout main
-git pull
-git status
-git tag -a v1.0.0 -m "Release v1.0.0"
-git push origin v1.0.0
-git ls-remote --tags origin v1.0.0
-```
+Only delete tags intentionally and after checking whether they were already used for a public build or release.

@@ -1,282 +1,177 @@
 # Architecture
 
-Fonte di verita delle scelte tecniche e strutturali di EZ-MEAL. Le scelte qui definite servono i requisiti in `docs/requirements.md`.
+## Overview
 
-## 1. Overview
+EZ-MEAL is a local-first Expo React Native app with shared Android, iOS and web code. The system is organized around a small domain model for ingredients, recipes, weekly plans and preferences.
 
-EZ-MEAL e un'app client-only, offline-first, con dati locali e nessun backend nel MVP. La UI espone home giornaliera, piano settimanale, ricette, ingredienti e tema; la logica applicativa valida regole di dominio e coordina persistenza locale.
+Main requirement mapping:
 
-| Driver | Scelta architetturale | Requisiti |
+- Ingredients and recipes: domain types, repositories and feature screens.
+- Weekly plans and Today view: plan domain rules plus UI state.
+- CSV import/export: parser/serializer and validation layer.
+- Theme/language: shared preferences and UI providers.
+
+## Technology Stack
+
+| Area | Choice | Rationale |
 | --- | --- | --- |
-| iPhone, Android, web | Codebase React Native unica con supporto web | REQ-011, NFR-003 |
-| Offline e dati locali | Storage locale transazionale | REQ-009, REQ-010, NFR-002, NFR-007 |
-| Regole pasto/ricetta | Domain layer puro e testabile | REQ-003, REQ-004, REQ-006 |
-| MVP piccolo | Client monolitico modulare, nessun servizio remoto | REQ-001..REQ-012 |
-| Tema chiaro/scuro | Design tokens e preferenza tema locale/sistema | REQ-012 |
+| App runtime | Expo SDK 54 + React Native | Single codebase for Android, iOS and web. |
+| Language | TypeScript | Safer domain and UI contracts. |
+| Persistence | SQLite/local storage through Expo-compatible APIs | Offline-first local data with structured queries. |
+| Testing | Jest + React Native Testing Library where applicable | Unit and UI regression coverage for core flows. |
+| Build | Expo/EAS | Android APK workflow and future store builds. |
 
-## 2. Stack tecnologico
+No backend, external API or cloud database is part of the MVP.
 
-| Area | Scelta | Motivazione |
-| --- | --- | --- |
-| Linguaggio | TypeScript | Tipizzazione per entita, use case, validazioni e refactoring sicuro. |
-| Framework app | React Native con Expo | Copre iOS, Android e web con una codebase e riduce complessita operativa MVP. |
-| Navigazione | Expo Router | Routing file-based coerente con Expo e sufficiente per le schermate previste. |
-| Persistenza | SQLite locale tramite libreria Expo compatibile | Dati strutturati, query locali, transazioni, offline nativo. |
-| Stato UI | React state/hooks; Context solo per stato globale minimo | Evita dipendenze non necessarie; sufficiente per tema e stato schermata. |
-| Form e validazioni | Validazioni TypeScript/funzioni pure nel domain layer | Le regole sono poche e testabili senza introdurre librerie dedicate. |
-| Date | Utility interne basate su API standard | Settimana/giorno sono semplici; librerie date solo se emergono requisiti locali complessi. |
-| Test | Jest + React Native Testing Library | Unit test di dominio e test componenti/interazioni principali. |
-| Servizi esterni | Nessuno nel MVP | Offline-first, privacy locale, nessun account/sync richiesto. |
+## Application Architecture
 
-Punti aperti: soglie prestazionali numeriche, gestione duplicati ingredienti, primo giorno settimana e uso vincolante degli ingredienti nella generazione randomica.
+Layers:
 
-## 3. Architettura applicativa
+- `src/domain/`: pure types, constants and business rules.
+- `src/data/`: persistence, migrations, repositories, import/export mapping.
+- `src/features/`: screens, local feature state and user flows.
+- `src/shared/`: theme, i18n, reusable UI components, logging and utilities.
+- `assets/`: logo, icons and static assets.
+- `docs/`: product, technical and operational documentation.
 
-Layer consentiti:
+Allowed dependencies:
 
-| Layer | Responsabilita | Dipendenze consentite |
-| --- | --- | --- |
-| `app` | Route, layout, composizione schermate | `features`, `shared/ui`, `shared/theme` |
-| `features` | Schermate e controller UI per dominio funzionale | `domain`, `data`, `shared` |
-| `domain` | Entita, tipi, regole, validazioni, use case puri | Nessuna dipendenza da UI o storage |
-| `data` | Repository, mapping storage, migrazioni, persistenza locale | `domain`, driver SQLite |
-| `shared` | UI base, tema, logging, errori, utility comuni | Nessuna dipendenza da feature |
+- features may depend on domain, data and shared;
+- data may depend on domain and shared utilities;
+- domain must not depend on UI or persistence;
+- shared UI must not own domain behavior.
 
-Regole:
-
-- La UI non accede direttamente al database.
-- I repository non contengono logica di presentazione.
-- Le regole di compatibilita pasto/ricetta vivono nel domain layer.
-- I use case espongono risultati espliciti: successo, validazione fallita, errore tecnico.
-- Nessun modulo MVP dipende da rete o servizi remoti.
-
-## 4. Struttura progetto
+## Project Structure
 
 ```text
-/
-  app/                         # Route Expo: home, planner, recipes, ingredients, settings
-  src/
-    domain/
-      mealTypes.ts             # colazione/pranzo/cena
-      recipes/                 # entita, validazioni, use case ricette
-      ingredients/             # entita, validazioni, use case ingredienti
-      planning/                # piano settimanale, slot, generazione
-    data/
-      db/                      # apertura DB, schema, migrazioni
-      repositories/            # implementazioni repository locali
-      mappers/                 # conversione DB <-> domain
-    features/
-      home/
-      planner/
-      recipes/
-      ingredients/
-      settings/
-    shared/
-      ui/
-      theme/
-      errors/
-      logging/
-      utils/
-    test/
-      fixtures/
-      builders/
-  docs/
+App.tsx
+index.ts
+app.json
+src/
+  data/
+  domain/
+  features/
+  shared/
+  test/
+assets/
+  logo/
+docs/
 ```
 
-Convenzioni:
+## Main Components
 
-- File e cartelle in `camelCase` o `kebab-case` secondo convenzione Expo locale; scegliere una sola convenzione al bootstrap.
-- Componenti React in `PascalCase`.
-- Tipi dominio con nomi espliciti: `Recipe`, `Ingredient`, `MealPlan`, `MealSlot`.
-- Use case con verbo: `createRecipe`, `assignRecipeToSlot`, `generateWeeklyPlan`.
-
-## 5. Componenti principali
-
-| Componente | Responsabilita | Requisiti |
+| Component | Responsibility | Related requirements |
 | --- | --- | --- |
-| Home feature | Carica data corrente e slot del giorno; mostra stati pieni/vuoti | REQ-001 |
-| Planner feature | Visualizza settimana, modifica slot, avvia generazione | REQ-002, REQ-003, REQ-004 |
-| Recipe feature | CRUD ricette e label pasto | REQ-005, REQ-006 |
-| Ingredient feature | CRUD ingredienti disponibili | REQ-007, REQ-008 |
-| Theme feature | Applica tema chiaro/scuro e default leggibile | REQ-012 |
-| Planning domain | Regole settimana, slot, compatibilita ricetta/pasto, generatore randomico | REQ-002, REQ-003, REQ-004 |
-| Local repositories | Persistono e leggono dati locali | REQ-009, REQ-010 |
-| Validation module | Normalizza input e restituisce errori utente | REQ-005, REQ-007 |
+| Ingredient management | Create/list/delete ingredients. | REQ-001 |
+| Recipe management | Create/edit/delete recipes, assign meal tag and ingredients. | REQ-002 |
+| Plan management | Create/select/edit/delete weekly plans. | REQ-003 |
+| Meal slot editor | Add/remove/swap one or more recipes in a slot. | REQ-004 |
+| Random plan generator | Fill compatible slots with random recipes. | REQ-005 |
+| Today view | Resolve current weekday and selected plan meals. | REQ-006 |
+| CSV import/export | Validate and serialize complete app data. | REQ-007 |
+| Settings | Theme, language, reset and import/export entry points. | REQ-008 |
 
-## 6. Modello dati
+## Data Model
 
-Entita domain-level:
+Core entities:
 
-| Entita | Campi principali | Relazioni |
-| --- | --- | --- |
-| `Recipe` | `id`, `name`, `mealTypes[]`, `ingredientIds[]`, `notes?`, `createdAt`, `updatedAt` | Molti-a-molti con `Ingredient`; usata da `MealSlot` |
-| `Ingredient` | `id`, `name`, `available`, `createdAt`, `updatedAt` | Molti-a-molti con `Recipe` |
-| `MealPlan` | `id`, `weekStartDate`, `days[]`, `createdAt`, `updatedAt` | Contiene 7 `PlanDay` |
-| `PlanDay` | `date`, `slots[]` | Contiene 3 `MealSlot` |
-| `MealSlot` | `date`, `mealType`, `recipeIds[]` | Punta a zero o piu `Recipe` compatibili |
-| `UserPreference` | `themeMode` | Locale, nessun account |
+- `Ingredient`: id, name, timestamps.
+- `Recipe`: id, name, meal tag, ingredient ids, timestamps.
+- `MealPlan`: id, title, days, timestamps.
+- `PlanDay`: weekday, breakfast/lunch/dinner slots.
+- `MealSlot`: meal tag, ordered recipe ids.
+- `Preferences`: theme, language, selected plan id.
 
-Regole dati:
+Relationships:
 
-- `mealType` ammette solo `breakfast`, `lunch`, `dinner` internamente; etichette UI localizzate in italiano.
-- Uno slot puo avere zero, una o piu ricette.
-- Ogni ricetta assegnata deve includere il `mealType` dello slot.
-- La stessa ricetta non deve essere duplicata nello stesso slot.
-- Le eliminazioni che impattano piani o relazioni devono produrre esito esplicito: blocco, cascade controllato o conferma utente. La policy finale va registrata in `docs/decisions.md`.
+- recipe references many ingredients;
+- plan slots reference many recipes;
+- Today view resolves selected plan plus current weekday.
 
-## 7. Flussi applicativi
+## Main Flows
 
-Home giornaliera:
+Recipe creation:
 
 ```text
-App start -> resolve today -> load week plan -> extract today slots -> load linked recipes -> render slots/stati vuoti
+UI input -> validation -> repository save -> app state refresh -> visible recipe card
 ```
 
-Modifica slot:
+Plan editing:
 
 ```text
-Open planner -> select slot -> list compatible recipes not already assigned -> validate assignment -> append recipe to slot -> optionally remove single recipes -> save slot -> refresh week and home data
+select plan -> enter edit mode -> mutate draft -> validate meal-tag compatibility -> save -> persist plan
 ```
 
-Generazione piano:
+CSV import:
 
 ```text
-User requests generation -> load recipes -> group by mealType -> fill 7x3 slots with compatible random recipes -> report uncovered slots -> persist after confirmation
+select CSV -> read file -> parse rows -> validate references/preferences -> replace/import data transactionally -> refresh app state
 ```
 
-Salvataggio ricetta:
+## Error Handling and Logging
 
-```text
-Recipe form -> normalize input -> validate name and mealTypes -> save recipe -> refresh recipe list and compatible planner options
-```
+- User-facing errors must be short, actionable and localized.
+- Recoverable failures should not crash the app.
+- Log meaningful operation boundaries such as import/export, reset and persistence failures.
+- Do not log secrets, private file contents or full user datasets.
+- Use correlation/request identifiers only if future multi-step asynchronous flows require them.
 
-## 8. Error handling e logging
+## Configuration
 
-Errori applicativi:
+Configuration lives in Expo/app config and package scripts. Secrets must not be committed; see `docs/security.md`.
 
-- `ValidationError`: input mancante, label assente, ricetta incompatibile.
-- `NotFoundError`: entita richiesta non presente.
-- `PersistenceError`: fallimento lettura/scrittura locale.
-- `DomainConflictError`: eliminazione o modifica con impatti su piani/relazioni.
+Important release fields:
 
-Regole:
+- `package.json > version`
+- `app.json > expo.version`
+- `app.json > expo.android.versionCode`
+- `app.json > expo.ios.buildNumber`
 
-- Gli errori di validazione mostrano messaggi utente specifici e non vengono loggati come errori tecnici.
-- Gli errori di persistenza sono gestiti con messaggio utente non tecnico e log diagnostico.
-- I use case restituiscono errori tipizzati; evitare eccezioni non gestite nei componenti UI.
-- Nessun log deve contenere dati alimentari dettagliati se non necessario alla diagnosi.
+Use `npm run version:bump -- <version>` to keep them aligned.
 
-Osservabilita MVP:
+## Performance and Scalability
 
-- Logging locale/console in sviluppo.
-- Nessun servizio remoto di monitoraggio nel MVP.
-- Correlation/request id non necessario per flussi sincroni locali; introdurlo solo per future operazioni multi-step asincrone, import/export o sync.
+Personal-scale local data is expected. Keep operations simple and synchronous from the user's perspective when possible. CSV import should validate before applying changes to avoid partial corruptions.
 
-## 9. Configurazione
+## Testing Strategy
 
-Configurazioni previste:
+- Unit-test domain rules for weekdays, compatible meal tags and data transformations.
+- Test repository/import-export logic with representative fixtures.
+- Test theme and language behavior where UI regressions are likely.
+- Keep APK smoke testing as a final manual verification step for release builds.
 
-| Chiave | Uso | Segreto |
-| --- | --- | --- |
-| `APP_ENV` | Ambiente applicativo: development/test/production | No |
-| `LOG_LEVEL` | Verbosita log in sviluppo/test | No |
-| `DB_NAME` | Nome storage locale | No |
+## Development Conventions
 
-Regole:
+- Prefer small feature slices that leave the app usable.
+- Keep shared UI components consistent for action buttons and chips.
+- Avoid duplicating button/action implementations.
+- Prefer explicit domain names over comments.
+- Update `README.md`, `WORKFLOW.md`, `IMPORT_EXPORT.md` or `docs/tasks.md` when behavior changes.
 
-- Nessun segreto richiesto nel MVP.
-- Non committare valori sensibili se introdotti in futuro.
-- Dettagli su segreti, privacy e hardening devono stare in `docs/security.md`.
+## Code Documentation Policy
 
-## 10. Performance e scalabilita
+- Comments in code should be in English.
+- Add brief documentation to main application classes/modules when useful.
+- Comment only non-obvious domain rules, trade-offs or assumptions.
+- Avoid comments that restate method, variable or component names.
 
-Misure giustificate dai requisiti:
+## Logging Policy
 
-- Query locali indicizzate su `weekStartDate`; gli slot sono salvati nel JSON del piano con `date`, `mealType`, `recipeIds[]`.
-- Caricamento home limitato alla settimana corrente e alle ricette referenziate.
-- Generazione piano eseguita in memoria su dataset personale, senza rete.
-- Componenti lista per ricette/ingredienti preparati a dataset personali realistici.
-- Migrazioni DB incrementali e idempotenti.
+Use logs for diagnostics, not narration. Log significant app events, integrations, import/export stages, reset actions and handled failures. Avoid noisy method entry/exit logs and duplicate temporary logs.
 
-Soglie numeriche da definire quando `docs/requirements.md` specifichera volumi e tempi.
+## README Guidance
 
-## 11. Testing strategy
+`README.md` should keep these details current:
 
-| Tipo | Target | Criteri |
-| --- | --- | --- |
-| Unit | Domain rules, validazioni, generatore randomico | Coprire compatibilita label, slot vuoti, ricette insufficienti, input non validi |
-| Repository integration | Persistenza locale e migrazioni | Salvare/rileggere ricette, ingredienti, piani, preferenze |
-| Component | Home, planner, form ricetta/ingrediente | Stati pieni/vuoti, errori validazione, tema base |
-| Flow test | Modifica slot, generazione piano, riapertura dati | Verificare requisiti MUST principali |
-| Mock | Storage e clock | Clock controllato per home giornaliera; repository fake per UI |
+- project purpose;
+- stack;
+- prerequisites;
+- setup/start/test/build commands;
+- essential configuration without secrets;
+- project structure;
+- entry points;
+- links to `docs/`, `IMPORT_EXPORT.md` and `WORKFLOW.md`.
 
-La logica di dominio deve essere testabile senza rendering UI e senza database reale.
+## Architecture Decisions
 
-## 12. Convenzioni di sviluppo
-
-- Preferire funzioni pure per regole di dominio.
-- Usare tipi espliciti per `Result`, errori, ID e `MealType`.
-- Evitare dipendenze circolari tra layer.
-- Evitare librerie per problemi gia coperti dallo stack o da poche funzioni interne.
-- Separare DTO/storage model dal modello di dominio quando i formati divergono.
-- Centralizzare costanti di dominio: tipi pasto, stati vuoti, error codes.
-- Ogni nuova scelta architetturale non ovvia va registrata in `docs/decisions.md`.
-- Documentare codice solo dove aumenta comprensione di vincoli, trade-off o assunzioni.
-
-## 13. Code documentation policy
-
-- Commenti in inglese.
-- Breve Javadoc/TSDoc sulle classi o moduli applicativi principali quando espongono responsabilita non ovvie.
-- Commenti su metodi o passaggi solo per logica non immediata, vincoli di dominio, trade-off o assunzioni.
-- Evitare commenti banali o duplicativi rispetto a nomi di classi, metodi e variabili.
-- I commenti non sostituiscono nomi chiari, tipi espliciti e test.
-
-## 14. Logging policy
-
-Livelli:
-
-- `debug`: dettagli temporanei utili in sviluppo, disabilitati in produzione.
-- `info`: eventi applicativi significativi, es. migrazione completata o generazione piano confermata.
-- `warn`: condizioni recuperabili, es. ricette insufficienti per coprire tutti gli slot.
-- `error`: fallimenti tecnici gestiti, es. errore persistenza.
-
-Regole:
-
-- Loggare confini del sistema: apertura storage, migrazioni, salvataggi falliti.
-- Loggare decisioni operative rilevanti: generazione con slot scoperti, conflitti su eliminazione.
-- Evitare log di ingresso/uscita metodo, duplicati, temporanei o rumorosi.
-- Non loggare contenuti personali estesi; usare conteggi, ID tecnici o categorie quando bastano.
-- Usare correlation/request id solo se vengono introdotti flussi multi-step asincroni, API o sync.
-
-## 15. README guidance
-
-`README.md` dovrebbe includere, quando disponibili:
-
-- Scopo sintetico del progetto.
-- Stack scelto e motivazione breve.
-- Prerequisiti locali.
-- Comandi di installazione, avvio, test e build.
-- Configurazione essenziale senza segreti.
-- Struttura progetto e entry point principali.
-- Rimandi a `docs/requirements.md`, `docs/architecture.md`, `docs/security.md`, `docs/tasks.md`, `docs/decisions.md`.
-- Note su offline-first, dati locali e piattaforme target.
-
-## 16. Decisioni architetturali
-
-Registrare in `docs/decisions.md` le decisioni con questo formato minimo:
-
-| Campo | Contenuto |
-| --- | --- |
-| Decisione | Scelta tecnica o strutturale |
-| Motivazione | Requisiti e vincoli che la rendono necessaria |
-| Alternative | Opzioni considerate e motivo dello scarto |
-| Impatto | Effetti su sviluppo, test, performance, operativita o evoluzione |
-
-Decisioni gia da registrare:
-
-- React Native + Expo per target iOS/Android/web.
-- SQLite locale per persistenza offline strutturata.
-- Nessun backend o servizio remoto nel MVP.
-- Domain layer puro separato da UI e storage.
-- Policy finale per eliminazione ricette/ingredienti referenziati.
-- Definizione calendario: primo giorno settimana e gestione locale/date.
+Record significant decisions in `docs/decisions.md` when they affect data shape, release workflow, public security posture, import/export format or platform strategy.
