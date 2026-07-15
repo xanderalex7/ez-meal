@@ -4,6 +4,7 @@ import { Keyboard, KeyboardAvoidingView, ScrollView, StyleSheet, View } from 're
 
 import App from '../../../App';
 import { createInitialAppModel, type AppActions } from '../../features/appModel';
+import { HomeScreen } from '../../features/home';
 import { PlannerScreen } from '../../features/planner';
 import { RecipesScreen } from '../../features/recipes';
 import { Badge, Button, Card, FloatingActionButton, MultiSelect } from '../../shared/ui';
@@ -319,6 +320,55 @@ describe('shared UI', () => {
     fireEvent.press(getByLabelText('Modifica piano'));
 
     expect(queryByTestId('plan-generator-actions')).toBeNull();
+  });
+
+  it('shows recipes planned for the current weekday on home', async () => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date('2026-07-15T10:00:00.000Z'));
+    const model = createInitialAppModel();
+    const todayPlan = {
+      ...model.mealPlan,
+      days: model.mealPlan.days.map((day, dayIndex) =>
+        dayIndex === 2
+          ? {
+              ...day,
+              slots: day.slots.map((slot) => ({
+                ...slot,
+                recipeIds: slot.mealType === 'lunch' ? ['recipe-riso', 'recipe-pollo'] : [],
+              })),
+            }
+          : day,
+      ),
+    };
+    const homeModel = {
+      ...model,
+      mealPlan: todayPlan,
+      mealPlans: [todayPlan],
+      recipes: [
+        {
+          id: 'recipe-riso',
+          name: 'Riso in bianco',
+          mealTypes: ['lunch' as const],
+          ingredientIds: [],
+          createdAt: '2026-07-15T10:00:00.000Z',
+          updatedAt: '2026-07-15T10:00:00.000Z',
+        },
+        {
+          id: 'recipe-pollo',
+          name: 'Fettine di pollo al limone',
+          mealTypes: ['lunch' as const],
+          ingredientIds: [],
+          createdAt: '2026-07-15T10:00:00.000Z',
+          updatedAt: '2026-07-15T10:00:00.000Z',
+        },
+      ],
+    };
+
+    const { getByText } = await render(<HomeScreen model={homeModel} />);
+
+    expect(getByText('Riso in bianco')).toBeTruthy();
+    expect(getByText('Fettine di pollo al limone')).toBeTruthy();
+    jest.useRealTimers();
   });
 
   it('uses a scrollable shell for long screen content', async () => {

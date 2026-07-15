@@ -12,7 +12,7 @@ type HomeScreenProps = {
 export function HomeScreen({ model }: HomeScreenProps) {
   const colors = useAppColors();
   const { mealTypeLabel, t } = useI18n();
-  const today = model.mealPlan.days.find((day) => day.date === '2026-07-04');
+  const today = model.mealPlan.days[toMondayFirstWeekdayIndex(new Date())];
 
   return (
     <View style={styles.stack}>
@@ -60,3 +60,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
 });
+
+function toMondayFirstWeekdayIndex(date: Date) {
+  return (date.getDay() + 6) % 7;
+}
