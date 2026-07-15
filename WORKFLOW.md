@@ -122,10 +122,10 @@ Use this flow only after the release candidate has been promoted to `main`.
 4. Deploy the generated web build to GitHub Pages.
 5. Smoke-test the published URL.
 
-The expected web export command is:
+The expected GitHub Pages web export command is:
 
 ```bash
-npm run build:web
+npm run build:web:pages
 ```
 
 The generated output is:
@@ -140,7 +140,7 @@ When the GitHub Pages workflow is implemented, it should:
 
 - use Node.js 26;
 - install dependencies with the lockfile;
-- run the web build;
+- run the GitHub Pages web build;
 - publish `build/web`;
 - avoid committing generated build output to the repository.
 

@@ -33,6 +33,7 @@
     "build:android": "expo export --platform android --output-dir build/android",
     "build:android:apk": "eas build -p android --profile apk",
     "build:web": "expo export --platform web --output-dir build/web",
+    "build:web:pages": "npm run build:web && node scripts/prepare-github-pages.js",
     "build:ios": "expo export --platform ios --output-dir build/ios",
     "typecheck": "tsc --noEmit",
     "test": "jest",

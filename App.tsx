@@ -71,10 +71,13 @@ function configureWebPwa() {
     return;
   }
 
-  upsertHeadTag('link', 'link[rel="manifest"]', { rel: 'manifest', href: '/manifest.webmanifest' });
+  const webBasePath = window.location.pathname.includes('/ez-meal/') ? '/ez-meal' : '';
+  const webAssetPath = (path: string) => `${webBasePath}${path}`;
+
+  upsertHeadTag('link', 'link[rel="manifest"]', { rel: 'manifest', href: webAssetPath('/manifest.webmanifest') });
   upsertHeadTag('link', 'link[rel="apple-touch-icon"]', {
     rel: 'apple-touch-icon',
-    href: '/icons/icon-192.png',
+    href: webAssetPath('/icons/icon-192.png'),
   });
   upsertHeadTag('meta', 'meta[name="theme-color"]', { name: 'theme-color', content: '#FAFAF7' });
   upsertHeadTag('meta', 'meta[name="apple-mobile-web-app-capable"]', {
@@ -88,7 +91,7 @@ function configureWebPwa() {
 
   if ('serviceWorker' in navigator && (window.isSecureContext || window.location.hostname === 'localhost')) {
     window.addEventListener('load', () => {
-      void navigator.serviceWorker.register('/service-worker.js').catch(() => {
+      void navigator.serviceWorker.register(webAssetPath('/service-worker.js')).catch(() => {
         consoleLogger.warn('PWA service worker registration failed');
       });
     });
