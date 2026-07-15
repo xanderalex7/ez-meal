@@ -1,6 +1,21 @@
-<svg width="512" height="512" viewBox="0 0 240 240" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
   <title id="title">EZ-MEAL icon</title>
-  <desc id="desc">A minimal green plate ring with an amber check mark for EZ-MEAL.</desc>
-  <circle cx="120" cy="120" r="82" stroke="#2F7D5C" stroke-width="26"/>
-  <path d="M82 122L110 150L162 92" stroke="#D97706" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
+  <desc id="desc">A minimal glassy plate with a centered green leaf.</desc>
+  <defs>
+    <radialGradient id="plate" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(205 168) rotate(55) scale(250)">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="0.58" stop-color="#FFFFFF" stop-opacity="0.94"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0.74"/>
+    </radialGradient>
+    <linearGradient id="leaf" x1="175" y1="282" x2="346" y2="202" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6CCF9D"/>
+      <stop offset="1" stop-color="#8AE4B7"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="#121412"/>
+  <circle cx="256" cy="256" r="146" fill="url(#plate)"/>
+  <circle cx="256" cy="256" r="146" stroke="#FFFFFF" stroke-opacity="0.38" stroke-width="10"/>
+  <path d="M176 286C197 216 286 164 356 206C324 287 232 324 176 286Z" fill="url(#leaf)"/>
+  <path d="M203 279C247 244 289 220 336 209" stroke="#121412" stroke-opacity="0.22" stroke-width="10" stroke-linecap="round"/>
+  <path d="M194 165C224 149 267 143 304 158" stroke="#FFFFFF" stroke-opacity="0.38" stroke-width="11" stroke-linecap="round"/>
 </svg>
