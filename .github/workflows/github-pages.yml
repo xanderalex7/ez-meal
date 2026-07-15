@@ -40,12 +40,9 @@ jobs:
         run: npm ci
 
       - name: Build web app
-        run: npm run build:web
+        run: npm run build:web:pages
         env:
           EXPO_NO_TELEMETRY: "1"
-
-      - name: Disable Jekyll
-        run: touch build/web/.nojekyll
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
