@@ -230,6 +230,7 @@ Minimum manual APK checks:
 | FUTURE-004 | DEFERRED | Shopping list generation. |
 | FUTURE-005 | DEFERRED | Refactor remaining internal naming, legacy CSV/database fields and docs from weight-oriented terminology to quantity-oriented terminology while preserving backward compatibility. |
 | FUTURE-006 | DEFERRED | Refactor technical naming and compatibility layer from recipe/Recipe to dish/Dish across domain, persistence, CSV schema, tests and docs while preserving import compatibility for legacy recipe records. |
+| FUTURE-007 | DEFERRED | Serious improvement: evaluate an Android Today home-screen widget showing breakfast, lunch and dinner dish lists; requires native Android/Expo build feasibility analysis, data snapshot strategy and update scheduling. |
 
 ## Update Rules
 
