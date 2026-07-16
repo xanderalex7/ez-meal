@@ -18,6 +18,8 @@ describe('repositories', () => {
       name: 'Pasta',
       mealTypes: ['lunch'],
       ingredientIds: ['ingredient-1'],
+      ingredientWeights: [{ ingredientId: 'ingredient-1', weightAmount: 80 }],
+      nutrition: { weightAmount: 320, calories: 520 },
       createdAt: timestamp,
       updatedAt: timestamp,
     };
@@ -28,6 +30,9 @@ describe('repositories', () => {
       'Pasta',
       '["lunch"]',
       '["ingredient-1"]',
+      '[{"ingredientId":"ingredient-1","weightAmount":80}]',
+      320,
+      520,
       null,
       timestamp,
       timestamp,
@@ -39,6 +44,9 @@ describe('repositories', () => {
         name: 'Pasta',
         meal_types: '["lunch"]',
         ingredient_ids: '["ingredient-1"]',
+        ingredient_weights: '[{"ingredientId":"ingredient-1","weightAmount":80}]',
+        weight_amount: 320,
+        calories: 520,
         notes: null,
         created_at: timestamp,
         updated_at: timestamp,
@@ -192,5 +200,32 @@ describe('repositories', () => {
 
     firstRows.set('SELECT value FROM user_preferences WHERE key = ?;', { value: 'en' });
     await expect(repository.getLanguage()).resolves.toEqual({ ok: true, value: 'en' });
+  });
+
+  it('persists nutrition settings with fallbacks', async () => {
+    const { db, runs } = createFakeQueryExecutor();
+    const repository = createPreferenceRepository(db);
+
+    await expect(repository.getNutritionSettings()).resolves.toEqual({
+      ok: true,
+      value: { trackingEnabled: false, weightUnit: 'g' },
+    });
+    await expect(
+      repository.saveNutritionSettings({ trackingEnabled: true, weightUnit: 'lb' }, timestamp),
+    ).resolves.toEqual({
+      ok: true,
+      value: { trackingEnabled: true, weightUnit: 'lb' },
+    });
+
+    expect(runs).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          params: ['nutritionTrackingEnabled', 'true', timestamp],
+        }),
+        expect.objectContaining({
+          params: ['weightUnit', 'lb', timestamp],
+        }),
+      ]),
+    );
   });
 });

@@ -63,28 +63,28 @@ docs/
 | Component | Responsibility | Related requirements |
 | --- | --- | --- |
 | Ingredient management | Create/list/delete ingredients. | REQ-001 |
-| Recipe management | Create/edit/delete recipes, assign meal tag and ingredients. | REQ-002 |
+| Recipe management | Create/edit/delete recipes, assign meal tag, ingredients, calories and ingredient quantities. | REQ-002, REQ-009 |
 | Plan management | Create/select/edit/delete weekly plans. | REQ-003 |
 | Meal slot editor | Add/remove/swap one or more recipes in a slot. | REQ-004 |
 | Random plan generator | Fill compatible slots with random recipes. | REQ-005 |
-| Today view | Resolve current weekday and selected plan meals. | REQ-006 |
+| Today view | Resolve current weekday and selected plan meals, including recipe calories and ingredient quantity breakdowns when enabled. | REQ-006, REQ-009 |
 | CSV import/export | Validate and serialize complete app data. | REQ-007 |
-| Settings | Theme, language, reset and import/export entry points. | REQ-008 |
+| Settings | Theme, language, nutrition preferences, reset and import/export entry points. | REQ-008, REQ-009 |
 
 ## Data Model
 
 Core entities:
 
 - `Ingredient`: id, name, timestamps.
-- `Recipe`: id, name, meal tag, ingredient ids, timestamps.
+- `Recipe`: id, name, meal tag, ingredient ids, ingredient quantities, optional recipe calories, timestamps.
 - `MealPlan`: id, title, days, timestamps.
 - `PlanDay`: weekday, breakfast/lunch/dinner slots.
 - `MealSlot`: meal tag, ordered recipe ids.
-- `Preferences`: theme, language, selected plan id.
+- `Preferences`: theme, language, selected plan id, nutrition tracking and legacy weight unit.
 
 Relationships:
 
-- recipe references many ingredients;
+- recipe references many ingredients and stores recipe-specific ingredient quantities;
 - plan slots reference many recipes;
 - Today view resolves selected plan plus current weekday.
 
