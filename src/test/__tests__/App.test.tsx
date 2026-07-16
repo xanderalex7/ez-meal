@@ -8,10 +8,12 @@ import { componentSizes, lightColors } from '../../shared/theme';
 jest.mock('../../features/appPersistence', () => ({
   createAppPersistence: jest.fn(async () => ({
     getLanguage: async () => 'it',
+    getNutritionSettings: async () => ({ trackingEnabled: false, weightUnit: 'g' }),
     getThemeMode: async () => 'system',
     load: async () => jest.requireActual('../../features/appModel').createInitialAppModel(),
     resetLocalData: async () => jest.requireActual('../../features/appModel').createInitialAppModel(),
     saveLanguage: async () => undefined,
+    saveNutritionSettings: async () => undefined,
     saveThemeMode: async () => undefined,
     saveSnapshot: async () => undefined,
   })),

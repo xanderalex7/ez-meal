@@ -14,11 +14,100 @@ describe('import/export CSV', () => {
     const imported = importAppModelFromCsv(csv);
 
     expect(csv).toContain('record_type,id,parent_id,key,name,value');
+    expect(csv).toContain('weight_amount,calories');
     expect(imported.language).toBe('it');
     expect(imported.themeMode).toBe('system');
+    expect(imported.model.nutritionSettings).toEqual({ trackingEnabled: false, weightUnit: 'g' });
     expect(imported.model.mealPlans).toHaveLength(1);
     expect(imported.model.mealPlan.days).toHaveLength(7);
     expect(imported.model.mealPlan.days.flatMap((day) => day.slots)).toHaveLength(21);
+  });
+
+  it('roundtrips recipe nutrition and nutrition preferences', () => {
+    const model = createInitialAppModel();
+    const updatedModel = {
+      ...model,
+      nutritionSettings: { trackingEnabled: true, weightUnit: 'kg' as const },
+      recipes: [
+        {
+          id: 'recipe-1',
+          name: 'Riso e pollo',
+          mealTypes: ['lunch' as const],
+          ingredientIds: [],
+          nutrition: { weightAmount: 0.45, calories: 650 },
+          createdAt: '2026-07-04T12:00:00.000Z',
+          updatedAt: '2026-07-04T12:00:00.000Z',
+        },
+      ],
+    };
+
+    const csv = exportAppModelToCsv({
+      exportedAt: '2026-07-14T10:00:00.000Z',
+      language: 'it',
+      model: updatedModel,
+      themeMode: 'dark',
+    });
+    const imported = importAppModelFromCsv(csv);
+
+    expect(csv).toContain('metadata,format,,schema_version,,2');
+    expect(csv).toContain('preference,nutritionTrackingEnabled,,nutritionTrackingEnabled,,true');
+    expect(csv).toContain('preference,weightUnit,,weightUnit,,kg');
+    expect(csv).toContain('recipe,recipe-1,,,Riso e pollo,,,lunch');
+    expect(csv).toContain(',0.45,650');
+    expect(imported.model.nutritionSettings).toEqual({ trackingEnabled: true, weightUnit: 'kg' });
+    expect(imported.model.recipes[0].nutrition).toEqual({ weightAmount: 0.45, calories: 650 });
+  });
+
+  it('imports legacy schema version 1 CSV files without nutrition columns', () => {
+    const model = createInitialAppModel();
+    const csv = [
+      'record_type,id,parent_id,key,name,value,available,meal_types,date,meal_type,recipe_id,week_start_date,created_at,updated_at,notes',
+      'metadata,format,,schema_version,,1,,,,,,,,,',
+      'metadata,export,,app_name,,EZ-MEAL,,,,,,,,,',
+      'metadata,export,,exported_at,,2026-07-14T10:00:00.000Z,,,,,,,,,',
+      'preference,language,,language,,it,,,,,,,,2026-07-14T10:00:00.000Z,',
+      'preference,themeMode,,themeMode,,system,,,,,,,,2026-07-14T10:00:00.000Z,',
+      'meal_plan,plan-current,,,Piano settimanale,,,,,,,2026-06-29,2026-07-04T12:00:00.000Z,2026-07-04T12:00:00.000Z,',
+      ...model.mealPlan.days.flatMap((day) =>
+        day.slots.map(
+          (slot) =>
+            `meal_slot,plan-current__${slot.date}__${slot.mealType},plan-current,,,,,,${slot.date},${slot.mealType},,,,,`,
+        ),
+      ),
+    ].join('\n');
+
+    const imported = importAppModelFromCsv(csv);
+
+    expect(imported.model.nutritionSettings).toEqual({ trackingEnabled: false, weightUnit: 'g' });
+    expect(imported.model.recipes).toEqual([]);
+  });
+
+  it('rejects invalid nutrition preferences and incomplete recipe nutrition', () => {
+    const model = createInitialAppModel();
+    const csv = exportAppModelToCsv({
+      exportedAt: '2026-07-14T10:00:00.000Z',
+      language: 'it',
+      model: {
+        ...model,
+        nutritionSettings: { trackingEnabled: true, weightUnit: 'g' },
+        recipes: [
+          {
+            id: 'recipe-1',
+            name: 'Pasta',
+            mealTypes: ['lunch' as const],
+            ingredientIds: [],
+            createdAt: '2026-07-04T12:00:00.000Z',
+            updatedAt: '2026-07-04T12:00:00.000Z',
+          },
+        ],
+      },
+      themeMode: 'system',
+    });
+
+    expect(() => importAppModelFromCsv(csv)).toThrow('Dati nutrizionali mancanti per ricetta: Pasta');
+    expect(() => importAppModelFromCsv(csv.replace(',g,', ',stone,'))).toThrow(
+      'Preferenza unita peso non valida',
+    );
   });
 
   it('roundtrips multiple recipes in the same meal slot', () => {

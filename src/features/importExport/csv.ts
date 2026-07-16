@@ -1,7 +1,12 @@
 import type { AppModel } from '../appModel';
 import { createInitialAppModel } from '../appModel';
-import type { Ingredient, MealPlan, MealType, Recipe } from '../../domain';
-import { mealTypes } from '../../domain';
+import type { Ingredient, MealPlan, MealType, NutritionSettings, Recipe } from '../../domain';
+import {
+  defaultNutritionSettings,
+  hasCompleteRecipeNutrition,
+  isWeightUnit,
+  mealTypes,
+} from '../../domain';
 import { isLanguage, type Language } from '../../shared/i18n';
 import { isThemeMode, type ThemeMode } from '../../shared/theme';
 
@@ -43,7 +48,13 @@ const csvHeader = [
   'created_at',
   'updated_at',
   'notes',
+  'weight_amount',
+  'calories',
 ] as const;
+
+const legacyCsvHeader = csvHeader.filter(
+  (column) => column !== 'weight_amount' && column !== 'calories',
+);
 
 const mealTypeSet = new Set<string>(mealTypes);
 
@@ -55,11 +66,25 @@ export function exportAppModelToCsv(input: {
 }) {
   const rows: string[][] = [
     [...csvHeader],
-    metadataRow('format', 'schema_version', '1'),
+    metadataRow('format', 'schema_version', '2'),
     metadataRow('export', 'app_name', 'EZ-MEAL'),
     metadataRow('export', 'exported_at', input.exportedAt),
     row({ record_type: 'preference', id: 'language', key: 'language', value: input.language, updated_at: input.exportedAt }),
     row({ record_type: 'preference', id: 'themeMode', key: 'themeMode', value: input.themeMode, updated_at: input.exportedAt }),
+    row({
+      record_type: 'preference',
+      id: 'nutritionTrackingEnabled',
+      key: 'nutritionTrackingEnabled',
+      value: String(input.model.nutritionSettings.trackingEnabled),
+      updated_at: input.exportedAt,
+    }),
+    row({
+      record_type: 'preference',
+      id: 'weightUnit',
+      key: 'weightUnit',
+      value: input.model.nutritionSettings.weightUnit,
+      updated_at: input.exportedAt,
+    }),
   ];
 
   input.model.ingredients.forEach((ingredient) => {
@@ -85,6 +110,8 @@ export function exportAppModelToCsv(input: {
         created_at: recipe.createdAt,
         updated_at: recipe.updatedAt,
         notes: recipe.notes ?? '',
+        weight_amount: recipe.nutrition ? String(recipe.nutrition.weightAmount) : '',
+        calories: recipe.nutrition ? String(recipe.nutrition.calories) : '',
       }),
     );
     recipe.ingredientIds.forEach((ingredientId) => {
@@ -151,6 +178,7 @@ export function importAppModelFromCsv(csv: string, progress?: ImportProgress): C
 
   progress?.('relations', 'active');
   const recipesWithIngredients = applyRecipeIngredients(recipes, ingredients, byType.recipe_ingredient);
+  validateNutritionCompleteness(preferences.nutritionSettings, recipesWithIngredients);
   progress?.('relations', 'success');
 
   progress?.('plans', 'active');
@@ -165,6 +193,7 @@ export function importAppModelFromCsv(csv: string, progress?: ImportProgress): C
       ingredients,
       mealPlan: activeMealPlan,
       mealPlans,
+      nutritionSettings: preferences.nutritionSettings,
       recipes: recipesWithIngredients,
       selectedMealPlanId: activeMealPlan.id,
     },
@@ -195,7 +224,12 @@ function parseCsv(csv: string) {
   return {
     header,
     rows: body.map((csvRow) => {
-      const record = Object.fromEntries(csvHeader.map((key, index) => [key, csvRow[index] ?? ''])) as CsvRecord;
+      const record = Object.fromEntries(
+        csvHeader.map((key) => {
+          const sourceIndex = header.indexOf(key);
+          return [key, sourceIndex >= 0 ? csvRow[sourceIndex] ?? '' : ''];
+        }),
+      ) as CsvRecord;
       return record;
     }),
   };
@@ -246,8 +280,9 @@ function parseCsvRows(csv: string) {
 
 function validateHeader(header: string[]) {
   const expected = csvHeader.join(',');
+  const legacyExpected = legacyCsvHeader.join(',');
   const actual = header.join(',');
-  if (actual !== expected) {
+  if (actual !== expected && actual !== legacyExpected) {
     throw new Error(`Header CSV non valido. Atteso: ${expected}`);
   }
 }
@@ -274,7 +309,7 @@ function groupByRecordType(rows: CsvRecord[]) {
 function validateMetadata(records: CsvRecord[]) {
   const schemaVersion = records.find((record) => record.key === 'schema_version')?.value;
   const appName = records.find((record) => record.key === 'app_name')?.value;
-  if (schemaVersion !== '1') {
+  if (schemaVersion !== '1' && schemaVersion !== '2') {
     throw new Error('Versione schema CSV non supportata.');
   }
   if (appName !== 'EZ-MEAL') {
@@ -285,13 +320,35 @@ function validateMetadata(records: CsvRecord[]) {
 function parsePreferences(records: CsvRecord[]) {
   const language = records.find((record) => record.id === 'language')?.value;
   const themeMode = records.find((record) => record.id === 'themeMode')?.value;
+  const trackingEnabled = records.find((record) => record.id === 'nutritionTrackingEnabled')?.value;
+  const weightUnit = records.find((record) => record.id === 'weightUnit')?.value;
   if (!isLanguage(language)) {
     throw new Error('Preferenza lingua non valida.');
   }
   if (!isThemeMode(themeMode)) {
     throw new Error('Preferenza tema non valida.');
   }
-  return { language, themeMode };
+  return {
+    language,
+    nutritionSettings: parseNutritionSettings(trackingEnabled, weightUnit),
+    themeMode,
+  };
+}
+
+function parseNutritionSettings(
+  trackingEnabled: string | undefined,
+  weightUnit: string | undefined,
+): NutritionSettings {
+  if (trackingEnabled && trackingEnabled !== 'true' && trackingEnabled !== 'false') {
+    throw new Error('Preferenza conteggio calorie non valida.');
+  }
+  if (weightUnit && !isWeightUnit(weightUnit)) {
+    throw new Error('Preferenza unita peso non valida.');
+  }
+  return {
+    trackingEnabled: trackingEnabled === 'true',
+    weightUnit: isWeightUnit(weightUnit) ? weightUnit : defaultNutritionSettings.weightUnit,
+  };
 }
 
 function parseIngredients(records: CsvRecord[]): Ingredient[] {
@@ -330,11 +387,39 @@ function parseRecipes(records: CsvRecord[]): Recipe[] {
       name: record.name,
       mealTypes: recipeMealTypes as MealType[],
       ingredientIds: [],
+      nutrition: parseRecipeNutrition(record),
       notes: record.notes || undefined,
       createdAt: record.created_at,
       updatedAt: record.updated_at,
     };
   });
+}
+
+function parseRecipeNutrition(record: CsvRecord): Recipe['nutrition'] {
+  const hasWeight = record.weight_amount.trim() !== '';
+  const hasCalories = record.calories.trim() !== '';
+  if (!hasWeight && !hasCalories) {
+    return undefined;
+  }
+  if (!hasWeight || !hasCalories) {
+    throw new Error(`Dati nutrizionali incompleti per ricetta: ${record.name}`);
+  }
+
+  const weightAmount = parsePositiveNumber(record.weight_amount);
+  const calories = parsePositiveNumber(record.calories);
+  if (weightAmount === undefined) {
+    throw new Error(`Peso ricetta non valido: ${record.name}`);
+  }
+  if (calories === undefined) {
+    throw new Error(`Calorie ricetta non valide: ${record.name}`);
+  }
+
+  return { weightAmount, calories };
+}
+
+function parsePositiveNumber(value: string): number | undefined {
+  const parsed = Number(value.trim().replace(',', '.'));
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
 }
 
 function applyRecipeIngredients(
@@ -362,6 +447,17 @@ function applyRecipeIngredients(
     ...recipe,
     ingredientIds: relationMap.get(recipe.id) ?? [],
   }));
+}
+
+function validateNutritionCompleteness(settings: NutritionSettings, recipes: Recipe[]) {
+  if (!settings.trackingEnabled) {
+    return;
+  }
+
+  const missingRecipe = recipes.find((recipe) => !hasCompleteRecipeNutrition(recipe.nutrition));
+  if (missingRecipe) {
+    throw new Error(`Dati nutrizionali mancanti per ricetta: ${missingRecipe.name}`);
+  }
 }
 
 function parseMealPlans(

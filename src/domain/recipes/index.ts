@@ -4,6 +4,7 @@ export type {
   Recipe,
   RecipeId,
   RecipeInput,
+  RecipeNutrition,
   RecipeValidationError,
   RecipeValidationErrorCode,
   RecipeValidationResult,

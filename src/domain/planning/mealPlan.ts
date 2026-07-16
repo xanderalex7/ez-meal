@@ -1,4 +1,5 @@
 import { mealTypes, type MealType } from '../mealTypes';
+import { sumNutritionTotals, type NutritionTotals } from '../nutrition';
 import type { Recipe } from '../recipes';
 
 export type MealPlanId = string;
@@ -135,6 +136,43 @@ export function normalizeMealPlan(plan: MealPlan): MealPlan {
       slots: day.slots.map((slot) => normalizeMealSlot(slot as LegacyMealSlot)),
     })),
   };
+}
+
+export function calculateMealSlotNutritionTotal(
+  slot: MealSlot,
+  recipes: Recipe[],
+): NutritionTotals {
+  const recipeMap = new Map(recipes.map((recipe) => [recipe.id, recipe]));
+  return sumNutritionTotals(slot.recipeIds.map((recipeId) => recipeMap.get(recipeId)?.nutrition));
+}
+
+export function calculatePlanDayNutritionTotal(day: PlanDay, recipes: Recipe[]): NutritionTotals {
+  return day.slots.reduce<NutritionTotals>(
+    (total, slot) => {
+      const slotTotal = calculateMealSlotNutritionTotal(slot, recipes);
+      return {
+        calories: total.calories + slotTotal.calories,
+        weightAmount: total.weightAmount + slotTotal.weightAmount,
+      };
+    },
+    { calories: 0, weightAmount: 0 },
+  );
+}
+
+export function calculateMealPlanNutritionTotal(
+  plan: MealPlan,
+  recipes: Recipe[],
+): NutritionTotals {
+  return plan.days.reduce<NutritionTotals>(
+    (total, day) => {
+      const dayTotal = calculatePlanDayNutritionTotal(day, recipes);
+      return {
+        calories: total.calories + dayTotal.calories,
+        weightAmount: total.weightAmount + dayTotal.weightAmount,
+      };
+    },
+    { calories: 0, weightAmount: 0 },
+  );
 }
 
 export function generateWeeklyPlan(input: {

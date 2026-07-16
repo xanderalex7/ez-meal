@@ -10,6 +10,7 @@ import { consoleLogger } from '../shared/logging';
 import type { Language } from '../shared/i18n';
 import type { ThemeMode } from '../shared/theme';
 import { createInitialAppModel, type AppModel } from './appModel';
+import type { NutritionSettings } from '../domain';
 
 type LocalRepositories = {
   ingredients: ReturnType<typeof createIngredientRepository>;
@@ -20,11 +21,13 @@ type LocalRepositories = {
 
 export type AppPersistence = {
   getLanguage: () => Promise<Language>;
+  getNutritionSettings: () => Promise<NutritionSettings>;
   getThemeMode: () => Promise<ThemeMode>;
   load: () => Promise<AppModel>;
   replaceLocalData: (model: AppModel, language: Language, themeMode: ThemeMode) => Promise<void>;
   resetLocalData: () => Promise<AppModel>;
   saveLanguage: (language: Language) => Promise<void>;
+  saveNutritionSettings: (settings: NutritionSettings) => Promise<void>;
   saveThemeMode: (themeMode: ThemeMode) => Promise<void>;
   saveSnapshot: (previous: AppModel, next: AppModel) => Promise<void>;
 };
@@ -39,16 +42,21 @@ export async function createAppPersistence(db?: QueryExecutor): Promise<AppPersi
       return unwrap(repositories.preferences.getLanguage());
     },
 
+    async getNutritionSettings() {
+      return unwrap(repositories.preferences.getNutritionSettings());
+    },
+
     async getThemeMode() {
       return unwrap(repositories.preferences.getThemeMode());
     },
 
     async load() {
       const initial = createInitialAppModel();
-      const [ingredients, recipes, mealPlans] = await Promise.all([
+      const [ingredients, recipes, mealPlans, nutritionSettings] = await Promise.all([
         unwrap(repositories.ingredients.list()),
         unwrap(repositories.recipes.list()),
         unwrap(repositories.mealPlans.list()),
+        unwrap(repositories.preferences.getNutritionSettings()),
       ]);
       const loadedMealPlans = mealPlans.length > 0 ? mealPlans : initial.mealPlans;
       const activeMealPlan =
@@ -57,6 +65,7 @@ export async function createAppPersistence(db?: QueryExecutor): Promise<AppPersi
         ingredients,
         mealPlan: activeMealPlan,
         mealPlans: loadedMealPlans,
+        nutritionSettings,
         recipes,
         selectedMealPlanId: activeMealPlan.id,
       };
@@ -83,6 +92,7 @@ export async function createAppPersistence(db?: QueryExecutor): Promise<AppPersi
         const now = new Date().toISOString();
         await unwrap(repositories.preferences.saveLanguage(language, now));
         await unwrap(repositories.preferences.saveThemeMode(themeMode, now));
+        await unwrap(repositories.preferences.saveNutritionSettings(model.nutritionSettings, now));
         consoleLogger.warn('Local app data imported');
       });
     },
@@ -99,6 +109,12 @@ export async function createAppPersistence(db?: QueryExecutor): Promise<AppPersi
       );
     },
 
+    async saveNutritionSettings(settings) {
+      await writeQueue(() =>
+        unwrap(repositories.preferences.saveNutritionSettings(settings, new Date().toISOString())),
+      );
+    },
+
     async saveSnapshot(previous, next) {
       await writeQueue(async () => {
         await saveDeletedEntities(repositories, previous, next);
@@ -110,6 +126,14 @@ export async function createAppPersistence(db?: QueryExecutor): Promise<AppPersi
         }
         for (const plan of mergeActiveMealPlan(next)) {
           await unwrap(repositories.mealPlans.save(plan));
+        }
+        if (previous.nutritionSettings !== next.nutritionSettings) {
+          await unwrap(
+            repositories.preferences.saveNutritionSettings(
+              next.nutritionSettings,
+              new Date().toISOString(),
+            ),
+          );
         }
         consoleLogger.info('Local app state saved', {
           ingredientCount: next.ingredients.length,

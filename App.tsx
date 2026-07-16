@@ -27,6 +27,7 @@ import { appSections, type AppSection } from './src/features/navigation';
 import { PlannerScreen } from './src/features/planner';
 import { RecipesScreen } from './src/features/recipes';
 import { SettingsScreen } from './src/features/settings';
+import type { NutritionSettings } from './src/domain';
 import { I18nProvider, type Language, useI18n } from './src/shared/i18n';
 import { consoleLogger } from './src/shared/logging';
 import { AppThemeProvider, darkColors, radii, spacing, useAppColors, type ThemeMode } from './src/shared/theme';
@@ -218,6 +219,17 @@ function AppContent({
     }
   }
 
+  async function changeNutritionSettings(nextNutritionSettings: NutritionSettings) {
+    actions.updateNutritionSettings(nextNutritionSettings);
+    try {
+      await persistence.current?.saveNutritionSettings(nextNutritionSettings);
+      return null;
+    } catch {
+      consoleLogger.error('Local nutrition preference save failed');
+      return t('errorNutritionSettingsSaveFailed');
+    }
+  }
+
   async function selectImportCsvFile() {
     try {
       const pickedFile = await pickCsvFile();
@@ -323,6 +335,7 @@ function AppContent({
           selectImportCsvFile,
           confirmImportCsvFile,
           exportCsvFile,
+          changeNutritionSettings,
         )}
       </ScrollView>
       {!keyboardVisible ? (
@@ -393,6 +406,7 @@ function renderSection(
   exportCsvFile: (
     onProgress: (stepId: ImportExportStepId, status: 'active' | 'success' | 'error') => void,
   ) => Promise<{ ok: true; completedAt: string } | { ok: false; message: string }>,
+  changeNutritionSettings: (settings: NutritionSettings) => Promise<string | null>,
 ) {
   switch (section) {
     case 'home':
@@ -411,6 +425,8 @@ function renderSection(
           onLanguageChange={changeLanguage}
           onConfirmImportCsv={confirmImportCsvFile}
           onExportCsv={exportCsvFile}
+          nutritionSettings={model.nutritionSettings}
+          onNutritionSettingsChange={changeNutritionSettings}
           onThemeModeChange={changeThemeMode}
           onSelectImportCsv={selectImportCsvFile}
           themeMode={themeMode}

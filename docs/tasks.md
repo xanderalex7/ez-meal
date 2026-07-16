@@ -42,13 +42,24 @@ Deliver a usable local-first meal planner before adding advanced features. Each 
 | TASK-065 | DONE | MUST | Prepare documentation for public repository using English as the single maintained language. | Existing Markdown docs. | Markdown docs are present without `-ITA` duplicates and no links point to removed Italian copies. | File list, reference search and Git status reviewed. |
 | TASK-066 | TODO | MUST | Final public-readiness scan for secrets, tokens, generated artifacts and ignored sensitive files. | TASK-065 | No obvious secrets or tracked build artifacts remain. `.gitignore` covers local/private files. | Repo scan commands reviewed. |
 | TASK-067 | IN_PROGRESS | SHOULD | Prepare v1.3.0 UI polish and validation release notes. Includes ingredient filtering/order, warning/error colors, recipe ingredient validation, multi-select blur handling, logo/header polish, Today card spacing and Android safe-area improvements. | Recent UI/validation work. | `CHANGELOG.md` documents v1.3.0 changes; README links the changelog; implementation passes automated checks; manual web/mobile review completed before release. | Typecheck passed for current implementation; final visual review and release smoke test pending. |
-| TASK-068 | TODO | MUST | Add optional recipe weight/calorie tracking with daily and plan totals. | TASK-064, CSV import/export, local persistence. | Recipes support weight/calorie fields when tracking is enabled; Today and Plan show per-recipe and total calories; Settings exposes measurement unit and tracking toggle; DB and CSV remain backward compatible. | Unit/domain tests, import/export tests, UI tests where practical, manual web/mobile flow, APK smoke test before release. |
+| TASK-068 | IN_PROGRESS | MUST | Add optional recipe weight/calorie tracking with daily and plan totals. | TASK-064, CSV import/export, local persistence. | Recipes support weight/calorie fields when tracking is enabled; Today and Plan show per-recipe and total calories; Settings exposes measurement unit and tracking toggle; DB and CSV remain backward compatible. | Implementation slices completed with typecheck and full test suite; final manual/web/mobile/APK validation and release notes pending. |
 
 ## Detailed Active Task Notes
 
 ### TASK-068 - Recipe Weight, Calories, Units and Totals
 
 Goal: add an optional nutrition tracking mode focused on recipe weight and calories, without breaking the existing simple meal-planning flow.
+
+Subtasks:
+
+| ID | Status | Scope | Completion Criteria | Verification |
+| --- | --- | --- | --- | --- |
+| TASK-068A | DONE | Domain/model foundation. | Recipe nutrition types, default nutrition settings, optional recipe nutrition, validation and derived slot/day/plan totals exist without changing current default behavior. | `npm run typecheck`; domain/app model/persistence/import-export targeted tests passed. |
+| TASK-068B | DONE | Persistence and migration. | Local DB supports recipe weight/calories; preferences persist tracking toggle and weight unit; existing local data upgrades without loss; reset restores defaults. | `npm run typecheck`; full Jest suite passed. |
+| TASK-068C | DONE | CSV import/export and documentation. | CSV format includes recipe nutrition and nutrition preferences; backward compatibility is handled; invalid numeric/unit data is rejected before import; `IMPORT_EXPORT.md` updated. | `npm run typecheck`; full Jest suite passed. |
+| TASK-068D | DONE | Settings and Recipes UI. | Settings exposes tracking toggle and weight unit selection; Recipes create/edit shows and validates weight/calories only when tracking is enabled. | `npm run typecheck`; full Jest suite passed. |
+| TASK-068E | DONE | Today and Plan UI totals/layout. | Today and Plan show per-recipe weight/calories, day totals and plan totals when enabled; long recipe names cannot overlap values; missing recipe nutrition shows actionable error. | `npm run typecheck`; full Jest suite passed. |
+| TASK-068F | TODO | Final validation and release notes. | Full feature is documented in `CHANGELOG.md`; release smoke test covers nutrition tracking, CSV round-trip and APK behavior. | Manual web/mobile/APK smoke test. |
 
 User behavior:
 

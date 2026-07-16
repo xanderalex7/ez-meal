@@ -27,6 +27,8 @@ export function RecipesScreen({ actions, model }: RecipesScreenProps) {
   const visibleRecipes = [...model.recipes].reverse();
   const [isFormVisible, setIsFormVisible] = useState(false);
   const [name, setName] = useState('');
+  const [weightAmount, setWeightAmount] = useState('');
+  const [calories, setCalories] = useState('');
   const [selectedMealTypes, setSelectedMealTypes] = useState<MealType[]>(['lunch']);
   const [selectedIngredientIds, setSelectedIngredientIds] = useState<string[]>([]);
   const [editingRecipeId, setEditingRecipeId] = useState<string | null>(null);
@@ -44,6 +46,8 @@ export function RecipesScreen({ actions, model }: RecipesScreenProps) {
 
   function resetForm() {
     setName('');
+    setWeightAmount('');
+    setCalories('');
     setSelectedMealTypes(['lunch']);
     setSelectedIngredientIds([]);
     setEditingRecipeId(null);
@@ -52,7 +56,14 @@ export function RecipesScreen({ actions, model }: RecipesScreenProps) {
   }
 
   function submit() {
-    const input = { name, mealTypes: selectedMealTypes, ingredientIds: selectedIngredientIds };
+    const input = {
+      name,
+      mealTypes: selectedMealTypes,
+      ingredientIds: selectedIngredientIds,
+      nutrition: model.nutritionSettings.trackingEnabled
+        ? { weightAmount, calories }
+        : undefined,
+    };
     const result = editingRecipeId
       ? actions.updateRecipe(editingRecipeId, input)
       : actions.addRecipe(input);
@@ -69,6 +80,8 @@ export function RecipesScreen({ actions, model }: RecipesScreenProps) {
       return;
     }
     setName(recipe.name);
+    setWeightAmount(recipe.nutrition ? String(recipe.nutrition.weightAmount) : '');
+    setCalories(recipe.nutrition ? String(recipe.nutrition.calories) : '');
     setSelectedMealTypes(recipe.mealTypes);
     setSelectedIngredientIds(recipe.ingredientIds);
     setEditingRecipeId(recipe.id);
@@ -117,6 +130,24 @@ export function RecipesScreen({ actions, model }: RecipesScreenProps) {
             onChangeText={setName}
             error={error}
           />
+          {model.nutritionSettings.trackingEnabled ? (
+            <View style={styles.nutritionFields}>
+              <TextField
+                keyboardType="decimal-pad"
+                label={t('recipeWeight', { unit: model.nutritionSettings.weightUnit })}
+                placeholder={t('recipeWeight', { unit: model.nutritionSettings.weightUnit })}
+                value={weightAmount}
+                onChangeText={setWeightAmount}
+              />
+              <TextField
+                keyboardType="number-pad"
+                label={t('recipeCalories')}
+                placeholder={t('recipeCalories')}
+                value={calories}
+                onChangeText={setCalories}
+              />
+            </View>
+          ) : null}
           <View style={styles.row}>
             {mealTypes.map((mealType) => (
               <MealTypeChip
@@ -266,6 +297,7 @@ function MealTypeChip({
 const styles = StyleSheet.create({
   stack: { gap: spacing.md, paddingTop: 72, position: 'relative' },
   form: { gap: spacing.md },
+  nutritionFields: { gap: spacing.md },
   stackSmall: { gap: spacing.sm },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   recipeActions: {

@@ -21,6 +21,7 @@ export async function migrateDatabase(input: {
 
     await ensureMealPlanTitleColumn(input.db);
     await ensureMealPlanWeekStartDateIsNotUnique(input.db);
+    await ensureRecipeNutritionColumns(input.db);
 
     await input.db.runAsync(
       'INSERT OR IGNORE INTO schema_migrations (version, applied_at) VALUES (?, ?);',
@@ -31,6 +32,19 @@ export async function migrateDatabase(input: {
   } catch (error) {
     input.logger?.error('Database migration failed', { version: 1 });
     throw error;
+  }
+}
+
+async function ensureRecipeNutritionColumns(db: SqlExecutor): Promise<void> {
+  const columns = await db.getAllAsync<{ name: string }>('PRAGMA table_info(recipes);', []);
+  const columnNames = new Set(columns.map((column) => column.name));
+
+  if (!columnNames.has('weight_amount')) {
+    await db.execAsync('ALTER TABLE recipes ADD COLUMN weight_amount REAL;');
+  }
+
+  if (!columnNames.has('calories')) {
+    await db.execAsync('ALTER TABLE recipes ADD COLUMN calories INTEGER;');
   }
 }
 

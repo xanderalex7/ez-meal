@@ -73,4 +73,74 @@ describe('validateRecipeInput', () => {
       ],
     });
   });
+
+  it('accepts recipe nutrition when provided', () => {
+    expect(
+      validateRecipeInput({
+        name: 'Riso e pollo',
+        mealTypes: ['lunch'],
+        ingredientIds: ['ingredient-1'],
+        nutrition: { weightAmount: '350,5', calories: '620' },
+      }),
+    ).toEqual({
+      ok: true,
+      value: {
+        name: 'Riso e pollo',
+        mealTypes: ['lunch'],
+        ingredientIds: ['ingredient-1'],
+        nutrition: { weightAmount: 350.5, calories: 620 },
+      },
+    });
+  });
+
+  it('requires recipe nutrition only when requested', () => {
+    expect(
+      validateRecipeInput(
+        { name: 'Toast', mealTypes: ['breakfast'], ingredientIds: ['ingredient-1'] },
+        { nutritionRequired: true },
+      ),
+    ).toEqual({
+      ok: false,
+      errors: [
+        {
+          code: 'RECIPE_WEIGHT_REQUIRED',
+          field: 'nutrition.weightAmount',
+          message: 'Il peso della ricetta è obbligatorio.',
+        },
+        {
+          code: 'RECIPE_CALORIES_REQUIRED',
+          field: 'nutrition.calories',
+          message: 'Le calorie della ricetta sono obbligatorie.',
+        },
+      ],
+    });
+  });
+
+  it('rejects invalid required recipe nutrition', () => {
+    expect(
+      validateRecipeInput(
+        {
+          name: 'Toast',
+          mealTypes: ['breakfast'],
+          ingredientIds: ['ingredient-1'],
+          nutrition: { weightAmount: '0', calories: '-5' },
+        },
+        { nutritionRequired: true },
+      ),
+    ).toEqual({
+      ok: false,
+      errors: [
+        {
+          code: 'RECIPE_WEIGHT_INVALID',
+          field: 'nutrition.weightAmount',
+          message: 'Il peso della ricetta deve essere maggiore di zero.',
+        },
+        {
+          code: 'RECIPE_CALORIES_INVALID',
+          field: 'nutrition.calories',
+          message: 'Le calorie della ricetta devono essere maggiori di zero.',
+        },
+      ],
+    });
+  });
 });

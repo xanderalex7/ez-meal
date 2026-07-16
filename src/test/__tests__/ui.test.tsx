@@ -16,10 +16,12 @@ let mockedInsets = { bottom: 0, left: 0, right: 0, top: 0 };
 jest.mock('../../features/appPersistence', () => ({
   createAppPersistence: jest.fn(async () => ({
     getLanguage: async () => 'it',
+    getNutritionSettings: async () => ({ trackingEnabled: false, weightUnit: 'g' }),
     getThemeMode: async () => 'system',
     load: async () => jest.requireActual('../../features/appModel').createInitialAppModel(),
     resetLocalData: async () => jest.requireActual('../../features/appModel').createInitialAppModel(),
     saveLanguage: async () => undefined,
+    saveNutritionSettings: async () => undefined,
     saveThemeMode: async () => undefined,
     saveSnapshot: async () => undefined,
   })),
@@ -142,6 +144,20 @@ describe('shared UI', () => {
     expect(await findByText('Esporta CSV')).toBeTruthy();
     expect(queryByText('Importa')).toBeNull();
     expect(queryByText('Lettura CSV')).toBeNull();
+  });
+
+  it('shows nutrition settings controls in settings', async () => {
+    const { findByLabelText, findByText, getByText } = await render(<App />);
+
+    fireEvent.press(getByText('Altro'));
+
+    expect(await findByText('Unità e calorie')).toBeTruthy();
+    expect(await findByText('Conteggio calorie disattivato')).toBeTruthy();
+    expect(await findByLabelText('Unità e calorie')).toBeTruthy();
+    expect(await findByText('Grammi')).toBeTruthy();
+    expect(await findByText('Chilogrammi')).toBeTruthy();
+    expect(await findByText('Once')).toBeTruthy();
+    expect(await findByText('Libbre')).toBeTruthy();
   });
 
 
@@ -283,6 +299,42 @@ describe('shared UI', () => {
     expect(
       StyleSheet.flatten(getByText('Crea prima un ingrediente per associarlo alla ricetta.').props.style),
     ).toEqual(expect.objectContaining({ color: lightColors.warning }));
+  });
+
+  it('shows recipe nutrition fields when tracking is enabled', async () => {
+    const model = {
+      ...createInitialAppModel(),
+      ingredients: [
+        {
+          id: 'ingredient-1',
+          name: 'Pomodoro',
+          available: true,
+          createdAt: '2026-07-04T12:00:00.000Z',
+          updatedAt: '2026-07-04T12:00:00.000Z',
+        },
+      ],
+      nutritionSettings: { trackingEnabled: true, weightUnit: 'kg' as const },
+    };
+    const actions = {
+      addRecipe: jest.fn(() => null),
+    } as unknown as AppActions;
+
+    const { getByLabelText, getByPlaceholderText } = await render(<RecipesScreen actions={actions} model={model} />);
+
+    fireEvent.press(getByLabelText('Apri creazione ricetta'));
+    fireEvent.changeText(getByLabelText('Nome ricetta'), 'Pasta');
+    fireEvent.changeText(getByLabelText('Peso ricetta (kg)'), '0,35');
+    fireEvent.changeText(getByLabelText('Calorie ricetta'), '520');
+    fireEvent(getByPlaceholderText('Cerca ingredienti'), 'pressIn');
+    fireEvent.press(getByLabelText('Pomodoro'));
+    fireEvent.press(getByLabelText('Aggiungi'));
+
+    expect(actions.addRecipe).toHaveBeenCalledWith({
+      ingredientIds: ['ingredient-1'],
+      mealTypes: ['lunch'],
+      name: 'Pasta',
+      nutrition: { weightAmount: '0,35', calories: '520' },
+    });
   });
 
   it('toggles planner read and edit controls', async () => {
@@ -434,6 +486,160 @@ describe('shared UI', () => {
     expect(getByText('Riso in bianco')).toBeTruthy();
     expect(getByText('Fettine di pollo al limone')).toBeTruthy();
     jest.useRealTimers();
+  });
+
+  it('shows daily nutrition totals on home when tracking is enabled', async () => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date('2026-07-15T10:00:00.000Z'));
+    const model = createInitialAppModel();
+    const todayPlan = {
+      ...model.mealPlan,
+      days: model.mealPlan.days.map((day, dayIndex) =>
+        dayIndex === 2
+          ? {
+              ...day,
+              slots: day.slots.map((slot) => ({
+                ...slot,
+                recipeIds: slot.mealType === 'lunch' ? ['recipe-riso', 'recipe-pollo'] : [],
+              })),
+            }
+          : day,
+      ),
+    };
+    const homeModel = {
+      ...model,
+      mealPlan: todayPlan,
+      mealPlans: [todayPlan],
+      nutritionSettings: { trackingEnabled: true, weightUnit: 'g' as const },
+      recipes: [
+        {
+          id: 'recipe-riso',
+          name: 'Riso in bianco con nome molto molto lungo',
+          mealTypes: ['lunch' as const],
+          ingredientIds: [],
+          nutrition: { weightAmount: 250, calories: 340 },
+          createdAt: '2026-07-15T10:00:00.000Z',
+          updatedAt: '2026-07-15T10:00:00.000Z',
+        },
+        {
+          id: 'recipe-pollo',
+          name: 'Pollo',
+          mealTypes: ['lunch' as const],
+          ingredientIds: [],
+          nutrition: { weightAmount: 180, calories: 260 },
+          createdAt: '2026-07-15T10:00:00.000Z',
+          updatedAt: '2026-07-15T10:00:00.000Z',
+        },
+      ],
+    };
+
+    const { getAllByText, getByText } = await render(<HomeScreen model={homeModel} />);
+
+    expect(getByText('600 cal')).toBeTruthy();
+    expect(getByText('250 g · 340 cal')).toBeTruthy();
+    expect(getByText('180 g · 260 cal')).toBeTruthy();
+    expect(StyleSheet.flatten(getAllByText('Riso in bianco con nome molto molto lungo')[0].props.style)).toEqual(
+      expect.objectContaining({ flex: 1, minWidth: 0 }),
+    );
+    jest.useRealTimers();
+  });
+
+  it('shows missing nutrition as an error on home', async () => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date('2026-07-15T10:00:00.000Z'));
+    const model = createInitialAppModel();
+    const todayPlan = {
+      ...model.mealPlan,
+      days: model.mealPlan.days.map((day, dayIndex) =>
+        dayIndex === 2
+          ? {
+              ...day,
+              slots: day.slots.map((slot) => ({
+                ...slot,
+                recipeIds: slot.mealType === 'lunch' ? ['recipe-riso'] : [],
+              })),
+            }
+          : day,
+      ),
+    };
+    const homeModel = {
+      ...model,
+      mealPlan: todayPlan,
+      mealPlans: [todayPlan],
+      nutritionSettings: { trackingEnabled: true, weightUnit: 'g' as const },
+      recipes: [
+        {
+          id: 'recipe-riso',
+          name: 'Riso in bianco',
+          mealTypes: ['lunch' as const],
+          ingredientIds: [],
+          createdAt: '2026-07-15T10:00:00.000Z',
+          updatedAt: '2026-07-15T10:00:00.000Z',
+        },
+      ],
+    };
+
+    const { getByText } = await render(<HomeScreen model={homeModel} />);
+
+    expect(
+      StyleSheet.flatten(
+        getByText('Completa peso e calorie di tutte le ricette pianificate oppure disattiva il conteggio calorie.').props.style,
+      ),
+    ).toEqual(expect.objectContaining({ color: lightColors.error }));
+    expect(getByText('-')).toBeTruthy();
+    jest.useRealTimers();
+  });
+
+  it('shows plan nutrition totals when tracking is enabled', async () => {
+    const model = createInitialAppModel();
+    const filledPlan = {
+      ...model.mealPlan,
+      days: model.mealPlan.days.map((day, dayIndex) =>
+        dayIndex === 0
+          ? {
+              ...day,
+              slots: day.slots.map((slot) =>
+                slot.mealType === 'lunch' ? { ...slot, recipeIds: ['recipe-riso', 'recipe-pollo'] } : slot,
+              ),
+            }
+          : day,
+      ),
+    };
+    const plannerModel = {
+      ...model,
+      mealPlan: filledPlan,
+      mealPlans: [filledPlan],
+      nutritionSettings: { trackingEnabled: true, weightUnit: 'g' as const },
+      recipes: [
+        {
+          id: 'recipe-riso',
+          name: 'Riso',
+          mealTypes: ['lunch' as const],
+          ingredientIds: [],
+          nutrition: { weightAmount: 250, calories: 340 },
+          createdAt: '2026-07-15T10:00:00.000Z',
+          updatedAt: '2026-07-15T10:00:00.000Z',
+        },
+        {
+          id: 'recipe-pollo',
+          name: 'Pollo',
+          mealTypes: ['lunch' as const],
+          ingredientIds: [],
+          nutrition: { weightAmount: 180, calories: 260 },
+          createdAt: '2026-07-15T10:00:00.000Z',
+          updatedAt: '2026-07-15T10:00:00.000Z',
+        },
+      ],
+    };
+
+    const { getAllByText, getByText } = await render(
+      <PlannerScreen actions={{} as AppActions} model={plannerModel} />,
+    );
+
+    expect(getByText('Piano settimanale (600 cal)')).toBeTruthy();
+    expect(getAllByText('600 cal')).toHaveLength(1);
+    expect(getByText('250 g · 340 cal')).toBeTruthy();
+    expect(getByText('180 g · 260 cal')).toBeTruthy();
   });
 
   it('uses a scrollable shell for long screen content', async () => {

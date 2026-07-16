@@ -1,9 +1,19 @@
 export { getMealTypeLabel, isMealType, mealTypeLabels, mealTypes } from './mealTypes';
 export { validateIngredientInput } from './ingredients';
 export {
+  defaultNutritionSettings,
+  hasCompleteRecipeNutrition,
+  isWeightUnit,
+  sumNutritionTotals,
+  weightUnits,
+} from './nutrition';
+export {
   addRecipeToSlot,
-  clearRecipesFromSlot,
   assignRecipeToSlot,
+  calculateMealPlanNutritionTotal,
+  calculateMealSlotNutritionTotal,
+  calculatePlanDayNutritionTotal,
+  clearRecipesFromSlot,
   createEmptyMealPlan,
   generateWeeklyPlan,
   normalizeMealPlan,
@@ -20,6 +30,7 @@ export type {
   IngredientValidationResult,
 } from './ingredients';
 export type { MealType } from './mealTypes';
+export type { NutritionSettings, NutritionTotals, RecipeNutrition, WeightUnit } from './nutrition';
 export type {
   AssignRecipeResult,
   GenerateWeeklyPlanResult,

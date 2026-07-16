@@ -1,14 +1,27 @@
 import { migrateDatabase, type SqlExecutor } from '../../data/db/migrations';
 import { schemaStatements } from '../../data/db/schema';
 
-function createFakeDb(columns = [{ name: 'title' }]) {
+function createFakeDb(input: {
+  mealPlanColumns?: Array<{ name: string }>;
+  recipeColumns?: Array<{ name: string }>;
+} = {}) {
   const executed: string[] = [];
   const runs: Array<{ source: string; params?: unknown[] }> = [];
+  const mealPlanColumns = input.mealPlanColumns ?? [{ name: 'title' }];
+  const recipeColumns = input.recipeColumns ?? [{ name: 'weight_amount' }, { name: 'calories' }];
   const db: SqlExecutor = {
     execAsync: async (source) => {
       executed.push(source);
     },
-    getAllAsync: async <T>() => columns as T[],
+    getAllAsync: async <T>(source: string) => {
+      if (source === 'PRAGMA table_info(meal_plans);') {
+        return mealPlanColumns as T[];
+      }
+      if (source === 'PRAGMA table_info(recipes);') {
+        return recipeColumns as T[];
+      }
+      return [] as T[];
+    },
     runAsync: async (source, params) => {
       runs.push({ source, params });
       return {};
@@ -47,12 +60,21 @@ describe('migrateDatabase', () => {
   });
 
   it('adds the meal plan title column when upgrading an existing database', async () => {
-    const { db, executed } = createFakeDb([{ name: 'id' }]);
+    const { db, executed } = createFakeDb({ mealPlanColumns: [{ name: 'id' }] });
 
     await migrateDatabase({ db, now: '2026-07-04T12:00:00.000Z' });
 
     expect(executed).toContain(
       "ALTER TABLE meal_plans ADD COLUMN title TEXT NOT NULL DEFAULT 'Piano settimanale';",
     );
+  });
+
+  it('adds recipe nutrition columns when upgrading an existing database', async () => {
+    const { db, executed } = createFakeDb({ recipeColumns: [{ name: 'id' }] });
+
+    await migrateDatabase({ db, now: '2026-07-04T12:00:00.000Z' });
+
+    expect(executed).toContain('ALTER TABLE recipes ADD COLUMN weight_amount REAL;');
+    expect(executed).toContain('ALTER TABLE recipes ADD COLUMN calories INTEGER;');
   });
 });

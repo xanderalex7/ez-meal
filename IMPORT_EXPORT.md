@@ -35,7 +35,7 @@ metadata, preference, ingredient, recipe, recipe_ingredient, meal_plan, meal_slo
 ## Mandatory Header
 
 ```csv
-record_type,id,parent_id,key,name,value,available,meal_types,date,meal_type,recipe_id,week_start_date,created_at,updated_at,notes
+record_type,id,parent_id,key,name,value,available,meal_types,date,meal_type,recipe_id,week_start_date,created_at,updated_at,notes,weight_amount,calories
 ```
 
 ## Row Types
@@ -43,7 +43,7 @@ record_type,id,parent_id,key,name,value,available,meal_types,date,meal_type,reci
 | `record_type` | Purpose |
 | --- | --- |
 | `metadata` | Format version and export metadata. |
-| `preference` | User preferences: language and theme. |
+| `preference` | User preferences: language, theme and nutrition settings. |
 | `ingredient` | Available ingredients. |
 | `recipe` | Recipes and meal tags. |
 | `recipe_ingredient` | Recipe-to-ingredient relation. |
@@ -53,9 +53,9 @@ record_type,id,parent_id,key,name,value,available,meal_types,date,meal_type,reci
 ## Required Metadata
 
 ```csv
-metadata,format,,schema_version,,1,,,,,,,,,
-metadata,export,,app_name,,EZ-MEAL,,,,,,,,,
-metadata,export,,exported_at,,2026-07-14T10:00:00.000Z,,,,,,,,,
+metadata,format,,schema_version,,2,,,,,,,,,,,
+metadata,export,,app_name,,EZ-MEAL,,,,,,,,,,,
+metadata,export,,exported_at,,2026-07-14T10:00:00.000Z,,,,,,,,,,,
 ```
 
 ## Preferences
@@ -64,12 +64,16 @@ Supported preferences:
 
 - `language`: `it` or `en`
 - `themeMode`: `system`, `light` or `dark`
+- `nutritionTrackingEnabled`: `true` or `false`
+- `weightUnit`: `g`, `kg`, `oz` or `lb`
 
 Example:
 
 ```csv
-preference,language,,language,,it,,,,,,,,2026-07-14T10:00:00.000Z,
-preference,themeMode,,themeMode,,system,,,,,,,,2026-07-14T10:00:00.000Z,
+preference,language,,language,,it,,,,,,,,2026-07-14T10:00:00.000Z,,,
+preference,themeMode,,themeMode,,system,,,,,,,,2026-07-14T10:00:00.000Z,,,
+preference,nutritionTrackingEnabled,,nutritionTrackingEnabled,,true,,,,,,,,2026-07-14T10:00:00.000Z,,,
+preference,weightUnit,,weightUnit,,g,,,,,,,,2026-07-14T10:00:00.000Z,,,
 ```
 
 ## Ingredients
@@ -86,7 +90,7 @@ Required columns:
 Example:
 
 ```csv
-ingredient,ingredient-1,,,Pomodoro,,true,,,,,,2026-07-04T12:00:00.000Z,2026-07-04T12:00:00.000Z,
+ingredient,ingredient-1,,,Pomodoro,,true,,,,,,2026-07-04T12:00:00.000Z,2026-07-04T12:00:00.000Z,,,
 ```
 
 ## Recipes
@@ -100,18 +104,25 @@ Required columns:
 - `created_at`
 - `updated_at`
 
+Optional columns:
+
+- `weight_amount`: positive number using the selected `weightUnit`
+- `calories`: positive number, calories for the whole recipe
+
 Example:
 
 ```csv
-recipe,recipe-1,,,Pasta al pomodoro,,,lunch;dinner,,,,,2026-07-04T12:00:00.000Z,2026-07-04T12:00:00.000Z,
+recipe,recipe-1,,,Pasta al pomodoro,,,lunch;dinner,,,,,2026-07-04T12:00:00.000Z,2026-07-04T12:00:00.000Z,,350,520
 ```
+
+If `nutritionTrackingEnabled` is `true`, every recipe must include valid `weight_amount` and `calories`.
 
 ## Recipe Ingredients
 
 Use one row per ingredient used by a recipe.
 
 ```csv
-recipe_ingredient,recipe-1__ingredient-1,recipe-1,,,ingredient-1,,,,,,,,,
+recipe_ingredient,recipe-1__ingredient-1,recipe-1,,,ingredient-1,,,,,,,,,,,
 ```
 
 - `parent_id`: recipe ID.
@@ -131,7 +142,7 @@ Required columns:
 Example:
 
 ```csv
-meal_plan,plan-current,,,Piano settimanale,,,,,,,2026-06-29,2026-07-04T12:00:00.000Z,2026-07-04T12:00:00.000Z,
+meal_plan,plan-current,,,Piano settimanale,,,,,,,2026-06-29,2026-07-04T12:00:00.000Z,2026-07-04T12:00:00.000Z,,,
 ```
 
 ## Meal Slots
@@ -150,17 +161,19 @@ Required columns:
 Example with multiple recipes:
 
 ```csv
-meal_slot,plan-current__2026-06-29__lunch,plan-current,,,,,,2026-06-29,lunch,recipe-riso;recipe-pollo;recipe-frutta,,,,
+meal_slot,plan-current__2026-06-29__lunch,plan-current,,,,,,2026-06-29,lunch,recipe-riso;recipe-pollo;recipe-frutta,,,,,,
 ```
 
 ## Import Must Fail If
 
 - mandatory header is missing or changed;
-- `schema_version` is not `1`;
+- `schema_version` is not `1` or `2`;
 - unsupported `record_type`;
 - required IDs or names are empty;
 - invalid boolean/date/meal type;
-- unsupported language or theme;
+- unsupported language, theme, nutrition tracking value or weight unit;
+- invalid or incomplete recipe `weight_amount` / `calories`;
+- `nutritionTrackingEnabled` is `true` and at least one recipe has missing nutrition values;
 - a relation points to a missing ingredient, recipe or plan;
 - a planned recipe is not compatible with the slot `meal_type`;
 - duplicate recipe IDs exist in the same slot;
@@ -179,5 +192,6 @@ meal_slot,plan-current__2026-06-29__lunch,plan-current,,,,,,2026-06-29,lunch,rec
 
 ## Compatibility
 
-- Current schema version: `1`.
+- Current schema version: `2`.
+- Schema version `1` files without `weight_amount`, `calories`, `nutritionTrackingEnabled` and `weightUnit` are still accepted.
 - Single recipe slots and multi-recipe slots are both supported through `meal_slot.recipe_id`.

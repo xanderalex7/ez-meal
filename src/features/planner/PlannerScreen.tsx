@@ -2,8 +2,13 @@ import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import type { AppActions, AppModel } from '../appModel';
-import type { MealType } from '../../domain';
+import {
+  calculateMealPlanNutritionTotal,
+  calculatePlanDayNutritionTotal,
+  type MealType,
+} from '../../domain';
 import { useI18n, type TranslationKey } from '../../shared/i18n';
+import { formatNumber, formatNutritionMeta, hasMissingNutrition } from '../../shared/nutritionUi';
 import {
   ActionIconButton,
   Badge,
@@ -36,6 +41,14 @@ export function PlannerScreen({ actions, model }: PlannerScreenProps) {
   const colors = useAppColors();
   const { mealTypeLabel, t } = useI18n();
   const visibleMealPlan = model.generatedMealPlanDraft ?? model.mealPlan;
+  const showNutrition = model.nutritionSettings.trackingEnabled;
+  const planTotal = calculateMealPlanNutritionTotal(visibleMealPlan, model.recipes);
+  const plannedRecipes = visibleMealPlan.days
+    .flatMap((day) => day.slots)
+    .flatMap((slot) => slot.recipeIds)
+    .map((recipeId) => model.recipes.find((candidate) => candidate.id === recipeId))
+    .filter((recipe): recipe is NonNullable<typeof recipe> => Boolean(recipe));
+  const nutritionMissing = showNutrition && hasMissingNutrition(plannedRecipes);
   const hasGeneratedDraft = Boolean(model.generatedMealPlanDraft);
   const hasMultipleMealPlans = model.mealPlans.length > 1;
   const [isCreateFormVisible, setIsCreateFormVisible] = useState(false);
@@ -136,7 +149,12 @@ export function PlannerScreen({ actions, model }: PlannerScreenProps) {
 
   return (
     <View style={styles.stack}>
-      <Text style={[styles.title, { color: colors.text }]}>{visibleMealPlan.title}</Text>
+      <View style={styles.titleRow}>
+        <Text numberOfLines={1} style={[styles.title, { color: colors.text }]}>
+          {visibleMealPlan.title}
+          {showNutrition ? ` (${formatNumber(planTotal.calories)} cal)` : ''}
+        </Text>
+      </View>
       {isCreateFormVisible ? (
         <View style={styles.form}>
           <TextField
@@ -199,11 +217,21 @@ export function PlannerScreen({ actions, model }: PlannerScreenProps) {
           {message.text}
         </Text>
       ) : null}
+      {nutritionMissing ? (
+        <Text style={[styles.message, { color: colors.error }]}>{t('nutritionMissing')}</Text>
+      ) : null}
       {visibleMealPlan.days.map((day, dayIndex) => (
         <Card key={day.date} style={styles.day}>
-          <Text style={[styles.dayTitle, { color: colors.text }]}>
-            {weekDayLabelKeys[dayIndex] ? t(weekDayLabelKeys[dayIndex]) : day.date}
-          </Text>
+          <View style={styles.dayHeader}>
+            <Text style={[styles.dayTitle, { color: colors.text }]}>
+              {weekDayLabelKeys[dayIndex] ? t(weekDayLabelKeys[dayIndex]) : day.date}
+            </Text>
+            {showNutrition ? (
+              <Text style={[styles.dayTotal, { color: colors.textMuted }]}>
+                {formatNumber(calculatePlanDayNutritionTotal(day, model.recipes).calories)} cal
+              </Text>
+            ) : null}
+          </View>
           <View style={[styles.dayDivider, { backgroundColor: colors.border }]} />
           {day.slots.map((slot) => {
             const assignedRecipes = slot.recipeIds
@@ -250,9 +278,20 @@ export function PlannerScreen({ actions, model }: PlannerScreenProps) {
                   <View style={styles.recipeList}>
                     {assignedRecipes.map((recipe) => (
                       <View key={recipe.id} style={styles.recipeRow}>
-                        <Text style={[styles.recipeName, { color: colors.text }]}>
+                        <Text
+                          numberOfLines={1}
+                          style={[styles.recipeName, { color: colors.text }]}
+                        >
                           {recipe.name}
                         </Text>
+                        {showNutrition ? (
+                          <Text
+                            numberOfLines={1}
+                            style={[styles.nutritionMeta, { color: colors.textMuted }]}
+                          >
+                            {formatNutritionMeta(recipe, model.nutritionSettings.weightUnit, t) ?? '-'}
+                          </Text>
+                        ) : null}
                         {isEditing ? (
                           <View style={styles.recipeAction}>
                             <ActionIconButton
@@ -343,10 +382,23 @@ const styles = StyleSheet.create({
   planSelector: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   generatorActions: { gap: spacing.sm, width: '100%' },
   fullWidthButton: { width: '100%' },
-  title: { fontSize: 20, fontWeight: '700' },
+  title: { flex: 1, fontSize: 20, fontWeight: '700', minWidth: 0 },
+  titleRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: spacing.md,
+    justifyContent: 'space-between',
+  },
   message: { fontSize: 14 },
   day: { gap: spacing.md },
-  dayTitle: { fontSize: 16, fontWeight: '700' },
+  dayHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: spacing.md,
+    justifyContent: 'space-between',
+  },
+  dayTitle: { flex: 1, fontSize: 16, fontWeight: '700', minWidth: 0 },
+  dayTotal: { flexShrink: 0, fontSize: 13, fontWeight: '700' },
   dayDivider: { height: 1 },
   slot: {
     alignItems: 'center',
@@ -358,7 +410,13 @@ const styles = StyleSheet.create({
   slotActions: { alignItems: 'center', flexDirection: 'row', justifyContent: 'flex-end', width: 44 },
   slotContainer: { gap: spacing.sm },
   slotLabel: { fontSize: 14, fontWeight: '700' },
-  recipeName: { fontSize: 17, fontWeight: '700' },
+  recipeName: { flex: 1, fontSize: 17, fontWeight: '700', minWidth: 0 },
+  nutritionMeta: {
+    flexShrink: 0,
+    fontSize: 13,
+    fontWeight: '700',
+    textAlign: 'right',
+  },
   recipeList: { gap: spacing.xs },
   recipeRow: {
     alignItems: 'center',
