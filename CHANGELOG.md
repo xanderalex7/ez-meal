@@ -9,8 +9,12 @@ This project follows semantic versioning for public app versions. Release proces
 ### Added
 
 - Ingredient list filtering from the Ingredients tab.
+- Recipe list filtering by recipe name.
 - Alphabetical ingredient ordering for easier lookup.
+- Alphabetical recipe ordering for easier lookup.
 - Cropped wordmark logo assets for the app header.
+- Optional nutrition tracking for recipe calories and ingredient-level quantities.
+- UX copy now refers to planned items as dishes instead of recipes.
 
 ### Changed
 
@@ -20,6 +24,9 @@ This project follows semantic versioning for public app versions. Release proces
 - Improved bottom navigation safe-area behavior on Android devices.
 - Improved recipe creation UX around ingredient selection.
 - Improved warning and error message styling with distinct colors.
+- Improved recipe editing flow by bringing the edit form into view.
+- Moved quantity tracking from recipe level to ingredient level.
+- Updated Today and Plan nutrition displays: Today shows ingredient quantities, while Plan keeps calorie-only summaries.
 
 ### Fixed
 

@@ -27,6 +27,7 @@ import { appSections, type AppSection } from './src/features/navigation';
 import { PlannerScreen } from './src/features/planner';
 import { RecipesScreen } from './src/features/recipes';
 import { SettingsScreen } from './src/features/settings';
+import type { NutritionSettings } from './src/domain';
 import { I18nProvider, type Language, useI18n } from './src/shared/i18n';
 import { consoleLogger } from './src/shared/logging';
 import { AppThemeProvider, darkColors, radii, spacing, useAppColors, type ThemeMode } from './src/shared/theme';
@@ -119,6 +120,7 @@ function AppContent({
   const [section, setSection] = useState<AppSection>('home');
   const [model, setModel] = useState(createInitialAppModel);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const contentScrollRef = useRef<ScrollView | null>(null);
   const persistence = useRef<AppPersistence | null>(null);
   const setPersistentModel = useMemo<Dispatch<SetStateAction<AppModel>>>(
     () => (update) => {
@@ -218,6 +220,17 @@ function AppContent({
     }
   }
 
+  async function changeNutritionSettings(nextNutritionSettings: NutritionSettings) {
+    actions.updateNutritionSettings(nextNutritionSettings);
+    try {
+      await persistence.current?.saveNutritionSettings(nextNutritionSettings);
+      return null;
+    } catch {
+      consoleLogger.error('Local nutrition preference save failed');
+      return t('errorNutritionSettingsSaveFailed');
+    }
+  }
+
   async function selectImportCsvFile() {
     try {
       const pickedFile = await pickCsvFile();
@@ -291,6 +304,10 @@ function AppContent({
   const keyboardBottomPadding = keyboardVisible ? spacing.xxxl : 0;
   const contentBottomPadding = spacing.xl + keyboardBottomPadding + (!keyboardVisible ? navBottomPadding : 0);
 
+  function scrollContentToTop() {
+    contentScrollRef.current?.scrollTo({ animated: true, y: 0 });
+  }
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -306,6 +323,7 @@ function AppContent({
         <Text style={[styles.subtitle, { color: colors.textMuted }]}>{t('appSubtitle')}</Text>
       </View>
       <ScrollView
+        ref={contentScrollRef}
         style={styles.content}
         contentContainerStyle={[styles.contentScroll, { paddingBottom: contentBottomPadding }]}
         keyboardShouldPersistTaps="handled"
@@ -323,6 +341,8 @@ function AppContent({
           selectImportCsvFile,
           confirmImportCsvFile,
           exportCsvFile,
+          changeNutritionSettings,
+          scrollContentToTop,
         )}
       </ScrollView>
       {!keyboardVisible ? (
@@ -393,6 +413,8 @@ function renderSection(
   exportCsvFile: (
     onProgress: (stepId: ImportExportStepId, status: 'active' | 'success' | 'error') => void,
   ) => Promise<{ ok: true; completedAt: string } | { ok: false; message: string }>,
+  changeNutritionSettings: (settings: NutritionSettings) => Promise<string | null>,
+  scrollContentToTop: () => void,
 ) {
   switch (section) {
     case 'home':
@@ -400,7 +422,7 @@ function renderSection(
     case 'planner':
       return <PlannerScreen actions={actions} model={model} />;
     case 'recipes':
-      return <RecipesScreen actions={actions} model={model} />;
+      return <RecipesScreen actions={actions} model={model} onRequestScrollToTop={scrollContentToTop} />;
     case 'ingredients':
       return <IngredientsScreen actions={actions} model={model} />;
     case 'settings':
@@ -411,6 +433,8 @@ function renderSection(
           onLanguageChange={changeLanguage}
           onConfirmImportCsv={confirmImportCsvFile}
           onExportCsv={exportCsvFile}
+          nutritionSettings={model.nutritionSettings}
+          onNutritionSettingsChange={changeNutritionSettings}
           onThemeModeChange={changeThemeMode}
           onSelectImportCsv={selectImportCsvFile}
           themeMode={themeMode}

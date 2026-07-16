@@ -85,14 +85,14 @@ Future evolutions:
 | Field | REQ-002 |
 | --- | --- |
 | Title | Manage recipes |
-| Description | The system must allow users to create, edit, view and delete recipes with name, meal tag and selected ingredients. |
+| Description | The system must allow users to create, search, edit, view and delete recipes with name, meal tag, selected ingredients, optional recipe calories and optional ingredient quantities. |
 | Rationale | Recipes are the selectable items used by meal plans. |
 | Actors | User |
 | Preconditions | Ingredients may exist. |
-| Main flow | User creates a recipe, selects a meal tag, selects zero or more ingredients, saves it and sees it newest first. |
+| Main flow | User creates a recipe, selects a meal tag, selects ingredients, enters ingredient quantities when nutrition tracking is enabled, saves it and sees it newest first; user can filter recipes by name and open an existing recipe in the edit form. |
 | Alternatives/errors | Invalid data is rejected; deleting recipes used in plans must be handled without app errors. |
 | Domain rules | Meal tag must be breakfast, lunch or dinner. |
-| Acceptance criteria | Given a valid recipe, When saved, Then it is visible with meal tag and ingredient list. |
+| Acceptance criteria | Given a valid recipe, When saved, Then it is visible with meal tag and ingredient list. Given saved recipes, When the user searches by name, Then only matching recipes are shown. Given a recipe is edited, When edit starts, Then the edit form is brought into view. Given nutrition tracking is enabled, When a recipe is saved, Then calories and every selected ingredient quantity are present. |
 | Impacts | Local data, plan references. |
 | Priority | MUST |
 | Status | Approved |
@@ -194,6 +194,22 @@ Future evolutions:
 | Status | Approved |
 | Traceability | `docs/tasks.md` |
 
+| Field | REQ-009 |
+| --- | --- |
+| Title | Optional nutrition tracking |
+| Description | The system must let users enable or disable recipe calorie and ingredient quantity tracking. |
+| Rationale | Users may want lightweight calorie visibility without turning the app into a full nutrition tracker. |
+| Actors | User |
+| Preconditions | Recipes and ingredients may exist. |
+| Main flow | User enables tracking, enters recipe calories and ingredient quantities with user-chosen units, then sees calorie totals in Today and Plan. |
+| Alternatives/errors | When disabled, nutrition fields and values are hidden; when enabled, incomplete planned nutrition shows an actionable error. |
+| Domain rules | Calories belong to the recipe; quantity belongs to each ingredient used by the recipe; unit text is entered by the user as part of the quantity; Plan shows calories only; Today shows recipe calories and ingredient quantities. |
+| Acceptance criteria | Given tracking is enabled, When Today opens, Then recipe calories and ingredient quantities are visible. Given tracking is enabled, When Plan opens, Then plan/day/recipe calories are visible without ingredient quantities. |
+| Impacts | Local data, CSV import/export, validation, UI. |
+| Priority | MUST |
+| Status | Approved |
+| Traceability | `docs/tasks.md`, `IMPORT_EXPORT.md` |
+
 ## Non-Functional Requirements
 
 - Offline-first: core flows must work without network.
@@ -210,6 +226,7 @@ Future evolutions:
 - Recipe names: trim, require non-empty values.
 - Meal tags: breakfast, lunch, dinner only.
 - Plan titles: trim, fallback to a valid default when empty.
+- Nutrition: calories must be positive at recipe level; ingredient quantities must be present for each selected ingredient when tracking is enabled; unit text is user-defined.
 - CSV: validate header, row type, IDs, references, language and theme before applying.
 
 ## Assumptions and Constraints

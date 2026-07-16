@@ -3,6 +3,7 @@ import type { Dispatch, SetStateAction } from 'react';
 import {
   addRecipeToSlot,
   createEmptyMealPlan,
+  defaultNutritionSettings,
   generateWeeklyPlan,
   removeRecipeFromSlotById,
   removeRecipeFromSlot,
@@ -11,6 +12,7 @@ import {
   type Ingredient,
   type MealPlan,
   type MealType,
+  type NutritionSettings,
   type Recipe,
 } from '../domain';
 import { translate, type TranslationKey, type TranslationParams } from '../shared/i18n';
@@ -21,6 +23,7 @@ export type AppModel = {
   generatedMealPlanDraft?: MealPlan;
   ingredients: Ingredient[];
   mealPlans: MealPlan[];
+  nutritionSettings: NutritionSettings;
   selectedMealPlanId: string;
   recipes: Recipe[];
   mealPlan: MealPlan;
@@ -29,10 +32,22 @@ export type AppModel = {
 export type AppActions = {
   addIngredient: (name: string) => string | null;
   deleteIngredient: (id: string, options?: { forceCascade?: boolean }) => string | null;
-  addRecipe: (input: { name: string; mealTypes: MealType[]; ingredientIds: string[] }) => string | null;
+  addRecipe: (input: {
+    name: string;
+    mealTypes: MealType[];
+    ingredientIds: string[];
+    ingredientWeights?: Array<{ ingredientId: string; quantity?: unknown; weightAmount?: unknown }>;
+    nutrition?: { weightAmount?: unknown; calories?: unknown };
+  }) => string | null;
   updateRecipe: (
     id: string,
-    input: { name: string; mealTypes: MealType[]; ingredientIds: string[] },
+    input: {
+      name: string;
+      mealTypes: MealType[];
+      ingredientIds: string[];
+      ingredientWeights?: Array<{ ingredientId: string; quantity?: unknown; weightAmount?: unknown }>;
+      nutrition?: { weightAmount?: unknown; calories?: unknown };
+    },
   ) => string | null;
   deleteRecipe: (id: string, options?: { forceCascade?: boolean }) => string | null;
   createMealPlan: (title: string) => string | null;
@@ -44,6 +59,7 @@ export type AppActions = {
   removeRecipeFromMealSlot: (date: string, mealType: MealType, recipeId?: string) => void;
   generatePlan: () => number;
   saveGeneratedPlan: () => string | null;
+  updateNutritionSettings: (settings: NutritionSettings) => void;
 };
 
 export function createInitialAppModel(): AppModel {
@@ -57,6 +73,7 @@ export function createInitialAppModel(): AppModel {
   return {
     ingredients: [],
     mealPlans: [mealPlan],
+    nutritionSettings: defaultNutritionSettings,
     selectedMealPlanId: mealPlan.id,
     recipes: [],
     mealPlan,
@@ -102,6 +119,9 @@ export function createAppActions(
         recipes: current.recipes.map((recipe) => ({
           ...recipe,
           ingredientIds: recipe.ingredientIds.filter((ingredientId) => ingredientId !== id),
+          ingredientWeights: recipe.ingredientWeights?.filter(
+            (ingredientWeight) => ingredientWeight.ingredientId !== id,
+          ),
         })),
       }));
       return null;
@@ -112,7 +132,9 @@ export function createAppActions(
         name: input.name,
         mealTypes: input.mealTypes,
         ingredientIds: input.ingredientIds,
-      });
+        ingredientWeights: input.ingredientWeights,
+        nutrition: input.nutrition,
+      }, { nutritionRequired: model.nutritionSettings.trackingEnabled });
       if (!result.ok) {
         return recipeValidationMessage(result.errors[0].code, t);
       }
@@ -125,6 +147,8 @@ export function createAppActions(
         name: result.value.name,
         mealTypes: result.value.mealTypes,
         ingredientIds: result.value.ingredientIds,
+        ingredientWeights: result.value.ingredientWeights,
+        nutrition: result.value.nutrition,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
@@ -137,7 +161,9 @@ export function createAppActions(
         name: input.name,
         mealTypes: input.mealTypes,
         ingredientIds: input.ingredientIds,
-      });
+        ingredientWeights: input.ingredientWeights,
+        nutrition: input.nutrition,
+      }, { nutritionRequired: model.nutritionSettings.trackingEnabled });
       if (!result.ok) {
         return recipeValidationMessage(result.errors[0].code, t);
       }
@@ -154,6 +180,8 @@ export function createAppActions(
                 name: result.value.name,
                 mealTypes: result.value.mealTypes,
                 ingredientIds: result.value.ingredientIds,
+                ingredientWeights: result.value.ingredientWeights,
+                nutrition: result.value.nutrition,
                 updatedAt: new Date().toISOString(),
               }
             : recipe,
@@ -385,6 +413,10 @@ export function createAppActions(
       }));
       return null;
     },
+
+    updateNutritionSettings(settings) {
+      setModel((current) => ({ ...current, nutritionSettings: settings }));
+    },
   };
 }
 
@@ -393,7 +425,13 @@ function recipeValidationMessage(
     | 'RECIPE_NAME_REQUIRED'
     | 'RECIPE_MEAL_TYPE_REQUIRED'
     | 'RECIPE_MEAL_TYPE_INVALID'
-    | 'RECIPE_INGREDIENT_REQUIRED',
+    | 'RECIPE_INGREDIENT_REQUIRED'
+    | 'RECIPE_INGREDIENT_WEIGHT_REQUIRED'
+    | 'RECIPE_INGREDIENT_WEIGHT_INVALID'
+    | 'RECIPE_WEIGHT_REQUIRED'
+    | 'RECIPE_WEIGHT_INVALID'
+    | 'RECIPE_CALORIES_REQUIRED'
+    | 'RECIPE_CALORIES_INVALID',
   t: (key: TranslationKey, params?: TranslationParams) => string,
 ) {
   return {
@@ -401,6 +439,12 @@ function recipeValidationMessage(
     RECIPE_MEAL_TYPE_REQUIRED: t('errorRecipeMealTypeRequired'),
     RECIPE_MEAL_TYPE_INVALID: t('errorRecipeMealTypeInvalid'),
     RECIPE_INGREDIENT_REQUIRED: t('errorRecipeIngredientRequired'),
+    RECIPE_INGREDIENT_WEIGHT_REQUIRED: t('errorRecipeWeightRequired'),
+    RECIPE_INGREDIENT_WEIGHT_INVALID: t('errorRecipeWeightInvalid'),
+    RECIPE_WEIGHT_REQUIRED: t('errorRecipeWeightRequired'),
+    RECIPE_WEIGHT_INVALID: t('errorRecipeWeightInvalid'),
+    RECIPE_CALORIES_REQUIRED: t('errorRecipeCaloriesRequired'),
+    RECIPE_CALORIES_INVALID: t('errorRecipeCaloriesInvalid'),
   }[code];
 }
 
