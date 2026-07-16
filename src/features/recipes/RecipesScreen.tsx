@@ -32,7 +32,7 @@ export function RecipesScreen({ actions, model }: RecipesScreenProps) {
   const [editingRecipeId, setEditingRecipeId] = useState<string | null>(null);
   const [pendingDeleteRecipeId, setPendingDeleteRecipeId] = useState<string | null>(null);
   const [error, setError] = useState<string | undefined>();
-  const [message, setMessage] = useState<string | undefined>();
+  const [message, setMessage] = useState<ScreenMessage | undefined>();
 
   function toggleMealType(mealType: MealType) {
     setSelectedMealTypes((current) =>
@@ -90,12 +90,12 @@ export function RecipesScreen({ actions, model }: RecipesScreenProps) {
     });
     if (result) {
       setPendingDeleteRecipeId(recipeId);
-      setMessage(result);
+      setMessage({ text: result, tone: 'warning' });
       return;
     }
 
     setPendingDeleteRecipeId(null);
-    setMessage(t('recipeDeleted'));
+    setMessage({ text: t('recipeDeleted'), tone: 'info' });
   }
 
   return (
@@ -103,7 +103,11 @@ export function RecipesScreen({ actions, model }: RecipesScreenProps) {
       <Text style={[styles.title, { color: colors.text }]}>
         {editingRecipeId ? t('recipeEditTitle') : t('recipesTitle')}
       </Text>
-      {message ? <Text style={[styles.message, { color: colors.textMuted }]}>{message}</Text> : null}
+      {message ? (
+        <Text style={[styles.message, { color: messageColor(message.tone, colors) }]}>
+          {message.text}
+        </Text>
+      ) : null}
       {isFormVisible ? (
         <View style={styles.form}>
           <TextField
@@ -135,11 +139,15 @@ export function RecipesScreen({ actions, model }: RecipesScreenProps) {
               onChange={setSelectedIngredientIds}
             />
           ) : (
-            <Text style={[styles.empty, { color: colors.textMuted }]}>
+            <Text style={[styles.empty, { color: colors.warning }]}>
               {t('recipeNoIngredientsHint')}
             </Text>
           )}
-          <Button label={editingRecipeId ? t('actionSave') : t('actionAdd')} onPress={submit} />
+          <Button
+            disabled={selectedIngredientIds.length === 0}
+            label={editingRecipeId ? t('actionSave') : t('actionAdd')}
+            onPress={submit}
+          />
         </View>
       ) : null}
       {visibleRecipes.map((recipe) => (
@@ -191,6 +199,21 @@ export function RecipesScreen({ actions, model }: RecipesScreenProps) {
       ) : null}
     </View>
   );
+}
+
+type ScreenMessage = {
+  text: string;
+  tone: 'info' | 'warning' | 'error';
+};
+
+function messageColor(tone: ScreenMessage['tone'], colors: ReturnType<typeof useAppColors>) {
+  if (tone === 'error') {
+    return colors.error;
+  }
+  if (tone === 'warning') {
+    return colors.warning;
+  }
+  return colors.textMuted;
 }
 
 function MealTypeChip({

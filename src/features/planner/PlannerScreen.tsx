@@ -42,7 +42,7 @@ export function PlannerScreen({ actions, model }: PlannerScreenProps) {
   const [pendingDeletePlanId, setPendingDeletePlanId] = useState<string | null>(null);
   const [planTitle, setPlanTitle] = useState(model.mealPlan.title);
   const [newPlanTitle, setNewPlanTitle] = useState('');
-  const [message, setMessage] = useState<string | undefined>();
+  const [message, setMessage] = useState<ScreenMessage | undefined>();
   const [selectionSlotKey, setSelectionSlotKey] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const canGeneratePlan = isEditing && !hasGeneratedDraft && isMealPlanEmpty(model.mealPlan);
@@ -56,8 +56,8 @@ export function PlannerScreen({ actions, model }: PlannerScreenProps) {
     const uncovered = actions.generatePlan();
     setMessage(
       uncovered === 0
-        ? t('planGeneratedDraft')
-        : t('planInsufficientRecipes', { count: uncovered }),
+        ? { text: t('planGeneratedDraft'), tone: 'info' }
+        : { text: t('planInsufficientRecipes', { count: uncovered }), tone: 'error' },
     );
   }
 
@@ -78,7 +78,11 @@ export function PlannerScreen({ actions, model }: PlannerScreenProps) {
         ? actions.renameMealPlan(model.mealPlan.id, planTitle)
         : null;
     const result = generatedResult ?? renameResult;
-    setMessage(result ?? (hasGeneratedDraft ? t('planGeneratedSave') : t('planSaved')));
+    setMessage(
+      result
+        ? { text: result, tone: 'error' }
+        : { text: hasGeneratedDraft ? t('planGeneratedSave') : t('planSaved'), tone: 'info' },
+    );
     if (!result) {
       setIsEditing(false);
     }
@@ -88,7 +92,7 @@ export function PlannerScreen({ actions, model }: PlannerScreenProps) {
     setPendingDeletePlanId(null);
     setSelectionSlotKey(null);
     const result = actions.createMealPlan(newPlanTitle);
-    setMessage(result ?? t('planCreated'));
+    setMessage(result ? { text: result, tone: 'error' } : { text: t('planCreated'), tone: 'info' });
     if (!result) {
       setNewPlanTitle('');
       setIsCreateFormVisible(false);
@@ -100,12 +104,12 @@ export function PlannerScreen({ actions, model }: PlannerScreenProps) {
     setSelectionSlotKey(null);
     if (pendingDeletePlanId !== model.mealPlan.id) {
       setPendingDeletePlanId(model.mealPlan.id);
-      setMessage(t('planDeleteConfirmMessage'));
+      setMessage({ text: t('planDeleteConfirmMessage'), tone: 'warning' });
       return;
     }
 
     const result = actions.deleteMealPlan(model.mealPlan.id);
-    setMessage(result ?? t('planDeleted'));
+    setMessage(result ? { text: result, tone: 'error' } : { text: t('planDeleted'), tone: 'info' });
     setPendingDeletePlanId(null);
   }
 
@@ -124,7 +128,7 @@ export function PlannerScreen({ actions, model }: PlannerScreenProps) {
 
   function assignRecipe(date: string, mealType: MealType, recipeId: string) {
     const result = actions.assignRecipeToMealSlot(date, mealType, recipeId);
-    setMessage(result ?? t('planMealUpdated'));
+    setMessage(result ? { text: result, tone: 'error' } : { text: t('planMealUpdated'), tone: 'info' });
     if (!result) {
       setSelectionSlotKey(null);
     }
@@ -190,7 +194,11 @@ export function PlannerScreen({ actions, model }: PlannerScreenProps) {
           />
         </View>
       ) : null}
-      {message ? <Text style={[styles.message, { color: colors.textMuted }]}>{message}</Text> : null}
+      {message ? (
+        <Text style={[styles.message, { color: messageColor(message.tone, colors) }]}>
+          {message.text}
+        </Text>
+      ) : null}
       {visibleMealPlan.days.map((day, dayIndex) => (
         <Card key={day.date} style={styles.day}>
           <Text style={[styles.dayTitle, { color: colors.text }]}>
@@ -257,7 +265,7 @@ export function PlannerScreen({ actions, model }: PlannerScreenProps) {
                               onPress={() => {
                                 actions.removeRecipeFromMealSlot(slot.date, slot.mealType, recipe.id);
                                 setSelectionSlotKey(null);
-                                setMessage(t('planMealCleared'));
+                                setMessage({ text: t('planMealCleared'), tone: 'info' });
                               }}
                             />
                           </View>
@@ -278,7 +286,7 @@ export function PlannerScreen({ actions, model }: PlannerScreenProps) {
                         />
                       ))
                     ) : (
-                      <Text style={[styles.empty, { color: colors.textMuted }]}>
+                      <Text style={[styles.empty, { color: colors.warning }]}>
                         {t('planNoCompatibleRecipe', { meal: mealTypeLabel(slot.mealType) })}
                       </Text>
                     )}
@@ -306,6 +314,21 @@ export function PlannerScreen({ actions, model }: PlannerScreenProps) {
       ) : null}
     </View>
   );
+}
+
+type ScreenMessage = {
+  text: string;
+  tone: 'info' | 'warning' | 'error';
+};
+
+function messageColor(tone: ScreenMessage['tone'], colors: ReturnType<typeof useAppColors>) {
+  if (tone === 'error') {
+    return colors.error;
+  }
+  if (tone === 'warning') {
+    return colors.warning;
+  }
+  return colors.textMuted;
 }
 
 function isMealPlanEmpty(mealPlan: AppModel['mealPlan']) {

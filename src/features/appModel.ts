@@ -389,13 +389,18 @@ export function createAppActions(
 }
 
 function recipeValidationMessage(
-  code: 'RECIPE_NAME_REQUIRED' | 'RECIPE_MEAL_TYPE_REQUIRED' | 'RECIPE_MEAL_TYPE_INVALID',
+  code:
+    | 'RECIPE_NAME_REQUIRED'
+    | 'RECIPE_MEAL_TYPE_REQUIRED'
+    | 'RECIPE_MEAL_TYPE_INVALID'
+    | 'RECIPE_INGREDIENT_REQUIRED',
   t: (key: TranslationKey, params?: TranslationParams) => string,
 ) {
   return {
     RECIPE_NAME_REQUIRED: t('errorRecipeNameRequired'),
     RECIPE_MEAL_TYPE_REQUIRED: t('errorRecipeMealTypeRequired'),
     RECIPE_MEAL_TYPE_INVALID: t('errorRecipeMealTypeInvalid'),
+    RECIPE_INGREDIENT_REQUIRED: t('errorRecipeIngredientRequired'),
   }[code];
 }
 

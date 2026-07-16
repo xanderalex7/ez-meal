@@ -47,7 +47,7 @@ export function SettingsScreen({
   const [showExportSteps, setShowExportSteps] = useState(false);
   const [showImportSteps, setShowImportSteps] = useState(false);
   const [selectedImportFile, setSelectedImportFile] = useState<{ name: string; uri: string } | undefined>();
-  const [message, setMessage] = useState<string | undefined>();
+  const [message, setMessage] = useState<ScreenMessage | undefined>();
   const themeOptions: Array<{ label: string; mode: ThemeMode }> = [
     { label: t('settingsThemeSystem'), mode: 'system' },
     { label: t('settingsThemeLight'), mode: 'light' },
@@ -61,25 +61,29 @@ export function SettingsScreen({
   async function selectThemeMode(nextThemeMode: ThemeMode) {
     setResetPending(false);
     const result = await onThemeModeChange(nextThemeMode);
-    setMessage(result ?? undefined);
+    setMessage(result ? { text: result, tone: 'error' } : undefined);
   }
 
   async function selectLanguage(nextLanguage: Language) {
     setResetPending(false);
     const result = await onLanguageChange(nextLanguage);
-    setMessage(result ?? undefined);
+    setMessage(result ? { text: result, tone: 'error' } : undefined);
   }
 
   async function resetDatabase() {
     if (!resetPending) {
       setResetPending(true);
-      setMessage(t('settingsResetPrompt'));
+      setMessage({ text: t('settingsResetPrompt'), tone: 'warning' });
       return;
     }
 
     const result = await onResetLocalDatabase();
     setResetPending(false);
-    setMessage(result ?? t('settingsResetDone'));
+    setMessage(
+      result
+        ? { text: result, tone: 'error' }
+        : { text: t('settingsResetDone'), tone: 'info' },
+    );
   }
 
   async function selectImportFile() {
@@ -90,15 +94,18 @@ export function SettingsScreen({
     const result = await onSelectImportCsv();
     if (result.ok) {
       setSelectedImportFile({ name: result.fileName, uri: result.uri });
-      setMessage(t('settingsImportFileSelected', { name: result.fileName }));
+      setMessage({ text: t('settingsImportFileSelected', { name: result.fileName }), tone: 'info' });
     } else if (!result.canceled) {
-      setMessage(result.message ?? t('errorImportFileSelectionFailed'));
+      setMessage({
+        text: result.message ?? t('errorImportFileSelectionFailed'),
+        tone: 'error',
+      });
     }
   }
 
   async function confirmImport() {
     if (!selectedImportFile) {
-      setMessage(t('settingsImportSelectFileFirst'));
+      setMessage({ text: t('settingsImportSelectFileFirst'), tone: 'warning' });
       return;
     }
     setMessage(undefined);
@@ -111,10 +118,10 @@ export function SettingsScreen({
     if (result.ok) {
       setLastImportAt(result.completedAt);
       setSelectedImportFile(undefined);
-      setMessage(t('settingsImportDone'));
+      setMessage({ text: t('settingsImportDone'), tone: 'info' });
     } else {
       setImportSteps((current) => markActiveStepAsError(current));
-      setMessage(result.message);
+      setMessage({ text: result.message, tone: 'error' });
     }
   }
 
@@ -128,17 +135,21 @@ export function SettingsScreen({
     });
     if (result.ok) {
       setLastExportAt(result.completedAt);
-      setMessage(t('settingsExportDone'));
+      setMessage({ text: t('settingsExportDone'), tone: 'info' });
     } else {
       setExportSteps((current) => markActiveStepAsError(current));
-      setMessage(result.message);
+      setMessage({ text: result.message, tone: 'error' });
     }
   }
 
   return (
     <View style={styles.stack}>
       <Text style={[styles.title, { color: colors.text }]}>{t('settingsTitle')}</Text>
-      {message ? <Text style={[styles.message, { color: colors.textMuted }]}>{message}</Text> : null}
+      {message ? (
+        <Text style={[styles.message, { color: messageColor(message.tone, colors) }]}>
+          {message.text}
+        </Text>
+      ) : null}
       <Card style={styles.cardStack}>
         <Badge label={t('settingsThemeBadge')} />
         <Text style={[styles.text, { color: colors.textMuted }]}>
@@ -219,6 +230,21 @@ type StepItem = {
   label: string;
   status: StepStatus;
 };
+
+type ScreenMessage = {
+  text: string;
+  tone: 'info' | 'warning' | 'error';
+};
+
+function messageColor(tone: ScreenMessage['tone'], colors: ReturnType<typeof useAppColors>) {
+  if (tone === 'error') {
+    return colors.error;
+  }
+  if (tone === 'warning') {
+    return colors.warning;
+  }
+  return colors.textMuted;
+}
 
 function createImportSteps(t: ReturnType<typeof useI18n>['t']): StepItem[] {
   return [

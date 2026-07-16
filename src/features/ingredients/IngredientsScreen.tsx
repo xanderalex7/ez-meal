@@ -18,7 +18,11 @@ export function IngredientsScreen({ actions, model }: IngredientsScreenProps) {
   const [name, setName] = useState('');
   const [error, setError] = useState<string | undefined>();
   const [pendingDeleteIngredientId, setPendingDeleteIngredientId] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | undefined>();
+  const [message, setMessage] = useState<ScreenMessage | undefined>();
+  const [search, setSearch] = useState('');
+  const visibleIngredients = [...model.ingredients]
+    .sort((left, right) => left.name.localeCompare(right.name, undefined, { sensitivity: 'base' }))
+    .filter((ingredient) => ingredient.name.toLowerCase().includes(search.trim().toLowerCase()));
 
   function submit() {
     const result = actions.addIngredient(name);
@@ -36,18 +40,22 @@ export function IngredientsScreen({ actions, model }: IngredientsScreenProps) {
     });
     if (result) {
       setPendingDeleteIngredientId(id);
-      setMessage(result);
+      setMessage({ text: result, tone: 'warning' });
       return;
     }
 
     setPendingDeleteIngredientId(null);
-    setMessage(t('ingredientDeleted'));
+    setMessage({ text: t('ingredientDeleted'), tone: 'info' });
   }
 
   return (
     <View style={styles.stack}>
       <Text style={[styles.title, { color: colors.text }]}>{t('ingredientsTitle')}</Text>
-      {message ? <Text style={[styles.message, { color: colors.textMuted }]}>{message}</Text> : null}
+      {message ? (
+        <Text style={[styles.message, { color: messageColor(message.tone, colors) }]}>
+          {message.text}
+        </Text>
+      ) : null}
       {isFormVisible ? (
         <View style={styles.form}>
           <TextField
@@ -60,7 +68,13 @@ export function IngredientsScreen({ actions, model }: IngredientsScreenProps) {
           <Button label={t('actionAdd')} onPress={submit} />
         </View>
       ) : null}
-      {[...model.ingredients].reverse().map((ingredient) => (
+      <TextField
+        label={t('ingredientSearch')}
+        placeholder={t('ingredientSearch')}
+        value={search}
+        onChangeText={setSearch}
+      />
+      {visibleIngredients.map((ingredient) => (
         <Card key={ingredient.id} style={styles.item}>
           <View>
             <Text style={[styles.itemTitle, { color: colors.text }]}>{ingredient.name}</Text>
@@ -93,6 +107,21 @@ export function IngredientsScreen({ actions, model }: IngredientsScreenProps) {
       ) : null}
     </View>
   );
+}
+
+type ScreenMessage = {
+  text: string;
+  tone: 'info' | 'warning' | 'error';
+};
+
+function messageColor(tone: ScreenMessage['tone'], colors: ReturnType<typeof useAppColors>) {
+  if (tone === 'error') {
+    return colors.error;
+  }
+  if (tone === 'warning') {
+    return colors.warning;
+  }
+  return colors.textMuted;
 }
 
 const styles = StyleSheet.create({

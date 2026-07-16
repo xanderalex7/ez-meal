@@ -1,6 +1,7 @@
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import {
+  Image,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
@@ -10,6 +11,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { HomeScreen } from './src/features/home';
 import { IngredientsScreen } from './src/features/ingredients';
@@ -27,7 +29,10 @@ import { RecipesScreen } from './src/features/recipes';
 import { SettingsScreen } from './src/features/settings';
 import { I18nProvider, type Language, useI18n } from './src/shared/i18n';
 import { consoleLogger } from './src/shared/logging';
-import { AppThemeProvider, radii, spacing, useAppColors, type ThemeMode } from './src/shared/theme';
+import { AppThemeProvider, darkColors, radii, spacing, useAppColors, type ThemeMode } from './src/shared/theme';
+
+const logoLight = require('./assets/logo/logo-light-crp.png');
+const logoDark = require('./assets/logo/logo-dark-crp.png');
 
 export default function App() {
   const [language, setLanguage] = useState<Language>('it');
@@ -38,16 +43,18 @@ export default function App() {
   }, []);
 
   return (
-    <I18nProvider language={language}>
-      <AppThemeProvider themeMode={themeMode}>
-        <AppContent
-          language={language}
-          setLanguage={setLanguage}
-          setThemeMode={setThemeMode}
-          themeMode={themeMode}
-        />
-      </AppThemeProvider>
-    </I18nProvider>
+    <SafeAreaProvider>
+      <I18nProvider language={language}>
+        <AppThemeProvider themeMode={themeMode}>
+          <AppContent
+            language={language}
+            setLanguage={setLanguage}
+            setThemeMode={setThemeMode}
+            themeMode={themeMode}
+          />
+        </AppThemeProvider>
+      </I18nProvider>
+    </SafeAreaProvider>
   );
 }
 
@@ -128,6 +135,8 @@ function AppContent({
   const { t } = useI18n();
   const actions = useMemo(() => createAppActions(model, setPersistentModel, t), [model, setPersistentModel, t]);
   const colors = useAppColors();
+  const insets = useSafeAreaInsets();
+  const headerLogo = colors.background === darkColors.background ? logoDark : logoLight;
 
   useEffect(() => {
     let active = true;
@@ -277,7 +286,10 @@ function AppContent({
     }
   }
 
+  const safeBottomPadding = Math.max(insets.bottom, spacing.sm);
+  const navBottomPadding = safeBottomPadding;
   const keyboardBottomPadding = keyboardVisible ? spacing.xxxl : 0;
+  const contentBottomPadding = spacing.xl + keyboardBottomPadding + (!keyboardVisible ? navBottomPadding : 0);
 
   return (
     <KeyboardAvoidingView
@@ -285,12 +297,17 @@ function AppContent({
       style={[styles.container, { backgroundColor: colors.background }]}
     >
       <View style={styles.header}>
-        <Text style={[styles.eyebrow, { color: colors.primary }]}>EZ-MEAL</Text>
-        <Text style={[styles.title, { color: colors.text }]}>{t('appSubtitle')}</Text>
+        <Image
+          accessibilityLabel="EZ-MEAL"
+          resizeMode="contain"
+          source={headerLogo}
+          style={styles.logo}
+        />
+        <Text style={[styles.subtitle, { color: colors.textMuted }]}>{t('appSubtitle')}</Text>
       </View>
       <ScrollView
         style={styles.content}
-        contentContainerStyle={[styles.contentScroll, { paddingBottom: spacing.xl + keyboardBottomPadding }]}
+        contentContainerStyle={[styles.contentScroll, { paddingBottom: contentBottomPadding }]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
@@ -315,6 +332,7 @@ function AppContent({
             {
               backgroundColor: colors.surface,
               borderColor: colors.border,
+              marginBottom: navBottomPadding,
               shadowColor: colors.text,
             },
           ]}
@@ -407,19 +425,19 @@ const styles = StyleSheet.create({
     padding: spacing.xl,
   },
   header: {
+    alignItems: 'flex-start',
     gap: spacing.sm,
     paddingBottom: spacing.xl,
-    paddingTop: 48,
   },
-  eyebrow: {
-    fontSize: 14,
-    fontWeight: '700',
+  logo: {
+    height: 56,
+    width: 174,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-    lineHeight: 30,
-    maxWidth: 420,
+  subtitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    lineHeight: 20,
+    maxWidth: 360,
   },
   content: {
     flex: 1,
