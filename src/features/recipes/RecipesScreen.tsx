@@ -19,12 +19,19 @@ import { componentSizes, radii, spacing, useAppColors } from '../../shared/theme
 type RecipesScreenProps = {
   actions: AppActions;
   model: AppModel;
+  onRequestScrollToTop?: () => void;
 };
 
-export function RecipesScreen({ actions, model }: RecipesScreenProps) {
+export function RecipesScreen({ actions, model, onRequestScrollToTop }: RecipesScreenProps) {
   const colors = useAppColors();
   const { mealTypeLabel, t } = useI18n();
-  const visibleRecipes = [...model.recipes].reverse();
+  const [search, setSearch] = useState('');
+  const normalizedSearch = search.trim().toLocaleLowerCase();
+  const visibleRecipes = [...model.recipes]
+    .reverse()
+    .filter((recipe) =>
+      normalizedSearch ? recipe.name.toLocaleLowerCase().includes(normalizedSearch) : true,
+    );
   const [isFormVisible, setIsFormVisible] = useState(false);
   const [name, setName] = useState('');
   const [weightAmount, setWeightAmount] = useState('');
@@ -89,6 +96,7 @@ export function RecipesScreen({ actions, model }: RecipesScreenProps) {
     setError(undefined);
     setMessage(undefined);
     setPendingDeleteRecipeId(null);
+    onRequestScrollToTop?.();
   }
 
   function getIngredientNames(ingredientIds: string[]) {
@@ -181,6 +189,12 @@ export function RecipesScreen({ actions, model }: RecipesScreenProps) {
           />
         </View>
       ) : null}
+      <TextField
+        label={t('recipeSearch')}
+        placeholder={t('recipeSearch')}
+        value={search}
+        onChangeText={setSearch}
+      />
       {visibleRecipes.map((recipe) => (
         <Card key={recipe.id} style={styles.item}>
           <View style={styles.stackSmall}>

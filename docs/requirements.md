@@ -85,14 +85,14 @@ Future evolutions:
 | Field | REQ-002 |
 | --- | --- |
 | Title | Manage recipes |
-| Description | The system must allow users to create, edit, view and delete recipes with name, meal tag and selected ingredients. |
+| Description | The system must allow users to create, search, edit, view and delete recipes with name, meal tag and selected ingredients. |
 | Rationale | Recipes are the selectable items used by meal plans. |
 | Actors | User |
 | Preconditions | Ingredients may exist. |
-| Main flow | User creates a recipe, selects a meal tag, selects zero or more ingredients, saves it and sees it newest first. |
+| Main flow | User creates a recipe, selects a meal tag, selects ingredients, saves it and sees it newest first; user can filter recipes by name and open an existing recipe in the edit form. |
 | Alternatives/errors | Invalid data is rejected; deleting recipes used in plans must be handled without app errors. |
 | Domain rules | Meal tag must be breakfast, lunch or dinner. |
-| Acceptance criteria | Given a valid recipe, When saved, Then it is visible with meal tag and ingredient list. |
+| Acceptance criteria | Given a valid recipe, When saved, Then it is visible with meal tag and ingredient list. Given saved recipes, When the user searches by name, Then only matching recipes are shown. Given a recipe is edited, When edit starts, Then the edit form is brought into view. |
 | Impacts | Local data, plan references. |
 | Priority | MUST |
 | Status | Approved |

@@ -120,6 +120,7 @@ function AppContent({
   const [section, setSection] = useState<AppSection>('home');
   const [model, setModel] = useState(createInitialAppModel);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const contentScrollRef = useRef<ScrollView | null>(null);
   const persistence = useRef<AppPersistence | null>(null);
   const setPersistentModel = useMemo<Dispatch<SetStateAction<AppModel>>>(
     () => (update) => {
@@ -303,6 +304,10 @@ function AppContent({
   const keyboardBottomPadding = keyboardVisible ? spacing.xxxl : 0;
   const contentBottomPadding = spacing.xl + keyboardBottomPadding + (!keyboardVisible ? navBottomPadding : 0);
 
+  function scrollContentToTop() {
+    contentScrollRef.current?.scrollTo({ animated: true, y: 0 });
+  }
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -318,6 +323,7 @@ function AppContent({
         <Text style={[styles.subtitle, { color: colors.textMuted }]}>{t('appSubtitle')}</Text>
       </View>
       <ScrollView
+        ref={contentScrollRef}
         style={styles.content}
         contentContainerStyle={[styles.contentScroll, { paddingBottom: contentBottomPadding }]}
         keyboardShouldPersistTaps="handled"
@@ -336,6 +342,7 @@ function AppContent({
           confirmImportCsvFile,
           exportCsvFile,
           changeNutritionSettings,
+          scrollContentToTop,
         )}
       </ScrollView>
       {!keyboardVisible ? (
@@ -407,6 +414,7 @@ function renderSection(
     onProgress: (stepId: ImportExportStepId, status: 'active' | 'success' | 'error') => void,
   ) => Promise<{ ok: true; completedAt: string } | { ok: false; message: string }>,
   changeNutritionSettings: (settings: NutritionSettings) => Promise<string | null>,
+  scrollContentToTop: () => void,
 ) {
   switch (section) {
     case 'home':
@@ -414,7 +422,7 @@ function renderSection(
     case 'planner':
       return <PlannerScreen actions={actions} model={model} />;
     case 'recipes':
-      return <RecipesScreen actions={actions} model={model} />;
+      return <RecipesScreen actions={actions} model={model} onRequestScrollToTop={scrollContentToTop} />;
     case 'ingredients':
       return <IngredientsScreen actions={actions} model={model} />;
     case 'settings':

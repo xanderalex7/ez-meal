@@ -288,6 +288,69 @@ describe('shared UI', () => {
     );
   });
 
+  it('filters recipes by name', async () => {
+    const model = {
+      ...createInitialAppModel(),
+      recipes: [
+        {
+          id: 'recipe-1',
+          name: 'Pasta al sugo',
+          mealTypes: ['lunch' as const],
+          ingredientIds: [],
+          createdAt: '2026-07-04T12:00:00.000Z',
+          updatedAt: '2026-07-04T12:00:00.000Z',
+        },
+        {
+          id: 'recipe-2',
+          name: 'Risotto',
+          mealTypes: ['dinner' as const],
+          ingredientIds: [],
+          createdAt: '2026-07-04T13:00:00.000Z',
+          updatedAt: '2026-07-04T13:00:00.000Z',
+        },
+      ],
+    };
+
+    const { getByLabelText, getByText, queryByText } = await render(
+      <RecipesScreen actions={{ deleteRecipe: jest.fn() } as unknown as AppActions} model={model} />,
+    );
+
+    fireEvent.changeText(getByLabelText('Cerca ricette'), 'past');
+
+    expect(getByText('Pasta al sugo')).toBeTruthy();
+    expect(queryByText('Risotto')).toBeNull();
+  });
+
+  it('requests scrolling to the edit form when editing a recipe', async () => {
+    const model = {
+      ...createInitialAppModel(),
+      recipes: [
+        {
+          id: 'recipe-1',
+          name: 'Pasta',
+          mealTypes: ['lunch' as const],
+          ingredientIds: [],
+          createdAt: '2026-07-04T12:00:00.000Z',
+          updatedAt: '2026-07-04T12:00:00.000Z',
+        },
+      ],
+    };
+    const onRequestScrollToTop = jest.fn();
+
+    const { getByLabelText, getByText } = await render(
+      <RecipesScreen
+        actions={{ deleteRecipe: jest.fn() } as unknown as AppActions}
+        model={model}
+        onRequestScrollToTop={onRequestScrollToTop}
+      />,
+    );
+
+    fireEvent.press(getByLabelText('Modifica ricetta Pasta'));
+
+    expect(getByText('Modifica ricetta')).toBeTruthy();
+    expect(onRequestScrollToTop).toHaveBeenCalledTimes(1);
+  });
+
   it('shows recipe missing-ingredient guidance as a warning', async () => {
     const model = createInitialAppModel();
     const actions = {} as AppActions;
