@@ -23,6 +23,7 @@ export function MultiSelect({ label, onChange, options, selectedIds }: MultiSele
   const colors = useAppColors();
   const { t } = useI18n();
   const inputRef = useRef<TextInput>(null);
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isWeb = Platform.OS === 'web';
   const [query, setQuery] = useState('');
   const [isOpen, setIsOpen] = useState(false);
@@ -38,6 +39,7 @@ export function MultiSelect({ label, onChange, options, selectedIds }: MultiSele
   );
 
   function toggle(id: string) {
+    cancelScheduledClose();
     onChange(
       selectedIds.includes(id)
         ? selectedIds.filter((selectedId) => selectedId !== id)
@@ -45,7 +47,24 @@ export function MultiSelect({ label, onChange, options, selectedIds }: MultiSele
     );
   }
 
+  function cancelScheduledClose() {
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+  }
+
+  function scheduleClose() {
+    cancelScheduledClose();
+    closeTimerRef.current = setTimeout(() => {
+      setIsOpen(false);
+      setKeyboardEnabled(isWeb);
+      closeTimerRef.current = null;
+    }, 120);
+  }
+
   function openSearch() {
+    cancelScheduledClose();
     if (isWeb) {
       setIsOpen(true);
       return;
@@ -73,11 +92,16 @@ export function MultiSelect({ label, onChange, options, selectedIds }: MultiSele
         ref={inputRef}
         accessibilityLabel={t('multiselectSearchA11y', { label })}
         onChangeText={(nextQuery) => {
+          cancelScheduledClose();
           setQuery(nextQuery);
           setIsOpen(true);
           setKeyboardEnabled(true);
         }}
-        onFocus={() => setIsOpen(true)}
+        onBlur={scheduleClose}
+        onFocus={() => {
+          cancelScheduledClose();
+          setIsOpen(true);
+        }}
         onPressIn={openSearch}
         placeholder={t('multiselectSearchPlaceholder')}
         placeholderTextColor={colors.textMuted}
@@ -113,6 +137,10 @@ export function MultiSelect({ label, onChange, options, selectedIds }: MultiSele
       ) : null}
       {isOpen ? (
         <View
+          onStartShouldSetResponder={() => {
+            cancelScheduledClose();
+            return false;
+          }}
           style={[
             styles.dropdown,
             {

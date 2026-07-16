@@ -1,4 +1,5 @@
 import { fireEvent, render } from '@testing-library/react-native';
+import type { ReactNode } from 'react';
 import { StyleSheet } from 'react-native';
 
 import App from '../../../App';
@@ -16,11 +17,16 @@ jest.mock('../../features/appPersistence', () => ({
   })),
 }));
 
+jest.mock('react-native-safe-area-context', () => ({
+  SafeAreaProvider: ({ children }: { children: ReactNode }) => children,
+  useSafeAreaInsets: () => ({ bottom: 0, left: 0, right: 0, top: 0 }),
+}));
+
 describe('App', () => {
   it('renders the bootstrap screen', async () => {
-    const { getAllByText, getByText } = await render(<App />);
+    const { getAllByText, getByLabelText, getByText } = await render(<App />);
 
-    expect(getByText('EZ-MEAL')).toBeTruthy();
+    expect(getByLabelText('EZ-MEAL')).toBeTruthy();
     expect(getByText('Pianifica i pasti con quello che hai già.')).toBeTruthy();
     expect(getAllByText('Oggi')).toHaveLength(2);
     expect(getByText('Piano')).toBeTruthy();
