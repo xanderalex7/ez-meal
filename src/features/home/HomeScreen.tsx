@@ -22,7 +22,7 @@ export function HomeScreen({ model }: HomeScreenProps) {
           .map((recipeId) => model.recipes.find((candidate) => candidate.id === recipeId))
           .filter((recipe): recipe is NonNullable<typeof recipe> => Boolean(recipe));
         return (
-          <Card key={slot.mealType}>
+          <Card key={slot.mealType} style={styles.todayCard}>
             <Badge label={mealTypeLabel(slot.mealType)} tone={slot.mealType} />
             {recipes.length > 0 ? (
               <View style={styles.recipeList}>
@@ -52,12 +52,14 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '700',
   },
+  todayCard: {
+    gap: spacing.sm,
+  },
   recipeName: {
     fontSize: 16,
   },
   recipeList: {
     gap: spacing.xs,
-    marginTop: spacing.xs,
   },
 });
 

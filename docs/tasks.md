@@ -41,6 +41,7 @@ Deliver a usable local-first meal planner before adding advanced features. Each 
 | --- | --- | --- | --- | --- | --- | --- |
 | TASK-065 | DONE | MUST | Prepare documentation for public repository using English as the single maintained language. | Existing Markdown docs. | Markdown docs are present without `-ITA` duplicates and no links point to removed Italian copies. | File list, reference search and Git status reviewed. |
 | TASK-066 | TODO | MUST | Final public-readiness scan for secrets, tokens, generated artifacts and ignored sensitive files. | TASK-065 | No obvious secrets or tracked build artifacts remain. `.gitignore` covers local/private files. | Repo scan commands reviewed. |
+| TASK-067 | IN_PROGRESS | SHOULD | Prepare v1.3.0 UI polish and validation release notes. Includes ingredient filtering/order, warning/error colors, recipe ingredient validation, multi-select blur handling, logo/header polish, Today card spacing and Android safe-area improvements. | Recent UI/validation work. | `CHANGELOG.md` documents v1.3.0 changes; README links the changelog; implementation passes automated checks; manual web/mobile review completed before release. | Typecheck passed for current implementation; final visual review and release smoke test pending. |
 
 ## Completed Task Groups
 

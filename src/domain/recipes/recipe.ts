@@ -23,11 +23,12 @@ export type RecipeInput = {
 export type RecipeValidationErrorCode =
   | 'RECIPE_NAME_REQUIRED'
   | 'RECIPE_MEAL_TYPE_REQUIRED'
-  | 'RECIPE_MEAL_TYPE_INVALID';
+  | 'RECIPE_MEAL_TYPE_INVALID'
+  | 'RECIPE_INGREDIENT_REQUIRED';
 
 export type RecipeValidationError = {
   code: RecipeValidationErrorCode;
-  field: 'name' | 'mealTypes';
+  field: 'name' | 'mealTypes' | 'ingredientIds';
   message: string;
 };
 
@@ -73,6 +74,14 @@ export function validateRecipeInput(input: RecipeInput): RecipeValidationResult 
       code: 'RECIPE_MEAL_TYPE_INVALID',
       field: 'mealTypes',
       message: 'Una o più label pasto non sono valide.',
+    });
+  }
+
+  if (!input.ingredientIds || input.ingredientIds.length === 0) {
+    errors.push({
+      code: 'RECIPE_INGREDIENT_REQUIRED',
+      field: 'ingredientIds',
+      message: 'Seleziona almeno un ingrediente.',
     });
   }
 

@@ -48,6 +48,7 @@ The app has an advanced MVP with Android APK workflow support.
 | `IMPORT_EXPORT.md` | CSV import/export format. |
 | `WORKFLOW.md` | Development, release and APK build workflow. |
 | `tagging.md` | Version tag policy and commands. |
+| `CHANGELOG.md` | Versioned release notes. |
 
 ## Documentation
 
@@ -60,6 +61,7 @@ The app has an advanced MVP with Android APK workflow support.
 - CSV format: `IMPORT_EXPORT.md`
 - Development/release workflow: `WORKFLOW.md`
 - Git tagging: `tagging.md`
+- Release notes: `CHANGELOG.md`
 
 ## Getting Started
 

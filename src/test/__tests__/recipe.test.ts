@@ -21,7 +21,9 @@ describe('validateRecipeInput', () => {
   });
 
   it('rejects an empty recipe name', () => {
-    expect(validateRecipeInput({ name: '   ', mealTypes: ['breakfast'] })).toEqual({
+    expect(
+      validateRecipeInput({ name: '   ', mealTypes: ['breakfast'], ingredientIds: ['ingredient-1'] }),
+    ).toEqual({
       ok: false,
       errors: [
         {
@@ -34,7 +36,7 @@ describe('validateRecipeInput', () => {
   });
 
   it('rejects recipes without meal types', () => {
-    expect(validateRecipeInput({ name: 'Toast', mealTypes: [] })).toEqual({
+    expect(validateRecipeInput({ name: 'Toast', mealTypes: [], ingredientIds: ['ingredient-1'] })).toEqual({
       ok: false,
       errors: [
         {
@@ -47,13 +49,26 @@ describe('validateRecipeInput', () => {
   });
 
   it('rejects invalid meal types', () => {
-    expect(validateRecipeInput({ name: 'Toast', mealTypes: ['snack'] })).toEqual({
+    expect(validateRecipeInput({ name: 'Toast', mealTypes: ['snack'], ingredientIds: ['ingredient-1'] })).toEqual({
       ok: false,
       errors: [
         {
           code: 'RECIPE_MEAL_TYPE_INVALID',
           field: 'mealTypes',
           message: 'Una o più label pasto non sono valide.',
+        },
+      ],
+    });
+  });
+
+  it('rejects recipes without ingredients', () => {
+    expect(validateRecipeInput({ name: 'Toast', mealTypes: ['breakfast'], ingredientIds: [] })).toEqual({
+      ok: false,
+      errors: [
+        {
+          code: 'RECIPE_INGREDIENT_REQUIRED',
+          field: 'ingredientIds',
+          message: 'Seleziona almeno un ingrediente.',
         },
       ],
     });

@@ -1,4 +1,5 @@
 import { act, fireEvent, render } from '@testing-library/react-native';
+import type { ReactNode } from 'react';
 import * as ReactNative from 'react-native';
 import { Keyboard, KeyboardAvoidingView, ScrollView, StyleSheet, View } from 'react-native';
 
@@ -9,6 +10,8 @@ import { PlannerScreen } from '../../features/planner';
 import { RecipesScreen } from '../../features/recipes';
 import { Badge, Button, Card, FloatingActionButton, MultiSelect } from '../../shared/ui';
 import { componentSizes, darkColors, lightColors, spacing } from '../../shared/theme';
+
+let mockedInsets = { bottom: 0, left: 0, right: 0, top: 0 };
 
 jest.mock('../../features/appPersistence', () => ({
   createAppPersistence: jest.fn(async () => ({
@@ -22,8 +25,17 @@ jest.mock('../../features/appPersistence', () => ({
   })),
 }));
 
+jest.mock('react-native-safe-area-context', () => {
+  const { View } = require('react-native');
+  return {
+    SafeAreaProvider: ({ children }: { children: ReactNode }) => children,
+    useSafeAreaInsets: () => mockedInsets,
+  };
+});
+
 describe('shared UI', () => {
   afterEach(() => {
+    mockedInsets = { bottom: 0, left: 0, right: 0, top: 0 };
     jest.restoreAllMocks();
   });
 
@@ -80,8 +92,9 @@ describe('shared UI', () => {
     expect(StyleSheet.flatten(lightRender.UNSAFE_getByType(KeyboardAvoidingView).props.style)).toEqual(
       expect.objectContaining({ backgroundColor: lightColors.background }),
     );
-    expect(lightRender.getByText('EZ-MEAL').props.style).toEqual(
-      expect.arrayContaining([expect.objectContaining({ color: lightColors.primary })]),
+    expect(lightRender.getByLabelText('EZ-MEAL').props.resizeMode).toBe('contain');
+    expect(StyleSheet.flatten(lightRender.getByText('Pianifica i pasti con quello che hai già.').props.style)).toEqual(
+      expect.objectContaining({ color: lightColors.textMuted, fontSize: 15 }),
     );
     lightRender.unmount();
 
@@ -91,9 +104,7 @@ describe('shared UI', () => {
     expect(StyleSheet.flatten(darkRender.UNSAFE_getByType(KeyboardAvoidingView).props.style)).toEqual(
       expect.objectContaining({ backgroundColor: darkColors.background }),
     );
-    expect(darkRender.getByText('EZ-MEAL').props.style).toEqual(
-      expect.arrayContaining([expect.objectContaining({ color: darkColors.primary })]),
-    );
+    expect(darkRender.getByLabelText('EZ-MEAL').props.resizeMode).toBe('contain');
   });
 
   it('allows forcing the dark theme from settings', async () => {
@@ -194,6 +205,33 @@ describe('shared UI', () => {
     expect(getByPlaceholderText('Cerca ingredienti').props.showSoftInputOnFocus).toBe(true);
   });
 
+  it('closes the multiselect dropdown when search loses focus', async () => {
+    jest.useFakeTimers();
+    try {
+      const { getByLabelText, getByPlaceholderText, queryByLabelText } = await render(
+        <MultiSelect
+          label="Ingredienti"
+          options={[{ id: 'ingredient-1', label: 'Pomodoro' }]}
+          selectedIds={[]}
+          onChange={jest.fn()}
+        />,
+      );
+      const searchInput = getByPlaceholderText('Cerca ingredienti');
+
+      fireEvent(searchInput, 'pressIn');
+      expect(getByLabelText('Pomodoro')).toBeTruthy();
+
+      fireEvent(searchInput, 'blur');
+      act(() => {
+        jest.runOnlyPendingTimers();
+      });
+
+      expect(queryByLabelText('Pomodoro')).toBeNull();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
   it('shows newest recipes first', async () => {
     const model = {
       ...createInitialAppModel(),
@@ -232,6 +270,19 @@ describe('shared UI', () => {
         borderColor: lightColors.text,
       }),
     );
+  });
+
+  it('shows recipe missing-ingredient guidance as a warning', async () => {
+    const model = createInitialAppModel();
+    const actions = {} as AppActions;
+
+    const { getByLabelText, getByText } = await render(<RecipesScreen actions={actions} model={model} />);
+
+    fireEvent.press(getByLabelText('Apri creazione ricetta'));
+
+    expect(
+      StyleSheet.flatten(getByText('Crea prima un ingrediente per associarlo alla ricetta.').props.style),
+    ).toEqual(expect.objectContaining({ color: lightColors.warning }));
   });
 
   it('toggles planner read and edit controls', async () => {
@@ -322,6 +373,20 @@ describe('shared UI', () => {
     expect(queryByTestId('plan-generator-actions')).toBeNull();
   });
 
+  it('shows missing compatible planner recipes as a warning', async () => {
+    const model = createInitialAppModel();
+    const actions = {} as AppActions;
+
+    const { getByLabelText, getByText } = await render(<PlannerScreen actions={actions} model={model} />);
+
+    fireEvent.press(getByLabelText('Modifica piano'));
+    fireEvent.press(getByLabelText('Scegli ricetta per 2026-06-29 Colazione'));
+
+    expect(StyleSheet.flatten(getByText('Nessuna ricetta compatibile per Colazione.').props.style)).toEqual(
+      expect.objectContaining({ color: lightColors.warning }),
+    );
+  });
+
   it('shows recipes planned for the current weekday on home', async () => {
     jest.useFakeTimers();
     jest.setSystemTime(new Date('2026-07-15T10:00:00.000Z'));
@@ -397,5 +462,19 @@ describe('shared UI', () => {
       keyboardListeners.get('keyboardDidHide')?.();
     });
     expect(getByLabelText('Piano')).toBeTruthy();
+  });
+
+  it('keeps bottom navigation above the device safe area', async () => {
+    mockedInsets = { bottom: 32, left: 0, right: 0, top: 0 };
+
+    const { UNSAFE_getAllByType, UNSAFE_getByType } = await render(<App />);
+    const nav = UNSAFE_getAllByType(View).find((node) => node.props.accessibilityRole === 'tablist');
+
+    expect(StyleSheet.flatten(nav?.props.style)).toEqual(
+      expect.objectContaining({ marginBottom: 32 }),
+    );
+    expect(StyleSheet.flatten(UNSAFE_getByType(ScrollView).props.contentContainerStyle)).toEqual(
+      expect.objectContaining({ paddingBottom: spacing.xl + 32 }),
+    );
   });
 });
