@@ -9,13 +9,16 @@ export function createRecipeRepository(db: QueryExecutor) {
         const row = recipeToRow(recipe);
         await db.runAsync(
           `INSERT OR REPLACE INTO recipes
-          (id, name, meal_types, ingredient_ids, notes, created_at, updated_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?);`,
+          (id, name, meal_types, ingredient_ids, ingredient_weights, weight_amount, calories, notes, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
           [
             row.id,
             row.name,
             row.meal_types,
             row.ingredient_ids,
+            row.ingredient_weights,
+            row.weight_amount,
+            row.calories,
             row.notes,
             row.created_at,
             row.updated_at,

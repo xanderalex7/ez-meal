@@ -24,6 +24,9 @@ describe('appPersistence', () => {
         name: 'Pasta',
         meal_types: '["lunch"]',
         ingredient_ids: '["ingredient-1"]',
+        ingredient_weights: '[{"ingredientId":"ingredient-1","weightAmount":80}]',
+        weight_amount: 320,
+        calories: 520,
         notes: null,
         created_at: timestamp,
         updated_at: timestamp,
@@ -46,7 +49,15 @@ describe('appPersistence', () => {
       ingredients: [{ id: 'ingredient-1', name: 'Pomodoro' }],
       mealPlan: { id: initial.mealPlan.id, title: 'Piano test' },
       mealPlans: [{ id: initial.mealPlan.id, title: 'Piano test' }],
-      recipes: [{ id: 'recipe-1', name: 'Pasta' }],
+      nutritionSettings: { trackingEnabled: false, weightUnit: 'g' },
+      recipes: [
+        {
+          id: 'recipe-1',
+          name: 'Pasta',
+          ingredientWeights: [{ ingredientId: 'ingredient-1', weightAmount: 80 }],
+          nutrition: { weightAmount: 320, calories: 520 },
+        },
+      ],
       selectedMealPlanId: initial.mealPlan.id,
     });
   });
@@ -103,6 +114,7 @@ describe('appPersistence', () => {
       recipes: [],
       mealPlan: { id: 'plan-current', title: 'Piano settimanale' },
       mealPlans: [{ id: 'plan-current', title: 'Piano settimanale' }],
+      nutritionSettings: { trackingEnabled: false, weightUnit: 'g' },
       selectedMealPlanId: 'plan-current',
     });
     expect(runs).toEqual(
@@ -203,12 +215,17 @@ describe('appPersistence', () => {
 
     await expect(persistence.getThemeMode()).resolves.toBe('system');
     await expect(persistence.getLanguage()).resolves.toBe('it');
+    await expect(persistence.getNutritionSettings()).resolves.toEqual({
+      trackingEnabled: false,
+      weightUnit: 'g',
+    });
 
     firstRows.set('SELECT value FROM user_preferences WHERE key = ?;', { value: 'dark' });
     await expect(persistence.getThemeMode()).resolves.toBe('dark');
 
     await persistence.saveThemeMode('light');
     await persistence.saveLanguage('en');
+    await persistence.saveNutritionSettings({ trackingEnabled: true, weightUnit: 'kg' });
 
     expect(runs).toEqual(
       expect.arrayContaining([
@@ -218,6 +235,14 @@ describe('appPersistence', () => {
         }),
         expect.objectContaining({
           params: expect.arrayContaining(['language', 'en']),
+          source: 'INSERT OR REPLACE INTO user_preferences (key, value, updated_at) VALUES (?, ?, ?);',
+        }),
+        expect.objectContaining({
+          params: expect.arrayContaining(['nutritionTrackingEnabled', 'true']),
+          source: 'INSERT OR REPLACE INTO user_preferences (key, value, updated_at) VALUES (?, ?, ?);',
+        }),
+        expect.objectContaining({
+          params: expect.arrayContaining(['weightUnit', 'kg']),
           source: 'INSERT OR REPLACE INTO user_preferences (key, value, updated_at) VALUES (?, ?, ?);',
         }),
       ]),
@@ -238,6 +263,7 @@ describe('appPersistence', () => {
           updatedAt: timestamp,
         },
       ],
+      nutritionSettings: { trackingEnabled: true, weightUnit: 'oz' },
     };
 
     await persistence.replaceLocalData(importedModel, 'en', 'dark');
@@ -259,6 +285,14 @@ describe('appPersistence', () => {
         }),
         expect.objectContaining({
           params: expect.arrayContaining(['themeMode', 'dark']),
+          source: 'INSERT OR REPLACE INTO user_preferences (key, value, updated_at) VALUES (?, ?, ?);',
+        }),
+        expect.objectContaining({
+          params: expect.arrayContaining(['nutritionTrackingEnabled', 'true']),
+          source: 'INSERT OR REPLACE INTO user_preferences (key, value, updated_at) VALUES (?, ?, ?);',
+        }),
+        expect.objectContaining({
+          params: expect.arrayContaining(['weightUnit', 'oz']),
           source: 'INSERT OR REPLACE INTO user_preferences (key, value, updated_at) VALUES (?, ?, ?);',
         }),
       ]),

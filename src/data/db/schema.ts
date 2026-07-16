@@ -10,6 +10,9 @@ export const schemaStatements = [
     name TEXT NOT NULL,
     meal_types TEXT NOT NULL,
     ingredient_ids TEXT NOT NULL,
+    ingredient_weights TEXT NOT NULL DEFAULT '[]',
+    weight_amount REAL,
+    calories INTEGER,
     notes TEXT,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL

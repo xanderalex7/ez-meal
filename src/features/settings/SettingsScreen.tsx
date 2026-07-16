@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Switch, Text, View } from 'react-native';
 
 import type { ImportExportStepId } from '../importExport';
+import type { NutritionSettings } from '../../domain';
 import { useI18n, type Language } from '../../shared/i18n';
 import { Badge, Button, Card } from '../../shared/ui';
 import { spacing, useAppColors, type ThemeMode } from '../../shared/theme';
@@ -18,12 +19,14 @@ type SettingsScreenProps = {
     onProgress: (stepId: ImportExportStepId, status: 'active' | 'success' | 'error') => void,
   ) => Promise<{ ok: true; completedAt: string } | { ok: false; message: string }>;
   onLanguageChange: (language: Language) => Promise<string | null>;
+  onNutritionSettingsChange: (settings: NutritionSettings) => Promise<string | null>;
   onResetLocalDatabase: () => Promise<string | null>;
   onSelectImportCsv: () => Promise<
     | { ok: true; fileName: string; uri: string }
     | { ok: false; canceled?: true; message?: string }
   >;
   onThemeModeChange: (themeMode: ThemeMode) => Promise<string | null>;
+  nutritionSettings: NutritionSettings;
   themeMode: ThemeMode;
 };
 
@@ -32,9 +35,11 @@ export function SettingsScreen({
   onConfirmImportCsv,
   onExportCsv,
   onLanguageChange,
+  onNutritionSettingsChange,
   onResetLocalDatabase,
   onSelectImportCsv,
   onThemeModeChange,
+  nutritionSettings,
   themeMode,
 }: SettingsScreenProps) {
   const colors = useAppColors();
@@ -57,7 +62,6 @@ export function SettingsScreen({
     { label: t('settingsLanguageItalian'), value: 'it' },
     { label: t('settingsLanguageEnglish'), value: 'en' },
   ];
-
   async function selectThemeMode(nextThemeMode: ThemeMode) {
     setResetPending(false);
     const result = await onThemeModeChange(nextThemeMode);
@@ -67,6 +71,12 @@ export function SettingsScreen({
   async function selectLanguage(nextLanguage: Language) {
     setResetPending(false);
     const result = await onLanguageChange(nextLanguage);
+    setMessage(result ? { text: result, tone: 'error' } : undefined);
+  }
+
+  async function updateNutritionSettings(nextNutritionSettings: NutritionSettings) {
+    setResetPending(false);
+    const result = await onNutritionSettingsChange(nextNutritionSettings);
     setMessage(result ? { text: result, tone: 'error' } : undefined);
   }
 
@@ -180,6 +190,28 @@ export function SettingsScreen({
               onPress={() => selectLanguage(option.value)}
             />
           ))}
+        </View>
+      </Card>
+      <Card style={styles.cardStack}>
+        <Badge label={t('settingsNutritionBadge')} />
+        <Text style={[styles.text, { color: colors.textMuted }]}>
+          {t('settingsNutritionDescription')}
+        </Text>
+        <View style={styles.switchRow}>
+          <Text style={[styles.text, { color: colors.text }]}>
+            {nutritionSettings.trackingEnabled
+              ? t('settingsNutritionEnabled')
+              : t('settingsNutritionDisabled')}
+          </Text>
+          <Switch
+            accessibilityLabel={t('settingsNutritionBadge')}
+            onValueChange={(trackingEnabled) =>
+              updateNutritionSettings({ ...nutritionSettings, trackingEnabled })
+            }
+            thumbColor={nutritionSettings.trackingEnabled ? colors.primary : colors.textMuted}
+            trackColor={{ false: colors.surfaceAlt, true: colors.surfaceAlt }}
+            value={nutritionSettings.trackingEnabled}
+          />
         </View>
       </Card>
       <Card style={styles.cardStack}>
@@ -322,6 +354,12 @@ const styles = StyleSheet.create({
   cardStack: { gap: spacing.md },
   message: { fontSize: 14 },
   optionRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  switchRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: spacing.md,
+    justifyContent: 'space-between',
+  },
   step: { fontSize: 13 },
   stepList: { gap: spacing.xs },
   title: { fontSize: 20, fontWeight: '700' },

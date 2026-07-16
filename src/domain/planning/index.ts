@@ -1,7 +1,10 @@
 export {
   addRecipeToSlot,
-  clearRecipesFromSlot,
   assignRecipeToSlot,
+  calculateMealPlanNutritionTotal,
+  calculateMealSlotNutritionTotal,
+  calculatePlanDayNutritionTotal,
+  clearRecipesFromSlot,
   createEmptyMealPlan,
   generateWeeklyPlan,
   normalizeMealPlan,
