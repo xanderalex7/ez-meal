@@ -42,7 +42,8 @@ Deliver a usable local-first meal planner before adding advanced features. Each 
 | TASK-065 | DONE | MUST | Prepare documentation for public repository using English as the single maintained language. | Existing Markdown docs. | Markdown docs are present without `-ITA` duplicates and no links point to removed Italian copies. | File list, reference search and Git status reviewed. |
 | TASK-066 | TODO | MUST | Final public-readiness scan for secrets, tokens, generated artifacts and ignored sensitive files. | TASK-065 | No obvious secrets or tracked build artifacts remain. `.gitignore` covers local/private files. | Repo scan commands reviewed. |
 | TASK-067 | IN_PROGRESS | SHOULD | Prepare v1.3.0 UI polish and validation release notes. Includes ingredient filtering/order, recipe filtering, recipe edit scroll behavior, warning/error colors, recipe ingredient validation, multi-select blur handling, logo/header polish, Today card spacing and Android safe-area improvements. | Recent UI/validation work. | `CHANGELOG.md` documents v1.3.0 changes; README links the changelog; implementation passes automated checks; manual web/mobile review completed before release. | Typecheck passed for current implementation; targeted UI tests passed; final visual review and release smoke test pending. |
-| TASK-068 | IN_PROGRESS | MUST | Add optional recipe weight/calorie tracking with daily and plan totals. | TASK-064, CSV import/export, local persistence. | Recipes support weight/calorie fields when tracking is enabled; Today and Plan show per-recipe and total calories; Settings exposes measurement unit and tracking toggle; DB and CSV remain backward compatible. | Implementation slices completed with typecheck and full test suite; final manual/web/mobile/APK validation and release notes pending. |
+| TASK-068 | DONE | MUST | Add optional recipe weight/calorie tracking with daily and plan totals. | TASK-064, CSV import/export, local persistence. | Recipes support weight/calorie fields when tracking is enabled; Today and Plan show per-recipe and total calories; Settings exposes measurement unit and tracking toggle; DB and CSV remain backward compatible. | Implementation slices completed with typecheck and full test suite; conceptual weight correction continues in TASK-069. |
+| TASK-069 | TODO | MUST | Fix nutrition model: recipe calories stay on the recipe, while weight moves to each ingredient used in a recipe. | TASK-068 | Recipe ingredient weights are captured, persisted, imported/exported and displayed correctly; Plan hides weight values; Today shows recipe calories plus ingredient weight breakdowns. | Typecheck, targeted unit/UI tests, CSV round-trip and manual web/mobile review. |
 
 ## Detailed Active Task Notes
 
@@ -59,7 +60,6 @@ Subtasks:
 | TASK-068C | DONE | CSV import/export and documentation. | CSV format includes recipe nutrition and nutrition preferences; backward compatibility is handled; invalid numeric/unit data is rejected before import; `IMPORT_EXPORT.md` updated. | `npm run typecheck`; full Jest suite passed. |
 | TASK-068D | DONE | Settings and Recipes UI. | Settings exposes tracking toggle and weight unit selection; Recipes create/edit shows and validates weight/calories only when tracking is enabled. | `npm run typecheck`; full Jest suite passed. |
 | TASK-068E | DONE | Today and Plan UI totals/layout. | Today and Plan show per-recipe weight/calories, day totals and plan totals when enabled; long recipe names cannot overlap values; missing recipe nutrition shows actionable error. | `npm run typecheck`; full Jest suite passed. |
-| TASK-068F | TODO | Final validation and release notes. | Full feature is documented in `CHANGELOG.md`; release smoke test covers nutrition tracking, CSV round-trip and APK behavior. | Manual web/mobile/APK smoke test. |
 
 User behavior:
 
@@ -145,6 +145,47 @@ Documentation impact:
 - Update `docs/design.md` only if new reusable UI layout rules/components are introduced.
 - Update `IMPORT_EXPORT.md` for the CSV format change.
 - Update `CHANGELOG.md` under the target release when implemented.
+
+### TASK-069 - Ingredient-Level Weight Fix
+
+Goal: correct the nutrition model after local testing showed that recipe weight is derived from the ingredient quantities inside the recipe, while calories remain a recipe-level value.
+
+Subtasks:
+
+| ID | Status | Scope | Completion Criteria | Verification |
+| --- | --- | --- | --- | --- |
+| TASK-069A | TODO | Domain and validation model. | Recipe keeps recipe-level calories; each selected recipe ingredient can carry a positive optional/required weight depending on tracking settings; totals ignore recipe-level weight. | Domain validation tests and typecheck. |
+| TASK-069B | TODO | Persistence and migration. | Local DB stores weight on recipe-ingredient relations instead of recipe rows; existing recipe weight data is migrated or safely ignored with no app crash; reset still works. | Migration/repository tests and manual existing-DB check. |
+| TASK-069C | TODO | CSV/import-export format. | `IMPORT_EXPORT.md` defines ingredient weights inside recipe composition records; import/export round-trip preserves ingredient weights and recipe calories; legacy CSV remains handled where feasible. | CSV tests with schema compatibility and invalid weight cases. |
+| TASK-069D | TODO | Recipes UI create/edit. | In recipe edit/create, selected ingredient chips are left-aligned in a vertical list with a weight input on the right; calories remain a recipe-level field; save validates missing/invalid ingredient weights when tracking is enabled. | UI tests where practical and mobile keyboard/manual check. |
+| TASK-069E | TODO | Recipe cards. | Recipe cards show calories aligned right on the recipe title row; ingredients are listed one per row with their weight aligned beside each ingredient. | Visual review on web/mobile, light/dark contrast check. |
+| TASK-069F | TODO | Today and Plan display. | Today shows each recipe as a sub-card with recipe name and calories on the title row, then ingredient rows with weights; Plan removes weight display and keeps calorie totals only. | Manual Today/Plan review with long recipe and ingredient names. |
+| TASK-069G | TODO | Documentation and release notes. | Requirements, architecture, import/export docs and changelog reflect ingredient-level weights without duplicating implementation details. | Documentation diff review. |
+
+User behavior:
+
+- Recipes tab:
+  - Calories remain editable at recipe level.
+  - Weight is entered per ingredient used by the recipe, for example `50 g` rice, `2 g` oil, `1 g` salt.
+  - Selected ingredients must appear in a vertical list: ingredient tag/name on the left, weight field on the right.
+  - Recipe cards must show ingredients one per row with the corresponding weight beside each ingredient.
+  - Recipe title row must show recipe name on the left and calories on the right.
+- Today tab:
+  - Each planned recipe should appear as a compact sub-card.
+  - The recipe sub-card title row shows recipe name and calories.
+  - Under the title row, each ingredient appears on its own row with its weight.
+  - Long recipe and ingredient names must not overlap calories or weight values.
+- Plan tab:
+  - Do not show recipe or ingredient weight in plan cards.
+  - Keep calorie totals at plan/day/recipe level where already required by `TASK-068`.
+
+Impact notes:
+
+- DB: weight must belong to the recipe-ingredient association, not the recipe entity.
+- Domain: recipe total weight is derived from ingredient weights and should not be stored redundantly unless a later requirement justifies it.
+- CSV: recipe composition rows need to carry ingredient weight; file format documentation must be updated before release.
+- UI: recipe ingredient selection needs a stable two-column row layout for ingredient label and weight input.
+- Tests: cover validation, migration, CSV round-trip and Today/Plan display behavior.
 
 ## Completed Task Groups
 
