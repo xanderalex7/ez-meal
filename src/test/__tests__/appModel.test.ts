@@ -149,12 +149,12 @@ describe('appModel duplicate policy', () => {
     });
 
     const createResult = harness.actions().addRecipe({
-      ingredientIds: [],
+      ingredientIds: ['ingredient-1'],
       mealTypes: ['lunch'],
       name: ' pasta ',
     });
     const updateResult = harness.actions().updateRecipe(dinnerRecipe.id, {
-      ingredientIds: [],
+      ingredientIds: ['ingredient-1'],
       mealTypes: ['dinner'],
       name: 'PASTA',
     });

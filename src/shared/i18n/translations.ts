@@ -35,6 +35,7 @@ const dictionaries = {
     homeNoRecipe: 'Nessuna ricetta pianificata',
     ingredientsTitle: 'Ingredienti',
     ingredientName: 'Nome ingrediente',
+    ingredientSearch: 'Cerca ingredienti',
     ingredientDeleted: 'Ingrediente eliminato.',
     ingredientEmpty: 'Nessun ingrediente disponibile.',
     ingredientCreateA11y: 'Apri creazione ingrediente',
@@ -130,6 +131,7 @@ const dictionaries = {
     errorRecipeNameRequired: 'Il nome della ricetta è obbligatorio.',
     errorRecipeMealTypeRequired: 'Seleziona almeno un pasto.',
     errorRecipeMealTypeInvalid: 'Una o più label pasto non sono valide.',
+    errorRecipeIngredientRequired: 'Seleziona almeno un ingrediente.',
     errorRecipeDuplicate: 'Esiste già una ricetta con questo nome.',
     errorRecipePlanned:
       'Ricetta pianificata in {{count}} pasti. Premi di nuovo per rimuoverla dai piani e cancellarla.',
@@ -171,6 +173,7 @@ const dictionaries = {
     homeNoRecipe: 'No recipe planned',
     ingredientsTitle: 'Ingredients',
     ingredientName: 'Ingredient name',
+    ingredientSearch: 'Search ingredients',
     ingredientDeleted: 'Ingredient deleted.',
     ingredientEmpty: 'No ingredients available.',
     ingredientCreateA11y: 'Open ingredient creation',
@@ -265,6 +268,7 @@ const dictionaries = {
     errorRecipeNameRequired: 'Recipe name is required.',
     errorRecipeMealTypeRequired: 'Select at least one meal.',
     errorRecipeMealTypeInvalid: 'One or more meal labels are invalid.',
+    errorRecipeIngredientRequired: 'Select at least one ingredient.',
     errorRecipeDuplicate: 'A recipe with this name already exists.',
     errorRecipePlanned:
       'Recipe planned in {{count}} meals. Press again to remove it from plans and delete it.',
