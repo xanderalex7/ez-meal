@@ -42,6 +42,98 @@ Deliver a usable local-first meal planner before adding advanced features. Each 
 | TASK-065 | DONE | MUST | Prepare documentation for public repository using English as the single maintained language. | Existing Markdown docs. | Markdown docs are present without `-ITA` duplicates and no links point to removed Italian copies. | File list, reference search and Git status reviewed. |
 | TASK-066 | TODO | MUST | Final public-readiness scan for secrets, tokens, generated artifacts and ignored sensitive files. | TASK-065 | No obvious secrets or tracked build artifacts remain. `.gitignore` covers local/private files. | Repo scan commands reviewed. |
 | TASK-067 | IN_PROGRESS | SHOULD | Prepare v1.3.0 UI polish and validation release notes. Includes ingredient filtering/order, warning/error colors, recipe ingredient validation, multi-select blur handling, logo/header polish, Today card spacing and Android safe-area improvements. | Recent UI/validation work. | `CHANGELOG.md` documents v1.3.0 changes; README links the changelog; implementation passes automated checks; manual web/mobile review completed before release. | Typecheck passed for current implementation; final visual review and release smoke test pending. |
+| TASK-068 | TODO | MUST | Add optional recipe weight/calorie tracking with daily and plan totals. | TASK-064, CSV import/export, local persistence. | Recipes support weight/calorie fields when tracking is enabled; Today and Plan show per-recipe and total calories; Settings exposes measurement unit and tracking toggle; DB and CSV remain backward compatible. | Unit/domain tests, import/export tests, UI tests where practical, manual web/mobile flow, APK smoke test before release. |
+
+## Detailed Active Task Notes
+
+### TASK-068 - Recipe Weight, Calories, Units and Totals
+
+Goal: add an optional nutrition tracking mode focused on recipe weight and calories, without breaking the existing simple meal-planning flow.
+
+User behavior:
+
+- Settings tab:
+  - Add a dedicated measurement/unit section.
+  - Add a weight unit preference with common options: grams, kilograms, ounces and pounds.
+  - Add a toggle/switch to enable or disable weight/calorie tracking.
+  - When disabled, weight and calories must not be shown in Today, Plan or Recipe edit/create UI.
+  - When enabled, every recipe must have valid weight and calorie values.
+- Recipes tab:
+  - When tracking is enabled, recipe create/edit forms must include weight and calories fields.
+  - Weight must use the selected weight unit in labels/help text.
+  - Calories should be stored/displayed as calories per recipe, not per ingredient.
+  - Save must reject missing, zero or invalid values when tracking is enabled.
+  - When tracking is disabled, recipe create/edit must behave like the current flow and hide these fields.
+- Today tab:
+  - Each recipe row must show recipe name on the left and weight/calories on the right.
+  - Reserve a maximum width/flex behavior for the recipe-name column so long names cannot overlap weight/calories.
+  - Show total daily calories aligned on the right side of the Today header/title area.
+  - Total daily calories are the sum of all recipes in the selected plan for the current weekday.
+  - If tracking is enabled and one or more planned recipes miss weight/calorie data, show a clear error asking the user to either complete all recipe info or disable calorie tracking.
+- Plan tab:
+  - For each weekday, show the total calories for that day next to the weekday label.
+  - Next to the plan name, show the plan calorie target/total in parentheses, for example `(2000 cal)`.
+  - Meal slot rows follow the same layout rule as Today: recipe name constrained on the left, weight/calories on the right.
+  - Editing, adding, removing and swapping recipes must update displayed totals immediately.
+
+Domain/data model impact:
+
+- Add optional recipe fields for weight amount and calories.
+- Add preferences for weight unit and tracking enabled/disabled.
+- Define validation rules:
+  - tracking disabled: weight/calories can be absent and are ignored by totals;
+  - tracking enabled: every recipe used in visible/planned meals must have valid positive weight and calorie values;
+  - recipe save/edit should prevent invalid values when tracking is enabled;
+  - imported data must be validated consistently before replacing local data.
+- Decide whether existing recipes receive empty values during migration or a default placeholder; prefer empty values plus actionable validation when tracking is enabled.
+- Keep calorie totals deterministic and derived from recipe data, not stored redundantly in plans.
+
+Database/persistence impact:
+
+- Add a local schema migration for recipe weight/calorie fields and app preferences.
+- Ensure existing local databases upgrade without data loss.
+- Ensure reset database restores default tracking preference and default unit.
+- Persist and restore unit/tracking settings across app restarts.
+
+CSV import/export impact:
+
+- Update `IMPORT_EXPORT.md` before or during implementation.
+- Add CSV fields/records for recipe weight, recipe calories, weight unit and tracking enabled preference.
+- Keep backward compatibility with CSV files exported before this feature when possible.
+- Validate imported unit values against supported units.
+- Validate imported numeric fields before applying data.
+- Export must include all new fields/preferences so a full app state round-trip preserves nutrition settings.
+
+UI/UX impact:
+
+- Avoid overlap in Today and Plan rows by using a stable two-column layout.
+- Keep nutrition metadata compact; do not make meal cards visually noisy.
+- Use localized labels and messages in Italian and English.
+- Error messages must use the existing error styling; warnings use warning styling.
+- Ensure light/dark contrast for the new labels, values and validation messages.
+- Ensure mobile keyboard behavior remains usable for numeric inputs.
+
+Testing/verification:
+
+- Unit/domain tests for calorie total calculations, validation and preference behavior.
+- Persistence/migration tests for existing data and new fields.
+- CSV import/export tests for new fields, backward compatibility and invalid data.
+- UI tests where practical for hidden/visible fields based on tracking toggle.
+- Manual checks on web and mobile:
+  - tracking disabled hides all weight/calorie UI;
+  - tracking enabled requires recipe nutrition data;
+  - Today daily total is correct;
+  - Plan weekday and plan totals are correct;
+  - long recipe names do not overlap weight/calorie values;
+  - import/export round-trip preserves settings and values.
+
+Documentation impact:
+
+- Update `docs/requirements.md` if this becomes part of product behavior.
+- Update `docs/architecture.md` for data model, persistence and CSV changes if implementation is accepted.
+- Update `docs/design.md` only if new reusable UI layout rules/components are introduced.
+- Update `IMPORT_EXPORT.md` for the CSV format change.
+- Update `CHANGELOG.md` under the target release when implemented.
 
 ## Completed Task Groups
 
@@ -80,7 +172,7 @@ Minimum manual APK checks:
 | --- | --- | --- |
 | FUTURE-001 | DEFERRED | Store-release branch/workflow for iOS/App Store and Play Store distribution. |
 | FUTURE-002 | DEFERRED | Optional cloud sync/account system. |
-| FUTURE-003 | DEFERRED | Nutrition/calorie planning. |
+| FUTURE-003 | DEFERRED | Advanced nutrition planning beyond recipe-level weight/calorie tracking. |
 | FUTURE-004 | DEFERRED | Shopping list generation. |
 
 ## Update Rules
