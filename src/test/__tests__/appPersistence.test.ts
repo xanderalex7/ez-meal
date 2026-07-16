@@ -24,6 +24,7 @@ describe('appPersistence', () => {
         name: 'Pasta',
         meal_types: '["lunch"]',
         ingredient_ids: '["ingredient-1"]',
+        ingredient_weights: '[{"ingredientId":"ingredient-1","weightAmount":80}]',
         weight_amount: 320,
         calories: 520,
         notes: null,
@@ -49,7 +50,14 @@ describe('appPersistence', () => {
       mealPlan: { id: initial.mealPlan.id, title: 'Piano test' },
       mealPlans: [{ id: initial.mealPlan.id, title: 'Piano test' }],
       nutritionSettings: { trackingEnabled: false, weightUnit: 'g' },
-      recipes: [{ id: 'recipe-1', name: 'Pasta', nutrition: { weightAmount: 320, calories: 520 } }],
+      recipes: [
+        {
+          id: 'recipe-1',
+          name: 'Pasta',
+          ingredientWeights: [{ ingredientId: 'ingredient-1', weightAmount: 80 }],
+          nutrition: { weightAmount: 320, calories: 520 },
+        },
+      ],
       selectedMealPlanId: initial.mealPlan.id,
     });
   });

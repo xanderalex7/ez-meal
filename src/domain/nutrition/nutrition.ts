@@ -8,8 +8,12 @@ export type NutritionSettings = {
 };
 
 export type RecipeNutrition = {
-  weightAmount: number;
   calories: number;
+  /**
+   * Legacy recipe-level weight kept temporarily for migrations/imports until
+   * ingredient-level weights are fully wired through persistence and UI.
+   */
+  weightAmount?: number;
 };
 
 export type NutritionTotals = {
@@ -31,8 +35,6 @@ export function hasCompleteRecipeNutrition(
 ): nutrition is RecipeNutrition {
   return Boolean(
     nutrition &&
-      Number.isFinite(nutrition.weightAmount) &&
-      nutrition.weightAmount > 0 &&
       Number.isFinite(nutrition.calories) &&
       nutrition.calories > 0,
   );
@@ -44,7 +46,7 @@ export function sumNutritionTotals(values: Array<RecipeNutrition | undefined>): 
       hasCompleteRecipeNutrition(nutrition)
         ? {
             calories: total.calories + nutrition.calories,
-            weightAmount: total.weightAmount + nutrition.weightAmount,
+            weightAmount: total.weightAmount,
           }
         : total,
     { calories: 0, weightAmount: 0 },

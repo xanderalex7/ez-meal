@@ -8,7 +8,11 @@ function createFakeDb(input: {
   const executed: string[] = [];
   const runs: Array<{ source: string; params?: unknown[] }> = [];
   const mealPlanColumns = input.mealPlanColumns ?? [{ name: 'title' }];
-  const recipeColumns = input.recipeColumns ?? [{ name: 'weight_amount' }, { name: 'calories' }];
+  const recipeColumns = input.recipeColumns ?? [
+    { name: 'ingredient_weights' },
+    { name: 'weight_amount' },
+    { name: 'calories' },
+  ];
   const db: SqlExecutor = {
     execAsync: async (source) => {
       executed.push(source);
@@ -76,5 +80,13 @@ describe('migrateDatabase', () => {
 
     expect(executed).toContain('ALTER TABLE recipes ADD COLUMN weight_amount REAL;');
     expect(executed).toContain('ALTER TABLE recipes ADD COLUMN calories INTEGER;');
+  });
+
+  it('adds recipe ingredient weight column when upgrading an existing database', async () => {
+    const { db, executed } = createFakeDb({ recipeColumns: [{ name: 'id' }, { name: 'calories' }] });
+
+    await migrateDatabase({ db, now: '2026-07-04T12:00:00.000Z' });
+
+    expect(executed).toContain("ALTER TABLE recipes ADD COLUMN ingredient_weights TEXT NOT NULL DEFAULT '[]';");
   });
 });

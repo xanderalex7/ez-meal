@@ -66,7 +66,7 @@ export function exportAppModelToCsv(input: {
 }) {
   const rows: string[][] = [
     [...csvHeader],
-    metadataRow('format', 'schema_version', '2'),
+    metadataRow('format', 'schema_version', '3'),
     metadataRow('export', 'app_name', 'EZ-MEAL'),
     metadataRow('export', 'exported_at', input.exportedAt),
     row({ record_type: 'preference', id: 'language', key: 'language', value: input.language, updated_at: input.exportedAt }),
@@ -110,17 +110,22 @@ export function exportAppModelToCsv(input: {
         created_at: recipe.createdAt,
         updated_at: recipe.updatedAt,
         notes: recipe.notes ?? '',
-        weight_amount: recipe.nutrition ? String(recipe.nutrition.weightAmount) : '',
+        weight_amount: '',
         calories: recipe.nutrition ? String(recipe.nutrition.calories) : '',
       }),
     );
     recipe.ingredientIds.forEach((ingredientId) => {
+      const ingredientWeight = recipe.ingredientWeights?.find(
+        (candidate) => candidate.ingredientId === ingredientId,
+      );
       rows.push(
         row({
           record_type: 'recipe_ingredient',
           id: `${recipe.id}__${ingredientId}`,
           parent_id: recipe.id,
           value: ingredientId,
+          weight_amount: ingredientWeight?.quantity ??
+            (ingredientWeight?.weightAmount ? String(ingredientWeight.weightAmount) : ''),
         }),
       );
     });
@@ -309,7 +314,7 @@ function groupByRecordType(rows: CsvRecord[]) {
 function validateMetadata(records: CsvRecord[]) {
   const schemaVersion = records.find((record) => record.key === 'schema_version')?.value;
   const appName = records.find((record) => record.key === 'app_name')?.value;
-  if (schemaVersion !== '1' && schemaVersion !== '2') {
+  if (schemaVersion !== '1' && schemaVersion !== '2' && schemaVersion !== '3') {
     throw new Error('Versione schema CSV non supportata.');
   }
   if (appName !== 'EZ-MEAL') {
@@ -396,25 +401,18 @@ function parseRecipes(records: CsvRecord[]): Recipe[] {
 }
 
 function parseRecipeNutrition(record: CsvRecord): Recipe['nutrition'] {
-  const hasWeight = record.weight_amount.trim() !== '';
   const hasCalories = record.calories.trim() !== '';
-  if (!hasWeight && !hasCalories) {
+  if (!hasCalories) {
     return undefined;
   }
-  if (!hasWeight || !hasCalories) {
-    throw new Error(`Dati nutrizionali incompleti per ricetta: ${record.name}`);
-  }
 
-  const weightAmount = parsePositiveNumber(record.weight_amount);
   const calories = parsePositiveNumber(record.calories);
-  if (weightAmount === undefined) {
-    throw new Error(`Peso ricetta non valido: ${record.name}`);
-  }
   if (calories === undefined) {
     throw new Error(`Calorie ricetta non valide: ${record.name}`);
   }
 
-  return { weightAmount, calories };
+  const legacyWeightAmount = parsePositiveNumber(record.weight_amount);
+  return { calories, ...(legacyWeightAmount ? { weightAmount: legacyWeightAmount } : {}) };
 }
 
 function parsePositiveNumber(value: string): number | undefined {
@@ -431,6 +429,7 @@ function applyRecipeIngredients(
   const ingredientIds = new Set(ingredients.map((ingredient) => ingredient.id));
   const recipeIds = new Set(recipes.map((recipe) => recipe.id));
   const relationMap = new Map<string, string[]>();
+  const weightMap = new Map<string, NonNullable<Recipe['ingredientWeights']>>();
 
   records.forEach((record) => {
     assertRequired(record.id, 'ID relazione ricetta-ingrediente mancante.');
@@ -440,13 +439,38 @@ function applyRecipeIngredients(
     if (!ingredientIds.has(record.value)) {
       throw new Error(`Relazione con ingrediente inesistente: ${record.value}`);
     }
+    const quantity = record.weight_amount.trim() || undefined;
+    const weightAmount = quantity ? parsePositiveNumber(quantity) : undefined;
     relationMap.set(record.parent_id, [...(relationMap.get(record.parent_id) ?? []), record.value]);
+    weightMap.set(record.parent_id, [
+      ...(weightMap.get(record.parent_id) ?? []),
+      { ingredientId: record.value, ...(quantity ? { quantity } : {}), ...(weightAmount ? { weightAmount } : {}) },
+    ]);
   });
 
   return recipes.map((recipe) => ({
     ...recipe,
     ingredientIds: relationMap.get(recipe.id) ?? [],
+    ingredientWeights: completeLegacyIngredientWeights(
+      relationMap.get(recipe.id) ?? [],
+      weightMap.get(recipe.id) ?? [],
+      recipe.nutrition?.weightAmount,
+    ),
   }));
+}
+
+function completeLegacyIngredientWeights(
+  ingredientIds: string[],
+  ingredientWeights: NonNullable<Recipe['ingredientWeights']>,
+  legacyRecipeWeight: number | undefined,
+) {
+  if (ingredientWeights.some((ingredientWeight) => ingredientWeight.quantity !== undefined || ingredientWeight.weightAmount !== undefined)) {
+    return ingredientWeights;
+  }
+  if (ingredientIds.length === 1 && legacyRecipeWeight) {
+    return [{ ingredientId: ingredientIds[0], quantity: String(legacyRecipeWeight), weightAmount: legacyRecipeWeight }];
+  }
+  return ingredientWeights.length > 0 ? ingredientWeights : undefined;
 }
 
 function validateNutritionCompleteness(settings: NutritionSettings, recipes: Recipe[]) {
@@ -457,6 +481,17 @@ function validateNutritionCompleteness(settings: NutritionSettings, recipes: Rec
   const missingRecipe = recipes.find((recipe) => !hasCompleteRecipeNutrition(recipe.nutrition));
   if (missingRecipe) {
     throw new Error(`Dati nutrizionali mancanti per ricetta: ${missingRecipe.name}`);
+  }
+  const missingIngredientWeight = recipes.find((recipe) =>
+    recipe.ingredientIds.some((ingredientId) => {
+      const ingredientWeight = recipe.ingredientWeights?.find(
+        (candidate) => candidate.ingredientId === ingredientId,
+      );
+      return !ingredientWeight?.quantity;
+    }),
+  );
+  if (missingIngredientWeight) {
+    throw new Error(`Peso ingrediente mancante per ricetta: ${missingIngredientWeight.name}`);
   }
 }
 

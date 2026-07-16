@@ -36,6 +36,7 @@ export type AppActions = {
     name: string;
     mealTypes: MealType[];
     ingredientIds: string[];
+    ingredientWeights?: Array<{ ingredientId: string; quantity?: unknown; weightAmount?: unknown }>;
     nutrition?: { weightAmount?: unknown; calories?: unknown };
   }) => string | null;
   updateRecipe: (
@@ -44,6 +45,7 @@ export type AppActions = {
       name: string;
       mealTypes: MealType[];
       ingredientIds: string[];
+      ingredientWeights?: Array<{ ingredientId: string; quantity?: unknown; weightAmount?: unknown }>;
       nutrition?: { weightAmount?: unknown; calories?: unknown };
     },
   ) => string | null;
@@ -117,6 +119,9 @@ export function createAppActions(
         recipes: current.recipes.map((recipe) => ({
           ...recipe,
           ingredientIds: recipe.ingredientIds.filter((ingredientId) => ingredientId !== id),
+          ingredientWeights: recipe.ingredientWeights?.filter(
+            (ingredientWeight) => ingredientWeight.ingredientId !== id,
+          ),
         })),
       }));
       return null;
@@ -127,6 +132,7 @@ export function createAppActions(
         name: input.name,
         mealTypes: input.mealTypes,
         ingredientIds: input.ingredientIds,
+        ingredientWeights: input.ingredientWeights,
         nutrition: input.nutrition,
       }, { nutritionRequired: model.nutritionSettings.trackingEnabled });
       if (!result.ok) {
@@ -141,6 +147,7 @@ export function createAppActions(
         name: result.value.name,
         mealTypes: result.value.mealTypes,
         ingredientIds: result.value.ingredientIds,
+        ingredientWeights: result.value.ingredientWeights,
         nutrition: result.value.nutrition,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -154,6 +161,7 @@ export function createAppActions(
         name: input.name,
         mealTypes: input.mealTypes,
         ingredientIds: input.ingredientIds,
+        ingredientWeights: input.ingredientWeights,
         nutrition: input.nutrition,
       }, { nutritionRequired: model.nutritionSettings.trackingEnabled });
       if (!result.ok) {
@@ -172,6 +180,7 @@ export function createAppActions(
                 name: result.value.name,
                 mealTypes: result.value.mealTypes,
                 ingredientIds: result.value.ingredientIds,
+                ingredientWeights: result.value.ingredientWeights,
                 nutrition: result.value.nutrition,
                 updatedAt: new Date().toISOString(),
               }
@@ -417,6 +426,8 @@ function recipeValidationMessage(
     | 'RECIPE_MEAL_TYPE_REQUIRED'
     | 'RECIPE_MEAL_TYPE_INVALID'
     | 'RECIPE_INGREDIENT_REQUIRED'
+    | 'RECIPE_INGREDIENT_WEIGHT_REQUIRED'
+    | 'RECIPE_INGREDIENT_WEIGHT_INVALID'
     | 'RECIPE_WEIGHT_REQUIRED'
     | 'RECIPE_WEIGHT_INVALID'
     | 'RECIPE_CALORIES_REQUIRED'
@@ -428,6 +439,8 @@ function recipeValidationMessage(
     RECIPE_MEAL_TYPE_REQUIRED: t('errorRecipeMealTypeRequired'),
     RECIPE_MEAL_TYPE_INVALID: t('errorRecipeMealTypeInvalid'),
     RECIPE_INGREDIENT_REQUIRED: t('errorRecipeIngredientRequired'),
+    RECIPE_INGREDIENT_WEIGHT_REQUIRED: t('errorRecipeWeightRequired'),
+    RECIPE_INGREDIENT_WEIGHT_INVALID: t('errorRecipeWeightInvalid'),
     RECIPE_WEIGHT_REQUIRED: t('errorRecipeWeightRequired'),
     RECIPE_WEIGHT_INVALID: t('errorRecipeWeightInvalid'),
     RECIPE_CALORIES_REQUIRED: t('errorRecipeCaloriesRequired'),

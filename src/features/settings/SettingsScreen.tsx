@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { StyleSheet, Switch, Text, View } from 'react-native';
 
 import type { ImportExportStepId } from '../importExport';
-import { weightUnits, type NutritionSettings, type WeightUnit } from '../../domain';
+import type { NutritionSettings } from '../../domain';
 import { useI18n, type Language } from '../../shared/i18n';
 import { Badge, Button, Card } from '../../shared/ui';
 import { spacing, useAppColors, type ThemeMode } from '../../shared/theme';
@@ -62,11 +62,6 @@ export function SettingsScreen({
     { label: t('settingsLanguageItalian'), value: 'it' },
     { label: t('settingsLanguageEnglish'), value: 'en' },
   ];
-  const weightUnitOptions: Array<{ label: string; value: WeightUnit }> = weightUnits.map((unit) => ({
-    label: weightUnitLabel(unit, t),
-    value: unit,
-  }));
-
   async function selectThemeMode(nextThemeMode: ThemeMode) {
     setResetPending(false);
     const result = await onThemeModeChange(nextThemeMode);
@@ -218,17 +213,6 @@ export function SettingsScreen({
             value={nutritionSettings.trackingEnabled}
           />
         </View>
-        <Text style={[styles.text, { color: colors.textMuted }]}>{t('settingsWeightUnit')}</Text>
-        <View style={styles.optionRow}>
-          {weightUnitOptions.map((option) => (
-            <Button
-              key={option.value}
-              label={option.label}
-              variant={nutritionSettings.weightUnit === option.value ? 'primary' : 'secondary'}
-              onPress={() => updateNutritionSettings({ ...nutritionSettings, weightUnit: option.value })}
-            />
-          ))}
-        </View>
       </Card>
       <Card style={styles.cardStack}>
         <Badge label={t('settingsDatabaseTitle')} />
@@ -292,15 +276,6 @@ function messageColor(tone: ScreenMessage['tone'], colors: ReturnType<typeof use
     return colors.warning;
   }
   return colors.textMuted;
-}
-
-function weightUnitLabel(unit: WeightUnit, t: ReturnType<typeof useI18n>['t']) {
-  return {
-    g: t('settingsWeightUnitG'),
-    kg: t('settingsWeightUnitKg'),
-    oz: t('settingsWeightUnitOz'),
-    lb: t('settingsWeightUnitLb'),
-  }[unit];
 }
 
 function createImportSteps(t: ReturnType<typeof useI18n>['t']): StepItem[] {

@@ -155,15 +155,15 @@ describe('meal plan domain', () => {
 
     expect(calculateMealSlotNutritionTotal(plannedDay.slots[1], [lunchRecipe, sideRecipe])).toEqual({
       calories: 780,
-      weightAmount: 500,
+      weightAmount: 0,
     });
     expect(calculatePlanDayNutritionTotal(plannedDay, [lunchRecipe, sideRecipe])).toEqual({
       calories: 1040,
-      weightAmount: 680,
+      weightAmount: 0,
     });
     expect(calculateMealPlanNutritionTotal(plannedPlan, [lunchRecipe, sideRecipe])).toEqual({
       calories: 1040,
-      weightAmount: 680,
+      weightAmount: 0,
     });
   });
 });

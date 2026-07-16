@@ -3,9 +3,14 @@ import { StyleSheet, Text, View } from 'react-native';
 import type { AppModel } from '../appModel';
 import { calculatePlanDayNutritionTotal } from '../../domain';
 import { useI18n } from '../../shared/i18n';
-import { formatNutritionMeta, hasMissingNutrition } from '../../shared/nutritionUi';
+import {
+  formatNumber,
+  formatRecipeCalories,
+  getRecipeIngredientRows,
+  hasMissingNutrition,
+} from '../../shared/nutritionUi';
 import { Badge, Card } from '../../shared/ui';
-import { spacing, useAppColors } from '../../shared/theme';
+import { radii, spacing, useAppColors } from '../../shared/theme';
 
 type HomeScreenProps = {
   model: AppModel;
@@ -46,20 +51,51 @@ export function HomeScreen({ model }: HomeScreenProps) {
             {recipes.length > 0 ? (
               <View style={styles.recipeList}>
                 {recipes.map((recipe) => (
-                  <View key={recipe.id} style={styles.recipeRow}>
-                    <Text
-                      numberOfLines={1}
-                      style={[styles.recipeName, { color: colors.text }]}
-                    >
-                      {recipe.name}
-                    </Text>
-                    {showNutrition ? (
+                  <View
+                    key={recipe.id}
+                    style={[
+                      styles.recipeSubCard,
+                      { backgroundColor: colors.surfaceAlt, borderColor: colors.border },
+                    ]}
+                  >
+                    <View style={styles.recipeRow}>
                       <Text
-                        numberOfLines={1}
-                        style={[styles.nutritionMeta, { color: colors.textMuted }]}
+                        numberOfLines={2}
+                        style={[styles.recipeName, { color: colors.text }]}
                       >
-                        {formatNutritionMeta(recipe, model.nutritionSettings.weightUnit, t) ?? '-'}
+                        {recipe.name}
                       </Text>
+                      {showNutrition ? (
+                        <Text
+                          numberOfLines={1}
+                          style={[styles.nutritionMeta, { color: colors.textMuted }]}
+                        >
+                          {formatRecipeCalories(recipe) ?? '-'}
+                        </Text>
+                      ) : null}
+                    </View>
+                    {showNutrition ? (
+                      <View
+                        style={[styles.recipeDivider, { backgroundColor: colors.border }]}
+                        testID={`home-recipe-divider-${recipe.id}`}
+                      />
+                    ) : null}
+                    {showNutrition ? (
+                      <View style={styles.ingredientList}>
+                        {getRecipeIngredientRows(recipe, model.ingredients).map((ingredient) => (
+                          <View key={ingredient.ingredientId} style={styles.ingredientRow}>
+                            <Text
+                              numberOfLines={1}
+                              style={[styles.ingredientName, { color: colors.textMuted }]}
+                            >
+                              {ingredient.name}
+                            </Text>
+                            <Text style={[styles.ingredientWeight, { color: colors.textMuted }]}>
+                              {ingredient.quantity ?? '-'}
+                            </Text>
+                          </View>
+                        ))}
+                      </View>
                     ) : null}
                   </View>
                 ))}
@@ -116,11 +152,37 @@ const styles = StyleSheet.create({
   recipeList: {
     gap: spacing.xs,
   },
+  recipeSubCard: {
+    borderRadius: radii.md,
+    borderWidth: 1,
+    gap: spacing.sm,
+    padding: spacing.sm,
+  },
+  recipeDivider: { height: 1 },
   recipeRow: {
     alignItems: 'center',
     flexDirection: 'row',
     gap: spacing.sm,
     justifyContent: 'space-between',
+  },
+  ingredientList: {
+    gap: spacing.xs,
+  },
+  ingredientRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: spacing.sm,
+    justifyContent: 'space-between',
+  },
+  ingredientName: {
+    flex: 1,
+    fontSize: 14,
+    minWidth: 0,
+  },
+  ingredientWeight: {
+    flexShrink: 0,
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
 

@@ -43,6 +43,7 @@ export type {
 export type {
   IngredientId,
   Recipe,
+  RecipeIngredient,
   RecipeId,
   RecipeInput,
   RecipeValidationError,

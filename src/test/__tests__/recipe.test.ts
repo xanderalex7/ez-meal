@@ -74,7 +74,7 @@ describe('validateRecipeInput', () => {
     });
   });
 
-  it('accepts recipe nutrition when provided', () => {
+  it('accepts recipe calories when provided', () => {
     expect(
       validateRecipeInput({
         name: 'Riso e pollo',
@@ -88,12 +88,12 @@ describe('validateRecipeInput', () => {
         name: 'Riso e pollo',
         mealTypes: ['lunch'],
         ingredientIds: ['ingredient-1'],
-        nutrition: { weightAmount: 350.5, calories: 620 },
+        nutrition: { calories: 620 },
       },
     });
   });
 
-  it('requires recipe nutrition only when requested', () => {
+  it('requires recipe calories and ingredient weights only when requested', () => {
     expect(
       validateRecipeInput(
         { name: 'Toast', mealTypes: ['breakfast'], ingredientIds: ['ingredient-1'] },
@@ -103,27 +103,28 @@ describe('validateRecipeInput', () => {
       ok: false,
       errors: [
         {
-          code: 'RECIPE_WEIGHT_REQUIRED',
-          field: 'nutrition.weightAmount',
-          message: 'Il peso della ricetta è obbligatorio.',
-        },
-        {
           code: 'RECIPE_CALORIES_REQUIRED',
           field: 'nutrition.calories',
           message: 'Le calorie della ricetta sono obbligatorie.',
+        },
+        {
+          code: 'RECIPE_INGREDIENT_WEIGHT_REQUIRED',
+          field: 'ingredientWeights',
+          message: 'La quantità di ogni ingrediente è obbligatoria.',
         },
       ],
     });
   });
 
-  it('rejects invalid required recipe nutrition', () => {
+  it('rejects missing required recipe calories and ingredient quantities', () => {
     expect(
       validateRecipeInput(
         {
           name: 'Toast',
           mealTypes: ['breakfast'],
           ingredientIds: ['ingredient-1'],
-          nutrition: { weightAmount: '0', calories: '-5' },
+          ingredientWeights: [{ ingredientId: 'ingredient-1', quantity: '   ' }],
+          nutrition: { calories: '-5' },
         },
         { nutritionRequired: true },
       ),
@@ -131,16 +132,46 @@ describe('validateRecipeInput', () => {
       ok: false,
       errors: [
         {
-          code: 'RECIPE_WEIGHT_INVALID',
-          field: 'nutrition.weightAmount',
-          message: 'Il peso della ricetta deve essere maggiore di zero.',
-        },
-        {
           code: 'RECIPE_CALORIES_INVALID',
           field: 'nutrition.calories',
           message: 'Le calorie della ricetta devono essere maggiori di zero.',
         },
+        {
+          code: 'RECIPE_INGREDIENT_WEIGHT_REQUIRED',
+          field: 'ingredientWeights',
+          message: 'La quantità di ogni ingrediente è obbligatoria.',
+        },
       ],
+    });
+  });
+
+  it('returns ingredient quantities when nutrition tracking is valid', () => {
+    expect(
+      validateRecipeInput(
+        {
+          name: 'Riso in bianco',
+          mealTypes: ['lunch'],
+          ingredientIds: ['rice', 'oil'],
+          ingredientWeights: [
+            { ingredientId: 'rice', quantity: '50 g' },
+            { ingredientId: 'oil', quantity: '1 cucchiaino' },
+          ],
+          nutrition: { calories: '240' },
+        },
+        { nutritionRequired: true },
+      ),
+    ).toEqual({
+      ok: true,
+      value: {
+        name: 'Riso in bianco',
+        mealTypes: ['lunch'],
+        ingredientIds: ['rice', 'oil'],
+        ingredientWeights: [
+          { ingredientId: 'rice', quantity: '50 g' },
+          { ingredientId: 'oil', quantity: '1 cucchiaino' },
+        ],
+        nutrition: { calories: 240 },
+      },
     });
   });
 });

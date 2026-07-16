@@ -22,6 +22,7 @@ export async function migrateDatabase(input: {
     await ensureMealPlanTitleColumn(input.db);
     await ensureMealPlanWeekStartDateIsNotUnique(input.db);
     await ensureRecipeNutritionColumns(input.db);
+    await ensureRecipeIngredientWeightsColumn(input.db);
 
     await input.db.runAsync(
       'INSERT OR IGNORE INTO schema_migrations (version, applied_at) VALUES (?, ?);',
@@ -45,6 +46,15 @@ async function ensureRecipeNutritionColumns(db: SqlExecutor): Promise<void> {
 
   if (!columnNames.has('calories')) {
     await db.execAsync('ALTER TABLE recipes ADD COLUMN calories INTEGER;');
+  }
+}
+
+async function ensureRecipeIngredientWeightsColumn(db: SqlExecutor): Promise<void> {
+  const columns = await db.getAllAsync<{ name: string }>('PRAGMA table_info(recipes);', []);
+  const columnNames = new Set(columns.map((column) => column.name));
+
+  if (!columnNames.has('ingredient_weights')) {
+    await db.execAsync("ALTER TABLE recipes ADD COLUMN ingredient_weights TEXT NOT NULL DEFAULT '[]';");
   }
 }
 

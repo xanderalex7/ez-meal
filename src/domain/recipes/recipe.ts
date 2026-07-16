@@ -6,11 +6,19 @@ export type { RecipeNutrition } from '../nutrition';
 export type RecipeId = string;
 export type IngredientId = string;
 
+export type RecipeIngredient = {
+  ingredientId: IngredientId;
+  quantity?: string;
+  /** Legacy numeric amount kept for data imported before free-form quantities. */
+  weightAmount?: number;
+};
+
 export type Recipe = {
   id: RecipeId;
   name: string;
   mealTypes: MealType[];
   ingredientIds: IngredientId[];
+  ingredientWeights?: RecipeIngredient[];
   nutrition?: RecipeNutrition;
   notes?: string;
   createdAt: string;
@@ -21,6 +29,11 @@ export type RecipeInput = {
   name: string;
   mealTypes: unknown[];
   ingredientIds?: IngredientId[];
+  ingredientWeights?: Array<{
+    ingredientId: IngredientId;
+    quantity?: unknown;
+    weightAmount?: unknown;
+  }>;
   nutrition?: {
     weightAmount?: unknown;
     calories?: unknown;
@@ -33,6 +46,8 @@ export type RecipeValidationErrorCode =
   | 'RECIPE_MEAL_TYPE_REQUIRED'
   | 'RECIPE_MEAL_TYPE_INVALID'
   | 'RECIPE_INGREDIENT_REQUIRED'
+  | 'RECIPE_INGREDIENT_WEIGHT_REQUIRED'
+  | 'RECIPE_INGREDIENT_WEIGHT_INVALID'
   | 'RECIPE_WEIGHT_REQUIRED'
   | 'RECIPE_WEIGHT_INVALID'
   | 'RECIPE_CALORIES_REQUIRED'
@@ -40,7 +55,13 @@ export type RecipeValidationErrorCode =
 
 export type RecipeValidationError = {
   code: RecipeValidationErrorCode;
-  field: 'name' | 'mealTypes' | 'ingredientIds' | 'nutrition.weightAmount' | 'nutrition.calories';
+  field:
+    | 'name'
+    | 'mealTypes'
+    | 'ingredientIds'
+    | 'ingredientWeights'
+    | 'nutrition.weightAmount'
+    | 'nutrition.calories';
   message: string;
 };
 
@@ -51,6 +72,7 @@ export type RecipeValidationResult =
         name: string;
         mealTypes: MealType[];
         ingredientIds: IngredientId[];
+        ingredientWeights?: RecipeIngredient[];
         nutrition?: RecipeNutrition;
         notes?: string;
       };
@@ -69,6 +91,8 @@ export function validateRecipeInput(
   const mealTypes = input.mealTypes.filter(isMealType);
   const hasInvalidMealTypes = input.mealTypes.some((mealType) => !isMealType(mealType));
   const nutrition = parseRecipeNutrition(input.nutrition);
+  const ingredientIds = input.ingredientIds ?? [];
+  const ingredientWeights = parseRecipeIngredientWeights(ingredientIds, input.ingredientWeights);
 
   if (!name) {
     errors.push({
@@ -94,7 +118,7 @@ export function validateRecipeInput(
     });
   }
 
-  if (!input.ingredientIds || input.ingredientIds.length === 0) {
+  if (ingredientIds.length === 0) {
     errors.push({
       code: 'RECIPE_INGREDIENT_REQUIRED',
       field: 'ingredientIds',
@@ -103,20 +127,6 @@ export function validateRecipeInput(
   }
 
   if (options.nutritionRequired) {
-    if (input.nutrition?.weightAmount === undefined || input.nutrition?.weightAmount === '') {
-      errors.push({
-        code: 'RECIPE_WEIGHT_REQUIRED',
-        field: 'nutrition.weightAmount',
-        message: 'Il peso della ricetta è obbligatorio.',
-      });
-    } else if (!nutrition || nutrition.weightAmount <= 0) {
-      errors.push({
-        code: 'RECIPE_WEIGHT_INVALID',
-        field: 'nutrition.weightAmount',
-        message: 'Il peso della ricetta deve essere maggiore di zero.',
-      });
-    }
-
     if (input.nutrition?.calories === undefined || input.nutrition?.calories === '') {
       errors.push({
         code: 'RECIPE_CALORIES_REQUIRED',
@@ -130,6 +140,17 @@ export function validateRecipeInput(
         message: 'Le calorie della ricetta devono essere maggiori di zero.',
       });
     }
+
+    ingredientIds.forEach((ingredientId) => {
+      const quantity = ingredientWeights.find((candidate) => candidate.ingredientId === ingredientId);
+      if (!quantity?.quantity) {
+        errors.push({
+          code: 'RECIPE_INGREDIENT_WEIGHT_REQUIRED',
+          field: 'ingredientWeights',
+          message: "La quantità di ogni ingrediente è obbligatoria.",
+        });
+      }
+    });
   }
 
   if (errors.length > 0) {
@@ -141,7 +162,8 @@ export function validateRecipeInput(
     value: {
       name,
       mealTypes,
-      ingredientIds: input.ingredientIds ?? [],
+      ingredientIds,
+      ingredientWeights: ingredientWeights.length > 0 ? ingredientWeights : undefined,
       nutrition: hasCompleteRecipeNutrition(nutrition) ? nutrition : undefined,
       notes: input.notes?.trim() || undefined,
     },
@@ -153,14 +175,45 @@ function parseRecipeNutrition(input: RecipeInput['nutrition']): RecipeNutrition 
     return undefined;
   }
 
-  const weightAmount = parseNumber(input.weightAmount);
   const calories = parseNumber(input.calories);
 
-  if (weightAmount === undefined || calories === undefined) {
+  if (calories === undefined) {
     return undefined;
   }
 
-  return { weightAmount, calories };
+  return { calories };
+}
+
+function parseRecipeIngredientWeights(
+  ingredientIds: IngredientId[],
+  input: RecipeInput['ingredientWeights'],
+): RecipeIngredient[] {
+  const inputMap = new Map((input ?? []).map((item) => [item.ingredientId, item]));
+
+  return ingredientIds
+    .map((ingredientId) => {
+      const source = inputMap.get(ingredientId);
+      const quantity = parseQuantity(source?.quantity ?? source?.weightAmount);
+      const weightAmount = parseNumber(source?.weightAmount);
+      return {
+        ingredientId,
+        ...(quantity === undefined ? {} : { quantity }),
+        ...(weightAmount === undefined ? {} : { weightAmount }),
+      };
+    })
+    .filter((item) => item.quantity !== undefined || item.weightAmount !== undefined || inputMap.has(item.ingredientId));
+}
+
+function parseQuantity(value: unknown): string | undefined {
+  if (typeof value === 'string' && value.trim()) {
+    return value.trim();
+  }
+
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return String(value);
+  }
+
+  return undefined;
 }
 
 function parseNumber(value: unknown): number | undefined {

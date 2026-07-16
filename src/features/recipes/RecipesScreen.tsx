@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import type { AppActions, AppModel } from '../appModel';
 import { mealTypes, type MealType } from '../../domain';
@@ -15,6 +15,7 @@ import {
   TrashIconButton,
 } from '../../shared/ui';
 import { componentSizes, radii, spacing, useAppColors } from '../../shared/theme';
+import { formatNumber, getRecipeIngredientRows as getSharedRecipeIngredientRows } from '../../shared/nutritionUi';
 
 type RecipesScreenProps = {
   actions: AppActions;
@@ -28,14 +29,14 @@ export function RecipesScreen({ actions, model, onRequestScrollToTop }: RecipesS
   const [search, setSearch] = useState('');
   const normalizedSearch = search.trim().toLocaleLowerCase();
   const visibleRecipes = [...model.recipes]
-    .reverse()
+    .sort((first, second) => first.name.localeCompare(second.name, undefined, { sensitivity: 'base' }))
     .filter((recipe) =>
       normalizedSearch ? recipe.name.toLocaleLowerCase().includes(normalizedSearch) : true,
     );
   const [isFormVisible, setIsFormVisible] = useState(false);
   const [name, setName] = useState('');
-  const [weightAmount, setWeightAmount] = useState('');
   const [calories, setCalories] = useState('');
+  const [ingredientWeightValues, setIngredientWeightValues] = useState<Record<string, string>>({});
   const [selectedMealTypes, setSelectedMealTypes] = useState<MealType[]>(['lunch']);
   const [selectedIngredientIds, setSelectedIngredientIds] = useState<string[]>([]);
   const [editingRecipeId, setEditingRecipeId] = useState<string | null>(null);
@@ -53,8 +54,8 @@ export function RecipesScreen({ actions, model, onRequestScrollToTop }: RecipesS
 
   function resetForm() {
     setName('');
-    setWeightAmount('');
     setCalories('');
+    setIngredientWeightValues({});
     setSelectedMealTypes(['lunch']);
     setSelectedIngredientIds([]);
     setEditingRecipeId(null);
@@ -67,8 +68,14 @@ export function RecipesScreen({ actions, model, onRequestScrollToTop }: RecipesS
       name,
       mealTypes: selectedMealTypes,
       ingredientIds: selectedIngredientIds,
+      ingredientWeights: model.nutritionSettings.trackingEnabled
+        ? selectedIngredientIds.map((ingredientId) => ({
+            ingredientId,
+            quantity: ingredientWeightValues[ingredientId] ?? '',
+          }))
+        : undefined,
       nutrition: model.nutritionSettings.trackingEnabled
-        ? { weightAmount, calories }
+        ? { calories }
         : undefined,
     };
     const result = editingRecipeId
@@ -87,10 +94,10 @@ export function RecipesScreen({ actions, model, onRequestScrollToTop }: RecipesS
       return;
     }
     setName(recipe.name);
-    setWeightAmount(recipe.nutrition ? String(recipe.nutrition.weightAmount) : '');
     setCalories(recipe.nutrition ? String(recipe.nutrition.calories) : '');
     setSelectedMealTypes(recipe.mealTypes);
     setSelectedIngredientIds(recipe.ingredientIds);
+    setIngredientWeightValues(getRecipeIngredientWeightValues(recipe));
     setEditingRecipeId(recipe.id);
     setIsFormVisible(true);
     setError(undefined);
@@ -103,6 +110,36 @@ export function RecipesScreen({ actions, model, onRequestScrollToTop }: RecipesS
     return ingredientIds
       .map((ingredientId) => model.ingredients.find((ingredient) => ingredient.id === ingredientId)?.name)
       .filter((ingredientName): ingredientName is string => Boolean(ingredientName));
+  }
+
+  function updateSelectedIngredientIds(nextIngredientIds: string[]) {
+    setSelectedIngredientIds(nextIngredientIds);
+    setIngredientWeightValues((current) =>
+      Object.fromEntries(
+        nextIngredientIds.map((ingredientId) => [ingredientId, current[ingredientId] ?? '']),
+      ),
+    );
+  }
+
+  function updateIngredientWeight(ingredientId: string, weightAmount: string) {
+    setIngredientWeightValues((current) => ({ ...current, [ingredientId]: weightAmount }));
+  }
+
+  function getRecipeIngredientWeightValues(recipe: AppModel['recipes'][number]) {
+    const weights = new Map(
+      (recipe.ingredientWeights ?? []).map((ingredientWeight) => [
+        ingredientWeight.ingredientId,
+        ingredientWeight.quantity ?? (
+          ingredientWeight.weightAmount === undefined ? '' : String(ingredientWeight.weightAmount)
+        ),
+      ]),
+    );
+
+    if (recipe.ingredientIds.length === 1 && !weights.has(recipe.ingredientIds[0]) && recipe.nutrition?.weightAmount) {
+      weights.set(recipe.ingredientIds[0], String(recipe.nutrition.weightAmount));
+    }
+
+    return Object.fromEntries(recipe.ingredientIds.map((ingredientId) => [ingredientId, weights.get(ingredientId) ?? '']));
   }
 
   function deleteRecipe(recipeId: string) {
@@ -141,13 +178,6 @@ export function RecipesScreen({ actions, model, onRequestScrollToTop }: RecipesS
           {model.nutritionSettings.trackingEnabled ? (
             <View style={styles.nutritionFields}>
               <TextField
-                keyboardType="decimal-pad"
-                label={t('recipeWeight', { unit: model.nutritionSettings.weightUnit })}
-                placeholder={t('recipeWeight', { unit: model.nutritionSettings.weightUnit })}
-                value={weightAmount}
-                onChangeText={setWeightAmount}
-              />
-              <TextField
                 keyboardType="number-pad"
                 label={t('recipeCalories')}
                 placeholder={t('recipeCalories')}
@@ -175,13 +205,70 @@ export function RecipesScreen({ actions, model, onRequestScrollToTop }: RecipesS
                 label: ingredient.name,
               }))}
               selectedIds={selectedIngredientIds}
-              onChange={setSelectedIngredientIds}
+              onChange={updateSelectedIngredientIds}
+              showSelectedChips={false}
             />
           ) : (
             <Text style={[styles.empty, { color: colors.warning }]}>
               {t('recipeNoIngredientsHint')}
             </Text>
           )}
+          {model.nutritionSettings.trackingEnabled && selectedIngredientIds.length > 0 ? (
+            <View style={styles.ingredientWeights}>
+              <Text style={[styles.ingredientWeightsTitle, { color: colors.text }]}>
+                {t('recipeIngredientWeights')}
+              </Text>
+              <Text style={[styles.ingredientWeightsHint, { color: colors.textMuted }]}>
+                {t('recipeIngredientWeightHint')}
+              </Text>
+              {selectedIngredientIds.map((ingredientId) => {
+                const ingredient = model.ingredients.find((candidate) => candidate.id === ingredientId);
+                const ingredientName = ingredient?.name ?? ingredientId;
+                return (
+                  <View key={ingredientId} style={styles.ingredientWeightRow}>
+                    <Pressable
+                      accessibilityLabel={t('multiselectRemoveA11y', { label: ingredientName })}
+                      accessibilityRole="button"
+                      onPress={() =>
+                        updateSelectedIngredientIds(
+                          selectedIngredientIds.filter((selectedIngredientId) => selectedIngredientId !== ingredientId),
+                        )
+                      }
+                      style={[
+                        styles.ingredientWeightLabel,
+                        { backgroundColor: colors.surfaceAlt, borderColor: colors.border },
+                      ]}
+                    >
+                      <Text
+                        numberOfLines={1}
+                        style={[styles.ingredientWeightLabelText, { color: colors.text }]}
+                      >
+                        {ingredientName}
+                      </Text>
+                      <Text style={[styles.ingredientWeightRemove, { color: colors.textMuted }]}>x</Text>
+                    </Pressable>
+                    <TextInput
+                      accessibilityLabel={t('recipeIngredientWeightA11y', {
+                        ingredient: ingredientName,
+                      })}
+                      onChangeText={(value) => updateIngredientWeight(ingredientId, value)}
+                      placeholder={t('recipeIngredientWeightPlaceholder')}
+                      placeholderTextColor={colors.textMuted}
+                      style={[
+                        styles.ingredientWeightInput,
+                        {
+                          backgroundColor: colors.surface,
+                          borderColor: colors.border,
+                          color: colors.text,
+                        },
+                      ]}
+                      value={ingredientWeightValues[ingredientId] ?? ''}
+                    />
+                  </View>
+                );
+              })}
+            </View>
+          ) : null}
           <Button
             disabled={selectedIngredientIds.length === 0}
             label={editingRecipeId ? t('actionSave') : t('actionAdd')}
@@ -198,18 +285,44 @@ export function RecipesScreen({ actions, model, onRequestScrollToTop }: RecipesS
       {visibleRecipes.map((recipe) => (
         <Card key={recipe.id} style={styles.item}>
           <View style={styles.stackSmall}>
-            <Text style={[styles.itemTitle, { color: colors.text }]}>{recipe.name}</Text>
+            <View style={styles.recipeTitleRow}>
+              <Text numberOfLines={2} style={[styles.itemTitle, { color: colors.text }]}>
+                {recipe.name}
+              </Text>
+              {model.nutritionSettings.trackingEnabled && recipe.nutrition?.calories ? (
+                <Text style={[styles.recipeCalories, { color: colors.textMuted }]}>
+                  {formatNumber(recipe.nutrition.calories)} cal
+                </Text>
+              ) : null}
+            </View>
             <View style={styles.row}>
               {recipe.mealTypes.map((mealType) => (
                 <Badge key={mealType} label={mealTypeLabel(mealType)} tone={mealType} />
               ))}
             </View>
-            <Text style={[styles.ingredientsText, { color: colors.textMuted }]}>
-              {t('recipeIngredientsPrefix')}{' '}
-              {getIngredientNames(recipe.ingredientIds).length > 0
-                ? getIngredientNames(recipe.ingredientIds).join(', ')
-                : t('recipeNoIngredients')}
-            </Text>
+            {getSharedRecipeIngredientRows(recipe, model.ingredients).length > 0 ? (
+              <View style={styles.recipeIngredientList}>
+                {getSharedRecipeIngredientRows(recipe, model.ingredients).map((ingredient) => (
+                  <View key={ingredient.ingredientId} style={styles.recipeIngredientRow}>
+                    <Text
+                      numberOfLines={1}
+                      style={[styles.recipeIngredientName, { color: colors.textMuted }]}
+                    >
+                      {ingredient.name}
+                    </Text>
+                    {model.nutritionSettings.trackingEnabled && ingredient.quantity ? (
+                      <Text style={[styles.recipeIngredientWeight, { color: colors.textMuted }]}>
+                        {ingredient.quantity}
+                      </Text>
+                    ) : null}
+                  </View>
+                ))}
+              </View>
+            ) : (
+              <Text style={[styles.ingredientsText, { color: colors.textMuted }]}>
+                {t('recipeIngredientsPrefix')} {t('recipeNoIngredients')}
+              </Text>
+            )}
           </View>
           <View style={styles.recipeActions} testID="recipe-actions">
             <PencilIconButton
@@ -312,6 +425,44 @@ const styles = StyleSheet.create({
   stack: { gap: spacing.md, paddingTop: 72, position: 'relative' },
   form: { gap: spacing.md },
   nutritionFields: { gap: spacing.md },
+  ingredientWeights: { gap: spacing.sm },
+  ingredientWeightsTitle: { fontSize: 14, fontWeight: '700' },
+  ingredientWeightsHint: { fontSize: 13, lineHeight: 18 },
+  ingredientWeightRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  ingredientWeightLabel: {
+    alignItems: 'center',
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    flex: 1,
+    flexDirection: 'row',
+    gap: spacing.sm,
+    minHeight: 40,
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.md,
+  },
+  ingredientWeightLabelText: {
+    flexShrink: 1,
+    fontSize: 13,
+    fontWeight: '700',
+    minWidth: 0,
+  },
+  ingredientWeightRemove: {
+    flexShrink: 0,
+    fontSize: 18,
+    fontWeight: '800',
+    lineHeight: 20,
+  },
+  ingredientWeightInput: {
+    borderRadius: radii.md,
+    borderWidth: 1,
+    minHeight: 40,
+    paddingHorizontal: spacing.md,
+    width: 112,
+  },
   stackSmall: { gap: spacing.sm },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   recipeActions: {
@@ -322,8 +473,37 @@ const styles = StyleSheet.create({
   },
   title: { fontSize: 20, fontWeight: '700' },
   item: { gap: spacing.md },
-  itemTitle: { fontSize: 16, fontWeight: '700' },
+  recipeTitleRow: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    gap: spacing.sm,
+    justifyContent: 'space-between',
+  },
+  itemTitle: { flex: 1, fontSize: 16, fontWeight: '700', minWidth: 0 },
+  recipeCalories: {
+    flexShrink: 0,
+    fontSize: 14,
+    fontWeight: '700',
+    lineHeight: 20,
+  },
   ingredientsText: { fontSize: 14 },
+  recipeIngredientList: { gap: spacing.xs },
+  recipeIngredientRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: spacing.sm,
+    justifyContent: 'space-between',
+  },
+  recipeIngredientName: {
+    flex: 1,
+    fontSize: 14,
+    minWidth: 0,
+  },
+  recipeIngredientWeight: {
+    flexShrink: 0,
+    fontSize: 14,
+    fontWeight: '600',
+  },
   message: { fontSize: 14 },
   empty: { fontSize: 14 },
   mealChip: {

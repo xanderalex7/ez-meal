@@ -2,6 +2,7 @@ export { validateRecipeInput } from './recipe';
 export type {
   IngredientId,
   Recipe,
+  RecipeIngredient,
   RecipeId,
   RecipeInput,
   RecipeNutrition,

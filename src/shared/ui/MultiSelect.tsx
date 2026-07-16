@@ -17,9 +17,16 @@ type MultiSelectProps = {
   onChange: (selectedIds: string[]) => void;
   options: MultiSelectOption[];
   selectedIds: string[];
+  showSelectedChips?: boolean;
 };
 
-export function MultiSelect({ label, onChange, options, selectedIds }: MultiSelectProps) {
+export function MultiSelect({
+  label,
+  onChange,
+  options,
+  selectedIds,
+  showSelectedChips = true,
+}: MultiSelectProps) {
   const colors = useAppColors();
   const { t } = useI18n();
   const inputRef = useRef<TextInput>(null);
@@ -116,7 +123,7 @@ export function MultiSelect({ label, onChange, options, selectedIds }: MultiSele
         ]}
         value={query}
       />
-      {selectedOptions.length > 0 ? (
+      {showSelectedChips && selectedOptions.length > 0 ? (
         <View style={styles.selectedList}>
           {selectedOptions.map((option) => (
             <Pressable

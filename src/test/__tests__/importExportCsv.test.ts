@@ -28,13 +28,23 @@ describe('import/export CSV', () => {
     const updatedModel = {
       ...model,
       nutritionSettings: { trackingEnabled: true, weightUnit: 'kg' as const },
+      ingredients: [
+        {
+          id: 'ingredient-1',
+          name: 'Riso',
+          available: true,
+          createdAt: '2026-07-04T12:00:00.000Z',
+          updatedAt: '2026-07-04T12:00:00.000Z',
+        },
+      ],
       recipes: [
         {
           id: 'recipe-1',
           name: 'Riso e pollo',
           mealTypes: ['lunch' as const],
-          ingredientIds: [],
-          nutrition: { weightAmount: 0.45, calories: 650 },
+          ingredientIds: ['ingredient-1'],
+          ingredientWeights: [{ ingredientId: 'ingredient-1', quantity: '1 cucchiaino' }],
+          nutrition: { calories: 650 },
           createdAt: '2026-07-04T12:00:00.000Z',
           updatedAt: '2026-07-04T12:00:00.000Z',
         },
@@ -49,13 +59,17 @@ describe('import/export CSV', () => {
     });
     const imported = importAppModelFromCsv(csv);
 
-    expect(csv).toContain('metadata,format,,schema_version,,2');
+    expect(csv).toContain('metadata,format,,schema_version,,3');
     expect(csv).toContain('preference,nutritionTrackingEnabled,,nutritionTrackingEnabled,,true');
     expect(csv).toContain('preference,weightUnit,,weightUnit,,kg');
     expect(csv).toContain('recipe,recipe-1,,,Riso e pollo,,,lunch');
-    expect(csv).toContain(',0.45,650');
+    expect(csv).toContain('recipe_ingredient,recipe-1__ingredient-1,recipe-1,,,ingredient-1');
+    expect(csv).toContain(',1 cucchiaino,');
     expect(imported.model.nutritionSettings).toEqual({ trackingEnabled: true, weightUnit: 'kg' });
-    expect(imported.model.recipes[0].nutrition).toEqual({ weightAmount: 0.45, calories: 650 });
+    expect(imported.model.recipes[0].nutrition).toEqual({ calories: 650 });
+    expect(imported.model.recipes[0].ingredientWeights).toEqual([
+      { ingredientId: 'ingredient-1', quantity: '1 cucchiaino' },
+    ]);
   });
 
   it('imports legacy schema version 1 CSV files without nutrition columns', () => {
@@ -108,6 +122,37 @@ describe('import/export CSV', () => {
     expect(() => importAppModelFromCsv(csv.replace(',g,', ',stone,'))).toThrow(
       'Preferenza unita peso non valida',
     );
+  });
+
+  it('imports legacy schema version 2 recipe weight when a recipe has one ingredient', () => {
+    const model = createInitialAppModel();
+    const csv = [
+      'record_type,id,parent_id,key,name,value,available,meal_types,date,meal_type,recipe_id,week_start_date,created_at,updated_at,notes,weight_amount,calories',
+      'metadata,format,,schema_version,,2,,,,,,,,,,,',
+      'metadata,export,,app_name,,EZ-MEAL,,,,,,,,,,,',
+      'metadata,export,,exported_at,,2026-07-14T10:00:00.000Z,,,,,,,,,,,',
+      'preference,language,,language,,it,,,,,,,,2026-07-14T10:00:00.000Z,,,',
+      'preference,themeMode,,themeMode,,system,,,,,,,,2026-07-14T10:00:00.000Z,,,',
+      'preference,nutritionTrackingEnabled,,nutritionTrackingEnabled,,true,,,,,,,,2026-07-14T10:00:00.000Z,,,',
+      'preference,weightUnit,,weightUnit,,g,,,,,,,,2026-07-14T10:00:00.000Z,,,',
+      'ingredient,ingredient-1,,,Riso,,true,,,,,,2026-07-04T12:00:00.000Z,2026-07-04T12:00:00.000Z,,,',
+      'recipe,recipe-1,,,Riso in bianco,,,lunch,,,,,2026-07-04T12:00:00.000Z,2026-07-04T12:00:00.000Z,,80,240',
+      'recipe_ingredient,recipe-1__ingredient-1,recipe-1,,,ingredient-1,,,,,,,,,,,',
+      'meal_plan,plan-current,,,Piano settimanale,,,,,,,2026-06-29,2026-07-04T12:00:00.000Z,2026-07-04T12:00:00.000Z,,,',
+      ...model.mealPlan.days.flatMap((day) =>
+        day.slots.map(
+          (slot) =>
+            `meal_slot,plan-current__${slot.date}__${slot.mealType},plan-current,,,,,,${slot.date},${slot.mealType},,,,,,`,
+        ),
+      ),
+    ].join('\n');
+
+    const imported = importAppModelFromCsv(csv);
+
+    expect(imported.model.recipes[0].nutrition).toEqual({ weightAmount: 80, calories: 240 });
+    expect(imported.model.recipes[0].ingredientWeights).toEqual([
+      { ingredientId: 'ingredient-1', quantity: '80', weightAmount: 80 },
+    ]);
   });
 
   it('roundtrips multiple recipes in the same meal slot', () => {

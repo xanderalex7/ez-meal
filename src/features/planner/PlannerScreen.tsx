@@ -8,7 +8,7 @@ import {
   type MealType,
 } from '../../domain';
 import { useI18n, type TranslationKey } from '../../shared/i18n';
-import { formatNumber, formatNutritionMeta, hasMissingNutrition } from '../../shared/nutritionUi';
+import { formatNumber, formatRecipeCalories, hasMissingNutrition } from '../../shared/nutritionUi';
 import {
   ActionIconButton,
   Badge,
@@ -289,7 +289,7 @@ export function PlannerScreen({ actions, model }: PlannerScreenProps) {
                             numberOfLines={1}
                             style={[styles.nutritionMeta, { color: colors.textMuted }]}
                           >
-                            {formatNutritionMeta(recipe, model.nutritionSettings.weightUnit, t) ?? '-'}
+                            {formatRecipeCalories(recipe) ?? '-'}
                           </Text>
                         ) : null}
                         {isEditing ? (

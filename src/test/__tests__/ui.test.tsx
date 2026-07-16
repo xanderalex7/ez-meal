@@ -139,7 +139,7 @@ describe('shared UI', () => {
     fireEvent.press(getByText('Altro'));
 
     expect(await findByText('Import/export')).toBeTruthy();
-    expect(await findByText('Importa o esporta ingredienti, ricette, piani, lingua e tema tramite un CSV unico.')).toBeTruthy();
+    expect(await findByText('Importa o esporta ingredienti, piatti, piani, lingua e tema tramite un CSV unico.')).toBeTruthy();
     expect(await findByText('Importa CSV')).toBeTruthy();
     expect(await findByText('Esporta CSV')).toBeTruthy();
     expect(queryByText('Importa')).toBeNull();
@@ -151,21 +151,22 @@ describe('shared UI', () => {
 
     fireEvent.press(getByText('Altro'));
 
-    expect(await findByText('Unità e calorie')).toBeTruthy();
+    expect(await findByText('Calorie e quantità')).toBeTruthy();
     expect(await findByText('Conteggio calorie disattivato')).toBeTruthy();
-    expect(await findByLabelText('Unità e calorie')).toBeTruthy();
-    expect(await findByText('Grammi')).toBeTruthy();
-    expect(await findByText('Chilogrammi')).toBeTruthy();
-    expect(await findByText('Once')).toBeTruthy();
-    expect(await findByText('Libbre')).toBeTruthy();
+    expect(await findByLabelText('Calorie e quantità')).toBeTruthy();
+    expect(
+      await findByText(
+        "Attiva calorie piatto e quantità ingredienti. Scrivi l'unità direttamente nella quantità, ad esempio 50 g, 1 cucchiaino o 10 ml.",
+      ),
+    ).toBeTruthy();
   });
 
 
   it('renders an accessible floating action button', async () => {
     const { getByLabelText, getByText } = await render(
-      <FloatingActionButton accessibilityLabel="Crea ricetta" onPress={jest.fn()} />,
+      <FloatingActionButton accessibilityLabel="Crea piatto" onPress={jest.fn()} />,
     );
-    const fab = getByLabelText('Crea ricetta');
+    const fab = getByLabelText('Crea piatto');
 
     expect(fab).toBeTruthy();
     expect(StyleSheet.flatten(fab.props.style)).toEqual(
@@ -248,7 +249,7 @@ describe('shared UI', () => {
     }
   });
 
-  it('shows newest recipes first', async () => {
+  it('shows recipes alphabetically', async () => {
     const model = {
       ...createInitialAppModel(),
       recipes: [
@@ -277,10 +278,10 @@ describe('shared UI', () => {
     const { getAllByText, getByLabelText } = await render(<RecipesScreen actions={actions} model={model} />);
 
     expect(getAllByText(/Pasta|Risotto/).map((node) => node.props.children)).toEqual([
-      'Risotto',
       'Pasta',
+      'Risotto',
     ]);
-    expect(StyleSheet.flatten(getByLabelText('Modifica ricetta Risotto').props.style)).toEqual(
+    expect(StyleSheet.flatten(getByLabelText('Modifica piatto Pasta').props.style)).toEqual(
       expect.objectContaining({
         backgroundColor: lightColors.surface,
         borderColor: lightColors.text,
@@ -315,7 +316,7 @@ describe('shared UI', () => {
       <RecipesScreen actions={{ deleteRecipe: jest.fn() } as unknown as AppActions} model={model} />,
     );
 
-    fireEvent.changeText(getByLabelText('Cerca ricette'), 'past');
+    fireEvent.changeText(getByLabelText('Cerca piatti'), 'past');
 
     expect(getByText('Pasta al sugo')).toBeTruthy();
     expect(queryByText('Risotto')).toBeNull();
@@ -345,9 +346,9 @@ describe('shared UI', () => {
       />,
     );
 
-    fireEvent.press(getByLabelText('Modifica ricetta Pasta'));
+    fireEvent.press(getByLabelText('Modifica piatto Pasta'));
 
-    expect(getByText('Modifica ricetta')).toBeTruthy();
+    expect(getByText('Modifica piatto')).toBeTruthy();
     expect(onRequestScrollToTop).toHaveBeenCalledTimes(1);
   });
 
@@ -357,10 +358,10 @@ describe('shared UI', () => {
 
     const { getByLabelText, getByText } = await render(<RecipesScreen actions={actions} model={model} />);
 
-    fireEvent.press(getByLabelText('Apri creazione ricetta'));
+    fireEvent.press(getByLabelText('Apri creazione piatto'));
 
     expect(
-      StyleSheet.flatten(getByText('Crea prima un ingrediente per associarlo alla ricetta.').props.style),
+      StyleSheet.flatten(getByText('Crea prima un ingrediente per associarlo al piatto.').props.style),
     ).toEqual(expect.objectContaining({ color: lightColors.warning }));
   });
 
@@ -382,22 +383,105 @@ describe('shared UI', () => {
       addRecipe: jest.fn(() => null),
     } as unknown as AppActions;
 
-    const { getByLabelText, getByPlaceholderText } = await render(<RecipesScreen actions={actions} model={model} />);
+    const { getAllByText, getByLabelText, getByPlaceholderText, queryByLabelText } = await render(
+      <RecipesScreen actions={actions} model={model} />,
+    );
 
-    fireEvent.press(getByLabelText('Apri creazione ricetta'));
-    fireEvent.changeText(getByLabelText('Nome ricetta'), 'Pasta');
-    fireEvent.changeText(getByLabelText('Peso ricetta (kg)'), '0,35');
-    fireEvent.changeText(getByLabelText('Calorie ricetta'), '520');
+    fireEvent.press(getByLabelText('Apri creazione piatto'));
+    fireEvent.changeText(getByLabelText('Nome piatto'), 'Pasta');
+    fireEvent.changeText(getByLabelText('Calorie piatto'), '520');
     fireEvent(getByPlaceholderText('Cerca ingredienti'), 'pressIn');
     fireEvent.press(getByLabelText('Pomodoro'));
+    expect(queryByLabelText('Rimuovi Pomodoro')).toBeTruthy();
+    expect(getAllByText('Pomodoro')).toHaveLength(2);
+    fireEvent.changeText(getByLabelText('Quantità Pomodoro'), '1 cucchiaino');
     fireEvent.press(getByLabelText('Aggiungi'));
 
     expect(actions.addRecipe).toHaveBeenCalledWith({
       ingredientIds: ['ingredient-1'],
+      ingredientWeights: [{ ingredientId: 'ingredient-1', quantity: '1 cucchiaino' }],
       mealTypes: ['lunch'],
       name: 'Pasta',
-      nutrition: { weightAmount: '0,35', calories: '520' },
+      nutrition: { calories: '520' },
     });
+  });
+
+  it('removes selected recipe ingredients from the quantity row', async () => {
+    const model = {
+      ...createInitialAppModel(),
+      ingredients: [
+        {
+          id: 'ingredient-1',
+          name: 'Pomodoro',
+          available: true,
+          createdAt: '2026-07-04T12:00:00.000Z',
+          updatedAt: '2026-07-04T12:00:00.000Z',
+        },
+      ],
+      nutritionSettings: { trackingEnabled: true, weightUnit: 'kg' as const },
+    };
+    const actions = {
+      addRecipe: jest.fn(() => null),
+    } as unknown as AppActions;
+
+    const { getByLabelText, getByPlaceholderText, queryByLabelText } = await render(
+      <RecipesScreen actions={actions} model={model} />,
+    );
+
+    fireEvent.press(getByLabelText('Apri creazione piatto'));
+    fireEvent(getByPlaceholderText('Cerca ingredienti'), 'pressIn');
+    fireEvent.press(getByLabelText('Pomodoro'));
+    fireEvent.press(getByLabelText('Rimuovi Pomodoro'));
+
+    expect(queryByLabelText('Quantità Pomodoro')).toBeNull();
+  });
+
+  it('shows recipe calories and ingredient weights on recipe cards', async () => {
+    const model = {
+      ...createInitialAppModel(),
+      ingredients: [
+        {
+          id: 'ingredient-1',
+          name: 'Riso crudo',
+          available: true,
+          createdAt: '2026-07-04T12:00:00.000Z',
+          updatedAt: '2026-07-04T12:00:00.000Z',
+        },
+        {
+          id: 'ingredient-2',
+          name: 'Olio',
+          available: true,
+          createdAt: '2026-07-04T12:00:00.000Z',
+          updatedAt: '2026-07-04T12:00:00.000Z',
+        },
+      ],
+      nutritionSettings: { trackingEnabled: true, weightUnit: 'g' as const },
+      recipes: [
+        {
+          id: 'recipe-1',
+          name: 'Riso in bianco',
+          mealTypes: ['lunch' as const],
+          ingredientIds: ['ingredient-1', 'ingredient-2'],
+          ingredientWeights: [
+            { ingredientId: 'ingredient-1', quantity: '50 g' },
+            { ingredientId: 'ingredient-2', quantity: '1 cucchiaino' },
+          ],
+          nutrition: { calories: 240 },
+          createdAt: '2026-07-04T12:00:00.000Z',
+          updatedAt: '2026-07-04T12:00:00.000Z',
+        },
+      ],
+    };
+    const actions = {} as AppActions;
+
+    const { getByText } = await render(<RecipesScreen actions={actions} model={model} />);
+
+    expect(getByText('Riso in bianco')).toBeTruthy();
+    expect(getByText('240 cal')).toBeTruthy();
+    expect(getByText('Riso crudo')).toBeTruthy();
+    expect(getByText('50 g')).toBeTruthy();
+    expect(getByText('Olio')).toBeTruthy();
+    expect(getByText('1 cucchiaino')).toBeTruthy();
   });
 
   it('toggles planner read and edit controls', async () => {
@@ -424,7 +508,7 @@ describe('shared UI', () => {
     );
     expect(queryByLabelText('Salva piano')).toBeNull();
     expect(queryByTestId('plan-generator-actions')).toBeNull();
-    expect(queryByLabelText('Scegli ricetta per 2026-06-29 Colazione')).toBeNull();
+    expect(queryByLabelText('Scegli piatto per 2026-06-29 Colazione')).toBeNull();
 
     fireEvent.press(getByLabelText('Modifica piano'));
 
@@ -443,7 +527,7 @@ describe('shared UI', () => {
     expect(StyleSheet.flatten(getByTestId('generate-plan-button').props.style)).toEqual(
       expect.objectContaining({ width: '100%' }),
     );
-    expect(getByLabelText('Scegli ricetta per 2026-06-29 Colazione')).toBeTruthy();
+    expect(getByLabelText('Scegli piatto per 2026-06-29 Colazione')).toBeTruthy();
   });
 
   it('does not show plan generation for non-empty plans', async () => {
@@ -495,9 +579,9 @@ describe('shared UI', () => {
     const { getByLabelText, getByText } = await render(<PlannerScreen actions={actions} model={model} />);
 
     fireEvent.press(getByLabelText('Modifica piano'));
-    fireEvent.press(getByLabelText('Scegli ricetta per 2026-06-29 Colazione'));
+    fireEvent.press(getByLabelText('Scegli piatto per 2026-06-29 Colazione'));
 
-    expect(StyleSheet.flatten(getByText('Nessuna ricetta compatibile per Colazione.').props.style)).toEqual(
+    expect(StyleSheet.flatten(getByText('Nessun piatto compatibile per Colazione.').props.style)).toEqual(
       expect.objectContaining({ color: lightColors.warning }),
     );
   });
@@ -579,8 +663,9 @@ describe('shared UI', () => {
           id: 'recipe-riso',
           name: 'Riso in bianco con nome molto molto lungo',
           mealTypes: ['lunch' as const],
-          ingredientIds: [],
-          nutrition: { weightAmount: 250, calories: 340 },
+          ingredientIds: ['ingredient-riso'],
+          ingredientWeights: [{ ingredientId: 'ingredient-riso', quantity: '50 g' }],
+          nutrition: { calories: 340 },
           createdAt: '2026-07-15T10:00:00.000Z',
           updatedAt: '2026-07-15T10:00:00.000Z',
         },
@@ -588,19 +673,43 @@ describe('shared UI', () => {
           id: 'recipe-pollo',
           name: 'Pollo',
           mealTypes: ['lunch' as const],
-          ingredientIds: [],
-          nutrition: { weightAmount: 180, calories: 260 },
+          ingredientIds: ['ingredient-pollo'],
+          ingredientWeights: [{ ingredientId: 'ingredient-pollo', quantity: '120 g' }],
+          nutrition: { calories: 260 },
+          createdAt: '2026-07-15T10:00:00.000Z',
+          updatedAt: '2026-07-15T10:00:00.000Z',
+        },
+      ],
+      ingredients: [
+        {
+          id: 'ingredient-riso',
+          name: 'Riso',
+          available: true,
+          createdAt: '2026-07-15T10:00:00.000Z',
+          updatedAt: '2026-07-15T10:00:00.000Z',
+        },
+        {
+          id: 'ingredient-pollo',
+          name: 'Pollo crudo',
+          available: true,
           createdAt: '2026-07-15T10:00:00.000Z',
           updatedAt: '2026-07-15T10:00:00.000Z',
         },
       ],
     };
 
-    const { getAllByText, getByText } = await render(<HomeScreen model={homeModel} />);
+    const { getAllByText, getByTestId, getByText } = await render(<HomeScreen model={homeModel} />);
 
     expect(getByText('600 cal')).toBeTruthy();
-    expect(getByText('250 g · 340 cal')).toBeTruthy();
-    expect(getByText('180 g · 260 cal')).toBeTruthy();
+    expect(getByText('340 cal')).toBeTruthy();
+    expect(getByText('260 cal')).toBeTruthy();
+    expect(getByText('Riso')).toBeTruthy();
+    expect(getByText('50 g')).toBeTruthy();
+    expect(StyleSheet.flatten(getByTestId('home-recipe-divider-recipe-riso').props.style)).toEqual(
+      expect.objectContaining({ height: 1 }),
+    );
+    expect(getByText('Pollo crudo')).toBeTruthy();
+    expect(getByText('120 g')).toBeTruthy();
     expect(StyleSheet.flatten(getAllByText('Riso in bianco con nome molto molto lungo')[0].props.style)).toEqual(
       expect.objectContaining({ flex: 1, minWidth: 0 }),
     );
@@ -646,7 +755,7 @@ describe('shared UI', () => {
 
     expect(
       StyleSheet.flatten(
-        getByText('Completa peso e calorie di tutte le ricette pianificate oppure disattiva il conteggio calorie.').props.style,
+        getByText('Completa quantità e calorie di tutti i piatti pianificati oppure disattiva il conteggio calorie.').props.style,
       ),
     ).toEqual(expect.objectContaining({ color: lightColors.error }));
     expect(getByText('-')).toBeTruthy();
@@ -678,8 +787,9 @@ describe('shared UI', () => {
           id: 'recipe-riso',
           name: 'Riso',
           mealTypes: ['lunch' as const],
-          ingredientIds: [],
-          nutrition: { weightAmount: 250, calories: 340 },
+          ingredientIds: ['ingredient-riso'],
+          ingredientWeights: [{ ingredientId: 'ingredient-riso', quantity: '50 g' }],
+          nutrition: { calories: 340 },
           createdAt: '2026-07-15T10:00:00.000Z',
           updatedAt: '2026-07-15T10:00:00.000Z',
         },
@@ -687,8 +797,9 @@ describe('shared UI', () => {
           id: 'recipe-pollo',
           name: 'Pollo',
           mealTypes: ['lunch' as const],
-          ingredientIds: [],
-          nutrition: { weightAmount: 180, calories: 260 },
+          ingredientIds: ['ingredient-pollo'],
+          ingredientWeights: [{ ingredientId: 'ingredient-pollo', quantity: '120 g' }],
+          nutrition: { calories: 260 },
           createdAt: '2026-07-15T10:00:00.000Z',
           updatedAt: '2026-07-15T10:00:00.000Z',
         },
@@ -701,8 +812,8 @@ describe('shared UI', () => {
 
     expect(getByText('Piano settimanale (600 cal)')).toBeTruthy();
     expect(getAllByText('600 cal')).toHaveLength(1);
-    expect(getByText('250 g · 340 cal')).toBeTruthy();
-    expect(getByText('180 g · 260 cal')).toBeTruthy();
+    expect(getByText('340 cal')).toBeTruthy();
+    expect(getByText('260 cal')).toBeTruthy();
   });
 
   it('uses a scrollable shell for long screen content', async () => {
