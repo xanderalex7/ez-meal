@@ -300,6 +300,7 @@ function AppContent({
   }
 
   const safeBottomPadding = Math.max(insets.bottom, spacing.sm);
+  const safeTopPadding = Math.max(spacing.xxxl, insets.top + spacing.xl);
   const navBottomPadding = safeBottomPadding;
   const keyboardBottomPadding = keyboardVisible ? spacing.xxxl : 0;
   const contentBottomPadding = spacing.xl + keyboardBottomPadding + (!keyboardVisible ? navBottomPadding : 0);
@@ -311,7 +312,7 @@ function AppContent({
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      style={[styles.container, { backgroundColor: colors.background }]}
+      style={[styles.container, { backgroundColor: colors.background, paddingTop: safeTopPadding }]}
     >
       <View style={styles.header}>
         <Image
