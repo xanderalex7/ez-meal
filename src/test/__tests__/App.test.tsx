@@ -32,7 +32,7 @@ describe('App', () => {
     expect(getByText('Pianifica i pasti con quello che hai già.')).toBeTruthy();
     expect(getAllByText('Oggi')).toHaveLength(2);
     expect(getByText('Piano')).toBeTruthy();
-    expect(getByText('Ricette')).toBeTruthy();
+    expect(getByText('Piatti')).toBeTruthy();
     expect(getByText('Ingredienti')).toBeTruthy();
   });
 
@@ -62,8 +62,8 @@ describe('App', () => {
       'Pomodoro',
     ]);
 
-    fireEvent.press(getByText('Ricette'));
-    fireEvent.press(await findByLabelText('Apri creazione ricetta'));
+    fireEvent.press(getByText('Piatti'));
+    fireEvent.press(await findByLabelText('Apri creazione piatto'));
     const lunchChip = await findByLabelText('Tag pasto Pranzo');
     const breakfastChip = await findByLabelText('Tag pasto Colazione');
     expect(lunchChip.props.accessibilityState).toEqual({ selected: true });
@@ -82,41 +82,43 @@ describe('App', () => {
         width: componentSizes.mealTagWidth,
       }),
     );
-    fireEvent.changeText(await findByPlaceholderText('Nome ricetta'), 'Pasta');
+    fireEvent.changeText(await findByPlaceholderText('Nome piatto'), 'Pasta');
     fireEvent.changeText(await findByPlaceholderText('Cerca ingredienti'), 'pom');
     fireEvent.press(await findByText('Pomodoro'));
     expect((await findByLabelText('Pomodoro')).props.accessibilityState).toEqual({ checked: true });
     fireEvent.press(await findByText('Aggiungi'));
     expect(await findByText('Pasta')).toBeTruthy();
-    expect(await findByText('Ingredienti: Pomodoro')).toBeTruthy();
+    expect(await findAllByText('Pomodoro')).not.toHaveLength(0);
     expect(StyleSheet.flatten((await findByTestId('recipe-actions')).props.style)).toEqual(
       expect.objectContaining({ flexDirection: 'row', justifyContent: 'flex-end' }),
     );
 
-    fireEvent.press(await findByLabelText('Modifica ricetta Pasta'));
-    fireEvent.changeText(await findByPlaceholderText('Nome ricetta'), 'Pasta al forno');
+    fireEvent.press(await findByLabelText('Modifica piatto Pasta'));
+    fireEvent.changeText(await findByPlaceholderText('Nome piatto'), 'Pasta al forno');
     fireEvent.press(await findByText('Salva'));
     expect(await findByText('Pasta al forno')).toBeTruthy();
 
     fireEvent.press(getByText('Ingredienti'));
     fireEvent.press(await findByLabelText('Elimina ingrediente Pomodoro'));
-    expect(await findByText(/Ingrediente usato in 1 ricette/)).toBeTruthy();
-    fireEvent.press(await findByLabelText('Conferma elimina ingrediente Pomodoro'));
+    expect(await findByText('Vuoi eliminare Pomodoro?')).toBeTruthy();
+    fireEvent.press(await findByText('Sì'));
+    expect(await findByText(/Ingrediente usato in 1 piatti/)).toBeTruthy();
+    fireEvent.press(await findByText('Sì'));
     expect(await findByText('Ingrediente eliminato.')).toBeTruthy();
 
     fireEvent.press(getByText('Piano'));
     fireEvent.press(await findByLabelText('Modifica piano'));
-    fireEvent.press(await findByLabelText('Scegli ricetta per 2026-06-29 Pranzo'));
+    fireEvent.press(await findByLabelText('Scegli piatto per 2026-06-29 Pranzo'));
     fireEvent.press(await findByText('Pasta al forno'));
     expect(await findByText('Pasto aggiornato.')).toBeTruthy();
     fireEvent.press(await findByLabelText('Salva piano'));
     expect(await findByText('Lunedì')).toBeTruthy();
 
-    fireEvent.press(getByText('Ricette'));
-    fireEvent.press(await findByLabelText('Elimina ricetta Pasta al forno'));
-    expect(await findByText(/Ricetta pianificata in 1 pasti/)).toBeTruthy();
-    fireEvent.press(await findByLabelText('Conferma elimina ricetta Pasta al forno'));
-    expect(await findByText('Ricetta eliminata.')).toBeTruthy();
+    fireEvent.press(getByText('Piatti'));
+    fireEvent.press(await findByLabelText('Elimina piatto Pasta al forno'));
+    expect(await findByText(/Piatto pianificato in 1 pasti/)).toBeTruthy();
+    fireEvent.press(await findByLabelText('Conferma elimina piatto Pasta al forno'));
+    expect(await findByText('Piatto eliminato.')).toBeTruthy();
 
     fireEvent.press(getByText('Piano'));
     expect(await findAllByText('Vuoto')).not.toHaveLength(0);
@@ -139,7 +141,7 @@ describe('App', () => {
 
     fireEvent.press(await findByLabelText('Modifica piano'));
     fireEvent.press(await findByText('Genera piano ✨'));
-    expect(await findByText(/Ricette insufficienti/)).toBeTruthy();
+    expect(await findByText(/Piatti insufficienti/)).toBeTruthy();
 
     fireEvent.press(getByText('Altro'));
     fireEvent.press(await findByText('Reset database locale'));

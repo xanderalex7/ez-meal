@@ -41,9 +41,12 @@ Deliver a usable local-first meal planner before adding advanced features. Each 
 | --- | --- | --- | --- | --- | --- | --- |
 | TASK-065 | DONE | MUST | Prepare documentation for public repository using English as the single maintained language. | Existing Markdown docs. | Markdown docs are present without `-ITA` duplicates and no links point to removed Italian copies. | File list, reference search and Git status reviewed. |
 | TASK-066 | TODO | MUST | Final public-readiness scan for secrets, tokens, generated artifacts and ignored sensitive files. | TASK-065 | No obvious secrets or tracked build artifacts remain. `.gitignore` covers local/private files. | Repo scan commands reviewed. |
-| TASK-067 | IN_PROGRESS | SHOULD | Prepare v1.3.0 UI polish and validation release notes. Includes ingredient filtering/order, recipe filtering, recipe edit scroll behavior, warning/error colors, recipe ingredient validation, multi-select blur handling, logo/header polish, Today card spacing and Android safe-area improvements. | Recent UI/validation work. | `CHANGELOG.md` documents v1.3.0 changes; README links the changelog; implementation passes automated checks; manual web/mobile review completed before release. | Typecheck passed for current implementation; targeted UI tests passed; final visual review and release smoke test pending. |
+| TASK-067 | DONE | SHOULD | Prepare v1.3.0 UI polish and validation release notes. Includes ingredient filtering/order, recipe filtering, recipe edit scroll behavior, warning/error colors, recipe ingredient validation, multi-select blur handling, logo/header polish, Today card spacing and Android safe-area improvements. | Recent UI/validation work. | `CHANGELOG.md` documents v1.3.0 changes; README links the changelog; implementation passes automated checks; manual web/mobile review completed before release. | `npm run typecheck` passed; full Jest suite passed; user confirmed manual review OK. |
 | TASK-068 | DONE | MUST | Add optional recipe weight/calorie tracking with daily and plan totals. | TASK-064, CSV import/export, local persistence. | Recipes support weight/calorie fields when tracking is enabled; Today and Plan show per-recipe and total calories; Settings exposes measurement unit and tracking toggle; DB and CSV remain backward compatible. | Implementation slices completed with typecheck and full test suite; conceptual weight correction continues in TASK-069. |
 | TASK-069 | DONE | MUST | Fix nutrition model: recipe calories stay on the recipe, while quantity moves to each ingredient used in a recipe. | TASK-068 | Recipe ingredient quantities are captured, persisted, imported/exported and displayed correctly; Plan hides quantity values; Today shows recipe calories plus ingredient quantity breakdowns. | Implementation, documentation, targeted tests and user acceptance completed. |
+| TASK-070 | IN_PROGRESS | SHOULD | Add pantry/shopping-list flow inside Ingredients using the existing ingredient availability state. | Ingredient `available` field, TASK-067 | Ingredients screen has `Dispensa` and `Spesa` tabs; pantry keeps all ingredients visible and highlights missing ones; shopping shows missing ingredients only; right-to-left swipe changes availability with visible swipe feedback; icon fallback actions exist where swipe is unavailable. | Typecheck and full test suite passed; manual mobile check for swipe behavior pending. |
+| TASK-071 | TODO | COULD | Add targeted in-app usage guidance only where interactions are not obvious. | TASK-070, CSV import/export UI. | Contextual info is available for pantry/shopping swipe behavior and CSV import/export only; primary workflows remain uncluttered. | Manual UX review in mobile and web, light/dark themes. |
+| TASK-072 | TODO | SHOULD | Improve CSV import UX by scrolling the confirmation action into view after a file is selected. | CSV import/export UI. | After selecting a CSV, the import confirmation button becomes visible without being hidden below the viewport or mobile keyboard/safe area. | Manual mobile/web import flow check. |
 
 ## Detailed Active Task Notes
 
@@ -189,6 +192,96 @@ Impact notes:
 - UI: recipe ingredient selection needs a stable two-column row layout for ingredient label and quantity input.
 - Tests: cover validation, migration, CSV round-trip and Today/Plan display behavior.
 
+### TASK-070 - Pantry and Shopping List
+
+Goal: expose the existing `Ingredient.available` state as a practical pantry/shopping-list workflow without adding a separate todo-list model.
+
+Subtasks:
+
+| ID | Status | Scope | Completion Criteria | Verification |
+| --- | --- | --- | --- | --- |
+| TASK-070A | DONE | Domain/actions. | App actions can toggle an ingredient between available and missing; persistence, import/export and reset keep using the existing `available` field. | `npm run typecheck`; targeted app model test passed. |
+| TASK-070B | DONE | Ingredients tabs. | Ingredients screen contains two tabs: `Dispensa` and `Spesa`; pantry shows all ingredients while missing ones use an orange non-error background; shopping shows only missing ingredients. | Targeted UI test passed. |
+| TASK-070C | IN_PROGRESS | Swipe interactions. | Right-to-left swipe in `Dispensa` marks an available ingredient as missing without removing it from pantry; right-to-left swipe in `Spesa` marks it as bought/available; swipe reveals a colored action background. | Swipe implemented with stable animated drag feedback; manual mobile check on Android/APK pending. |
+| TASK-070D | DONE | Accessible fallback. | Pantry rows use a yellow filled cart-plus icon for adding available ingredients to shopping; shopping rows use a green filled cart icon for marking bought; delete is hidden in shopping. | Targeted UI test passed. |
+
+User behavior:
+
+- Ingredients tab:
+  - `Dispensa` shows all ingredients.
+  - Ingredients marked as missing remain visible in `Dispensa` with an orange warning-style background that must not be confused with destructive red.
+  - `Spesa` shows ingredients currently missing and therefore to buy.
+  - Moving an ingredient does not delete it and must not break recipes, plans or CSV import/export.
+- Swipe behavior:
+  - In `Dispensa`, swipe right-to-left means "mark as missing"; the item remains visible in pantry.
+  - In `Spesa`, swipe right-to-left means "remove from shopping list / mark as bought".
+  - The direction is intentionally consistent.
+  - Swipe should reveal a visible colored action background.
+- Button behavior:
+  - In `Dispensa`, available ingredients show a yellow cart-plus icon action using the selected filled cart variant.
+  - In `Spesa`, missing ingredients show a green cart icon action using the selected filled cart variant.
+  - Ingredient deletion is available only from `Dispensa`, not from `Spesa`.
+
+Impact notes:
+
+- Data model: no new entity is required for the first version; use `Ingredient.available`.
+- DB/CSV: existing `available` column/field remains the source of truth.
+- UI: ingredient lists need clear empty states for both tabs.
+- Future: generating the shopping list from the selected meal plan can build on the same missing/available state.
+
+### TASK-071 - In-App Usage Guidance
+
+Goal: explain only the app interactions that are not obvious without adding permanent instructional noise to operational screens.
+
+Options to evaluate:
+
+- Per-screen info icon:
+  - Small circled-info icon in relevant screens or tabs.
+  - Opens a modal with concise guidance for the current context.
+  - Best for highly contextual gestures such as swipe in `Dispensa`/`Spesa`.
+- Dedicated section in `Altro`:
+  - Add a `Guida` or `Come usare EZ-MEAL` section.
+  - Contains short grouped explanations for Ingredienti, Piatti, Piano, Oggi, Import/Export and Settings.
+  - Best for discoverability and avoiding repeated icons.
+- Hybrid approach:
+  - Add a central guide in `Altro`.
+  - Use small contextual info icons only where the behavior is not obvious, such as swipe actions or CSV import/export.
+  - Best balance for a compact app.
+
+Decision:
+
+- Do not add info icons to every screen.
+- Add contextual info only where the behavior is not obvious:
+  - `Dispensa`/`Spesa` swipe actions;
+  - CSV import/export behavior.
+- If a fuller guide is added later, place it in `Altro` as a dedicated section.
+- Keep all guidance localized in Italian and English.
+- Avoid long prose; use compact, action-oriented wording.
+
+### TASK-072 - Import Confirmation Scroll
+
+Goal: make CSV import usable on mobile after file selection by ensuring the next required action is visible.
+
+User behavior:
+
+- In `Altro`, user taps `Import CSV`.
+- User selects a CSV from the file picker.
+- After the file is loaded, the UI should automatically scroll to the confirmation/import action.
+- The confirm button must not remain hidden under the viewport, bottom navbar, safe area or keyboard.
+
+Implementation notes:
+
+- Use the existing import/export layout and scroll container.
+- Prefer a focused scroll-to-view behavior for the confirmation button/section.
+- Do not change the import validation flow or CSV schema.
+- Preserve the current progressive validation checklist behavior.
+
+Verification:
+
+- Manual check on mobile-sized viewport.
+- Manual check on Android/APK where possible.
+- Web check to ensure the behavior is not disruptive on desktop.
+
 ## Completed Task Groups
 
 | Range | Status | Notes |
@@ -227,7 +320,7 @@ Minimum manual APK checks:
 | FUTURE-001 | DEFERRED | Store-release branch/workflow for iOS/App Store and Play Store distribution. |
 | FUTURE-002 | DEFERRED | Optional cloud sync/account system. |
 | FUTURE-003 | DEFERRED | Advanced nutrition planning beyond recipe-level weight/calorie tracking. |
-| FUTURE-004 | DEFERRED | Shopping list generation. |
+| FUTURE-004 | DEFERRED | Generate shopping list suggestions from the selected meal plan by comparing planned recipe ingredients with pantry availability. |
 | FUTURE-005 | DEFERRED | Refactor remaining internal naming, legacy CSV/database fields and docs from weight-oriented terminology to quantity-oriented terminology while preserving backward compatibility. |
 | FUTURE-006 | DEFERRED | Refactor technical naming and compatibility layer from recipe/Recipe to dish/Dish across domain, persistence, CSV schema, tests and docs while preserving import compatibility for legacy recipe records. |
 | FUTURE-007 | DEFERRED | Serious improvement: evaluate an Android Today home-screen widget showing breakfast, lunch and dinner dish lists; requires native Android/Expo build feasibility analysis, data snapshot strategy and update scheduling. |

@@ -32,6 +32,7 @@ export type AppModel = {
 export type AppActions = {
   addIngredient: (name: string) => string | null;
   deleteIngredient: (id: string, options?: { forceCascade?: boolean }) => string | null;
+  setIngredientAvailability: (id: string, available: boolean) => string | null;
   addRecipe: (input: {
     name: string;
     mealTypes: MealType[];
@@ -125,6 +126,25 @@ export function createAppActions(
         })),
       }));
       return null;
+    },
+
+    setIngredientAvailability(id, available) {
+      let updated = false;
+      setModel((current) => ({
+        ...current,
+        ingredients: current.ingredients.map((ingredient) => {
+          if (ingredient.id !== id) {
+            return ingredient;
+          }
+          updated = true;
+          return {
+            ...ingredient,
+            available,
+            updatedAt: new Date().toISOString(),
+          };
+        }),
+      }));
+      return updated ? null : t('errorIngredientNotFound');
     },
 
     addRecipe(input) {
