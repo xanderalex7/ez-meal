@@ -146,6 +146,16 @@ When the GitHub Pages workflow is implemented, it should:
 
 The workflow file is `.github/workflows/github-pages.yml`.
 
+To push documentation-only or administrative commits to `main` without triggering GitHub Actions, include `[no ci]` in the commit message.
+
+Example:
+
+```bash
+git commit -m "docs: update release notes [no ci]"
+```
+
+Use `[no ci]` only when skipping the web deployment is intentional. Release commits that should update GitHub Pages must not use it.
+
 ## Release Smoke Test
 
 Before considering a release complete, verify at least:
