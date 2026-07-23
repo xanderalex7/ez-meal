@@ -4,7 +4,7 @@ All notable EZ-MEAL changes are tracked here.
 
 This project follows semantic versioning for public app versions. Release process and tag commands are documented in `WORKFLOW.md` and `tagging.md`.
 
-## 1.5.0 - Unreleased
+## 1.5.0 - 2026-07-23
 
 ### Added
 
