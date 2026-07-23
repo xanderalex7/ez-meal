@@ -73,7 +73,7 @@ describe('appModel destructive actions', () => {
 
     const warning = harness.actions().deleteIngredient('ingredient-1');
 
-    expect(warning).toMatch(/Ingrediente usato in 1 ricette/);
+    expect(warning).toMatch(/Ingrediente usato in 1 piatti/);
     expect(harness.model.ingredients).toHaveLength(1);
     expect(harness.model.recipes[0].ingredientIds).toEqual(['ingredient-1']);
 
@@ -109,7 +109,7 @@ describe('appModel destructive actions', () => {
 
     const warning = harness.actions().deleteRecipe(plannedRecipe.id);
 
-    expect(warning).toMatch(/Ricetta pianificata in 2 pasti/);
+    expect(warning).toMatch(/Piatto pianificato in 2 pasti/);
     expect(harness.model.recipes).toHaveLength(1);
     expect(countPlannedRecipe(harness.model, plannedRecipe.id)).toBe(2);
 
@@ -122,6 +122,27 @@ describe('appModel destructive actions', () => {
 });
 
 describe('appModel duplicate policy', () => {
+  it('moves ingredients between pantry and shopping states', () => {
+    const harness = createModelHarness({
+      ...createInitialAppModel(),
+      ingredients: [
+        {
+          id: 'ingredient-1',
+          name: 'Pomodoro',
+          available: true,
+          createdAt: timestamp,
+          updatedAt: timestamp,
+        },
+      ],
+    });
+
+    expect(harness.actions().setIngredientAvailability('ingredient-1', false)).toBeNull();
+    expect(harness.model.ingredients[0].available).toBe(false);
+
+    expect(harness.actions().setIngredientAvailability('ingredient-1', true)).toBeNull();
+    expect(harness.model.ingredients[0].available).toBe(true);
+  });
+
   it('rejects duplicate ingredient names ignoring case and surrounding spaces', () => {
     const harness = createModelHarness({
       ...createInitialAppModel(),
@@ -159,8 +180,8 @@ describe('appModel duplicate policy', () => {
       name: 'PASTA',
     });
 
-    expect(createResult).toBe('Esiste già una ricetta con questo nome.');
-    expect(updateResult).toBe('Esiste già una ricetta con questo nome.');
+    expect(createResult).toBe('Esiste già un piatto con questo nome.');
+    expect(updateResult).toBe('Esiste già un piatto con questo nome.');
     expect(harness.model.recipes.map((recipe) => recipe.name)).toEqual(['Pasta', 'Zuppa']);
   });
 });
