@@ -6,6 +6,7 @@ import { Keyboard, KeyboardAvoidingView, ScrollView, StyleSheet, View } from 're
 import App from '../../../App';
 import { createInitialAppModel, type AppActions } from '../../features/appModel';
 import { HomeScreen } from '../../features/home';
+import { IngredientsScreen } from '../../features/ingredients';
 import { PlannerScreen } from '../../features/planner';
 import { RecipesScreen } from '../../features/recipes';
 import { Badge, Button, Card, FloatingActionButton, MultiSelect } from '../../shared/ui';
@@ -84,6 +85,85 @@ describe('shared UI', () => {
     expect(getByText('Colazione').props.style).toEqual(
       expect.arrayContaining([expect.objectContaining({ color: lightColors.text })]),
     );
+  });
+
+  it('separates pantry and shopping ingredients and exposes fallback move actions', async () => {
+    const model = {
+      ...createInitialAppModel(),
+      ingredients: [
+        {
+          id: 'ingredient-1',
+          name: 'Pomodoro',
+          available: true,
+          createdAt: '2026-07-04T12:00:00.000Z',
+          updatedAt: '2026-07-04T12:00:00.000Z',
+        },
+        {
+          id: 'ingredient-2',
+          name: 'Sale',
+          available: false,
+          createdAt: '2026-07-04T12:00:00.000Z',
+          updatedAt: '2026-07-04T12:00:00.000Z',
+        },
+      ],
+    };
+    const actions = {
+      deleteIngredient: jest.fn(),
+      setIngredientAvailability: jest.fn(() => null),
+    } as unknown as AppActions;
+
+    const { getByLabelText, getByText, queryByLabelText } = await render(
+      <IngredientsScreen actions={actions} model={model} />,
+    );
+
+    expect(getByText('Pomodoro')).toBeTruthy();
+    expect(getByText('Sale')).toBeTruthy();
+    expect(queryByLabelText('Segna Sale come preso')).toBeNull();
+
+    fireEvent.press(getByLabelText('Spesa'));
+
+    expect(getByText('Sale')).toBeTruthy();
+    expect(queryByLabelText('Elimina ingrediente Sale')).toBeNull();
+
+    fireEvent.press(getByLabelText('Segna Sale come preso'));
+
+    expect(actions.setIngredientAvailability).toHaveBeenCalledWith('ingredient-2', true);
+  });
+
+  it('confirms ingredient deletion in a modal', async () => {
+    const model = {
+      ...createInitialAppModel(),
+      ingredients: [
+        {
+          id: 'ingredient-1',
+          name: 'Pomodoro',
+          available: true,
+          createdAt: '2026-07-04T12:00:00.000Z',
+          updatedAt: '2026-07-04T12:00:00.000Z',
+        },
+      ],
+    };
+    const actions = {
+      deleteIngredient: jest.fn(() => null),
+      setIngredientAvailability: jest.fn(() => null),
+    } as unknown as AppActions;
+
+    const { getByLabelText, getByText, queryByText } = await render(
+      <IngredientsScreen actions={actions} model={model} />,
+    );
+
+    fireEvent.press(getByLabelText('Elimina ingrediente Pomodoro'));
+
+    expect(getByText('Vuoi eliminare Pomodoro?')).toBeTruthy();
+
+    fireEvent.press(getByText('No'));
+
+    expect(queryByText('Vuoi eliminare Pomodoro?')).toBeNull();
+
+    fireEvent.press(getByLabelText('Elimina ingrediente Pomodoro'));
+    fireEvent.press(getByText('Sì'));
+
+    expect(actions.deleteIngredient).toHaveBeenCalledWith('ingredient-1', { forceCascade: false });
   });
 
   it('applies light and dark theme colors from the system color scheme', async () => {

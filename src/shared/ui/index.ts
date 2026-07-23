@@ -1,4 +1,4 @@
-export { ActionIconButton, PlusIcon, SwapIcon } from './ActionIconButton';
+export { ActionIconButton, CartIcon, PlusIcon, SwapIcon } from './ActionIconButton';
 export { Badge } from './Badge';
 export { Button } from './Button';
 export { Card } from './Card';
