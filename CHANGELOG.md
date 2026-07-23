@@ -4,7 +4,23 @@ All notable EZ-MEAL changes are tracked here.
 
 This project follows semantic versioning for public app versions. Release process and tag commands are documented in `WORKFLOW.md` and `tagging.md`.
 
-## 1.3.0 - Unreleased
+## 1.5.0 - Unreleased
+
+### Added
+
+- Pantry/shopping flow in the Ingredients tab with `Dispensa` and `Spesa` views.
+- Ingredient availability state exposed in the UI as available/missing.
+- Shopping-list swipe and icon fallback actions for moving ingredients between pantry and shopping states.
+- Filled cart and cart-plus icons for shopping actions.
+- Ingredient deletion confirmation modal.
+
+### Changed
+
+- Missing ingredients remain visible in `Dispensa` with a warning-style background.
+- Ingredient deletion is available only from `Dispensa`, not from `Spesa`.
+- Improved app header safe-area spacing on mobile devices.
+
+## 1.4.0 - 2026-07-23
 
 ### Added
 
